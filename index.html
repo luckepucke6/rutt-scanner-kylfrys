@@ -870,7 +870,7 @@
     const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
 {"routeNumber":"1","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
 Rules:
-- routeNumber: the number after "Rutt " in the sheet header
+- routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. The header looks like "Rutt 4- 161 Xhulijo" — routeNumber is "4", NOT "161" and NOT "4 161". It is always a small number (1–15).
 - kof: the 6-digit number in the leftmost data column (ignore header rows)
 - store: the store name and address text from the Startplats column
 - pall/bur/hlv: value in that column, empty string if the cell is blank
@@ -930,7 +930,12 @@ Return only the JSON object, no markdown fences, no explanation.`;
      STORE EXTRACTED ENTRIES
   ═══════════════════════════════════════════════ */
   function storeEntries(parsed) {
-    const routeNum = String(parsed.routeNumber ?? '?');
+    // Plocka ut bara ruttnumret (1–2 siffror) ur det AI returnerar.
+    // Hanterar fall som "4", "4 161", "161", "Rutt 4" → alltid "4".
+    const raw = String(parsed.routeNumber ?? '');
+    const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1]   // första 1-2-siffriga ord
+                  ?? raw.match(/(\d+)/)?.[1]             // annars första siffersekvens
+                  ?? '?';
     let count = 0;
 
     for (const entry of (parsed.entries ?? [])) {
