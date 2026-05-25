@@ -391,6 +391,86 @@
 
     .kof-input:focus { border-color: var(--color-accent); }
 
+    /* ── Input wrapper (för rensknapp) ── */
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+      min-width: 0;
+    }
+
+    .input-wrapper .kof-input { width: 100%; padding-right: 38px; }
+
+    .clear-btn {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--color-text-tertiary);
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Autocomplete-förslag ── */
+    .suggestions {
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-bottom: 0.5px solid var(--color-border);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:active { background: var(--color-surface-2); }
+
+    .suggestion-kof {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    .suggestion-kof em {
+      color: var(--color-accent);
+      font-style: normal;
+    }
+
+    .suggestion-meta { flex: 1; min-width: 0; }
+
+    .suggestion-route {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+
+    .suggestion-store {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .search-btn {
       padding: 13px 18px;
       background: var(--color-accent);
@@ -632,18 +712,21 @@
     <div id="searchContent" class="hidden flex-col">
       <div class="kof-count" id="kofCount"></div>
       <div class="search-row">
-        <input
-          type="number"
-          class="kof-input"
-          id="kofInput"
-          placeholder="123456"
-          maxlength="6"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          onkeydown="if(event.key === 'Enter') searchKof()"
-          oninput="limitKofInput(this)"
-        >
-        <button class="search-btn" onclick="searchKof()">
+        <div class="input-wrapper">
+          <input
+            type="number"
+            class="kof-input"
+            id="kofInput"
+            placeholder="123456"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter'){hideSuggestions();searchKof();}"
+            oninput="handleKofInput(this)"
+          >
+          <button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
+        </div>
+        <button class="search-btn" onclick="hideSuggestions();searchKof()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="10" r="7"/>
             <path d="m21 21-4.35-4.35"/>
@@ -651,6 +734,7 @@
           Sök
         </button>
       </div>
+      <div class="suggestions hidden" id="suggestions"></div>
       <div id="resultArea"></div>
     </div>
 
@@ -974,9 +1058,74 @@ Return only the JSON object, no markdown fences, no explanation.`;
     }
   }
 
-  function limitKofInput(input) {
+  /* ── KOF-inmatning: rensknapp + förslag + auto-sök vid 6 siffror ── */
+  function handleKofInput(input) {
     const val = input.value.replace(/\D/g, '').slice(0, 6);
     input.value = val;
+
+    // Rensknapp
+    const clearBtn = document.getElementById('clearBtn');
+    clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
+
+    if (val.length === 0) {
+      hideSuggestions();
+      document.getElementById('resultArea').innerHTML = '';
+      return;
+    }
+
+    // Auto-sök direkt vid exakt 6 siffror
+    if (val.length === 6) {
+      hideSuggestions();
+      searchKof();
+      return;
+    }
+
+    // Visa autocomplete-förslag
+    showSuggestions(val);
+  }
+
+  function showSuggestions(query) {
+    const matches = Object.entries(state.routeData)
+      .filter(([kof]) => kof.startsWith(query))
+      .slice(0, 8);
+
+    const box = document.getElementById('suggestions');
+    if (matches.length === 0) { box.classList.add('hidden'); return; }
+
+    box.innerHTML = matches.map(([kof, data]) => `
+      <div class="suggestion-item" ontouchstart="" onclick="selectSuggestion('${escHtml(kof)}')">
+        <div class="suggestion-kof">
+          <em>${escHtml(kof.slice(0, query.length))}</em>${escHtml(kof.slice(query.length))}
+        </div>
+        <div class="suggestion-meta">
+          <div class="suggestion-route">${escHtml(data.route)}</div>
+          <div class="suggestion-store">${escHtml(data.store)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    box.classList.remove('hidden');
+  }
+
+  function hideSuggestions() {
+    document.getElementById('suggestions').classList.add('hidden');
+  }
+
+  function selectSuggestion(kof) {
+    const input = document.getElementById('kofInput');
+    input.value = kof;
+    document.getElementById('clearBtn').style.display = 'flex';
+    hideSuggestions();
+    searchKof();
+  }
+
+  function clearSearch() {
+    const input = document.getElementById('kofInput');
+    input.value = '';
+    document.getElementById('clearBtn').style.display = 'none';
+    document.getElementById('resultArea').innerHTML = '';
+    hideSuggestions();
+    input.focus();
   }
 
   function searchKof() {
@@ -984,9 +1133,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const raw   = input.value.trim();
     if (!raw) return;
 
-    // Try exact match first, then zero-padded to 6 digits
-    const kof6   = raw.padStart(6, '0');
-    const data   = state.routeData[raw] ?? state.routeData[kof6];
+    // Exakt matchning, sedan nollpaddat
+    const kof6 = raw.padStart(6, '0');
+    const data  = state.routeData[raw] ?? state.routeData[kof6];
     const resultArea = document.getElementById('resultArea');
 
     if (data) {
@@ -1030,6 +1179,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
         </div>
       `;
     }
+
+    // Scrolla ned till resultatet automatiskt på mobil
+    setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
   }
 
   /* ═══════════════════════════════════════════════
