@@ -524,10 +524,24 @@
       margin-bottom: 10px;
     }
 
+    .result-driver {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 6px;
+    }
+
     .result-estimate {
       font-size: 13px;
       color: var(--color-text-secondary);
       font-style: italic;
+    }
+
+    .route-group-driver {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.85;
+      margin-top: 2px;
     }
 
     .result-boxes {
@@ -1141,9 +1155,10 @@
     const base64Data = match[2];
 
     const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"1","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
+{"routeNumber":"1","driver":"162 George/Marko","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
 Rules:
 - routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. The header looks like "Rutt 4- 161 Xhulijo" — routeNumber is "4", NOT "161" and NOT "4 161". It is always a small number (1–15).
+- driver: the full text AFTER the dash in the header, e.g. "Rutt 1- 162 George/Marko :)" → driver is "162 George/Marko" (strip trailing emoji or ":)" etc).
 - kof: the 6-digit number in the leftmost data column (ignore header rows)
 - store: the store name and address text from the Startplats column
 - pall/bur/hlv: value in that column, empty string if the cell is blank
@@ -1218,6 +1233,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       const route = entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`;
       state.routeData[kof] = {
         route,
+        driver: String(parsed.driver ?? '').trim(),
         store: entry.store ?? '',
         pall:  entry.pall  ?? '',
         bur:   entry.bur   ?? '',
@@ -1336,6 +1352,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
           </div>
           <div class="result-card-body">
             <div class="result-route">${escHtml(data.route)}</div>
+            ${data.driver ? `<div class="result-driver">👤 ${escHtml(data.driver)}</div>` : ''}
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.pall ? `<div class="result-estimate">Ca ${escHtml(data.pall)} enheter</div>` : ''}
           </div>
@@ -1383,33 +1400,53 @@ Return only the JSON object, no markdown fences, no explanation.`;
       groups[data.route].push({ kof, ...data });
     }
 
-    // Sortera rutter: Rutt 1, 2 ... sedan S1, S2 ...
-    const sorted = Object.keys(groups).sort((a, b) => {
-      const isS_a = a.startsWith('S'), isS_b = b.startsWith('S');
-      if (isS_a !== isS_b) return isS_a ? 1 : -1;
-      return parseInt(a.match(/\d+/)?.[0] ?? 0) - parseInt(b.match(/\d+/)?.[0] ?? 0);
-    });
+    // Hitta alla unika ruttnummer (1, 2, 3 ...)
+    const nums = new Set();
+    for (const name of Object.keys(groups)) {
+      const n = name.match(/\d+/)?.[0];
+      if (n) nums.add(parseInt(n));
+    }
+    const sortedNums = [...nums].sort((a, b) => a - b);
 
-    list.innerHTML = sorted.map(routeName => {
-      const stops   = groups[routeName];
-      const isS     = routeName.startsWith('S');
-      const stopRows = stops.map(s => `
+    function stopRows(stops) {
+      return stops.map(s => `
         <div class="route-stop">
           <div class="route-stop-kof">${escHtml(s.kof)}</div>
           <div class="route-stop-store">${escHtml(s.store)}</div>
           ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
         </div>
       `).join('');
+    }
 
-      return `
-        <div class="route-group">
-          <div class="route-group-header ${isS ? 's-route' : ''}">
-            <span>${escHtml(routeName)}</span>
-            <span class="route-group-count">${stops.length} stopp</span>
+    // Bygg ett kort per ruttnummer med Rutt X och SX ihop
+    list.innerHTML = sortedNums.map(n => {
+      const mainKey = `Rutt ${n}`;
+      const sKey    = `S${n}`;
+      const main    = groups[mainKey];
+      const s       = groups[sKey];
+
+      const driver = main?.[0]?.driver || s?.[0]?.driver || '';
+
+      const mainSection = main ? `
+        <div class="route-group-header">
+          <div>
+            <div>${escHtml(mainKey)}</div>
+            ${driver ? `<div class="route-group-driver">👤 ${escHtml(driver)}</div>` : ''}
           </div>
-          ${stopRows}
+          <span class="route-group-count">${main.length} stopp</span>
         </div>
-      `;
+        ${stopRows(main)}
+      ` : '';
+
+      const sSection = s ? `
+        <div class="route-group-header s-route">
+          <span>${escHtml(sKey)}</span>
+          <span class="route-group-count">${s.length} stopp</span>
+        </div>
+        ${stopRows(s)}
+      ` : '';
+
+      return `<div class="route-group">${mainSection}${sSection}</div>`;
     }).join('');
   }
 
