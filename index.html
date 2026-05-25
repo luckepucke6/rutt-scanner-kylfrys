@@ -1158,7 +1158,7 @@
 {"routeNumber":"1","driver":"162 George/Marko","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
 Rules:
 - routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. The header looks like "Rutt 4- 161 Xhulijo" — routeNumber is "4", NOT "161" and NOT "4 161". It is always a small number (1–15).
-- driver: the full text AFTER the dash in the header, e.g. "Rutt 1- 162 George/Marko :)" → driver is "162 George/Marko" (strip trailing emoji or ":)" etc).
+- driver: REQUIRED. The text after the dash/hyphen in the header line. Example: "Rutt 4- 161 Xhulijo :)" → driver is "161 Xhulijo". Example: "Rutt 1- 162 George/Marko :)" → driver is "162 George/Marko". Strip any trailing ":)" or emoji. If no name found, use "".
 - kof: the 6-digit number in the leftmost data column (ignore header rows)
 - store: the store name and address text from the Startplats column
 - pall/bur/hlv: value in that column, empty string if the cell is blank
