@@ -521,7 +521,13 @@
       font-size: 14px;
       color: var(--color-text-secondary);
       line-height: 1.4;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
+    }
+
+    .result-estimate {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      font-style: italic;
     }
 
     .result-boxes {
@@ -590,6 +596,94 @@
       margin: 0 -14px;
     }
 
+    /* ── Rensa-knapp (scan-tab) ── */
+    .clear-data-btn {
+      width: 100%;
+      padding: 11px;
+      background: none;
+      border: 0.5px solid var(--color-error-border);
+      border-radius: var(--radius);
+      color: var(--color-error);
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .clear-data-btn:active { opacity: 0.7; }
+
+    /* ── Ruttöversikt ── */
+    .route-group {
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .route-group-header {
+      padding: 10px 14px;
+      background: var(--color-accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .route-group-header.s-route { background: #5856d6; }
+
+    .route-group-count {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    .route-stop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 0.5px solid var(--color-border);
+    }
+
+    .route-stop:last-child { border-bottom: none; }
+
+    .route-stop-kof {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+      width: 58px;
+    }
+
+    .route-stop-store {
+      flex: 1;
+      font-size: 13px;
+      color: var(--color-text-primary);
+      line-height: 1.35;
+    }
+
+    .route-stop-pall {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      flex-shrink: 0;
+      font-style: italic;
+    }
+
+    /* ── Sparad-badge ── */
+    .saved-badge {
+      font-size: 11px;
+      color: var(--color-success);
+      text-align: center;
+      padding: 4px 0 2px;
+    }
+
     /* ── Util ── */
     .hidden { display: none !important; }
     .flex-col { display: flex; flex-direction: column; gap: 10px; }
@@ -630,6 +724,12 @@
         <path d="m21 21-4.35-4.35"/>
       </svg>
       Sök KOF
+    </button>
+    <button class="tab-btn" id="tab-routes" onclick="switchTab('routes')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7h18M3 12h18M3 17h18"/>
+      </svg>
+      Rutter
     </button>
   </div>
 
@@ -696,6 +796,15 @@
       </div>
     </div>
 
+    <!-- Sparad-info + rensa -->
+    <div id="savedBadge" class="saved-badge hidden"></div>
+    <button class="clear-data-btn hidden" id="clearDataBtn" onclick="clearAllData()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      Rensa all inläst data
+    </button>
+
   </div>
 
   <!-- ════ SEARCH TAB ════ -->
@@ -740,6 +849,16 @@
 
   </div>
 
+  <!-- ════ ROUTES TAB ════ -->
+  <div id="pane-routes" class="content hidden">
+    <div class="empty-state" id="routesEmpty">
+      <div class="empty-icon">🗺️</div>
+      <div class="empty-title">Inga ruttdata inlästa</div>
+      <div class="empty-sub">Scanna ruttlistorna så visas alla stopp här</div>
+    </div>
+    <div id="routesList" class="hidden flex-col"></div>
+  </div>
+
 </div>
 <script>
   /* ═══════════════════════════════════════════════
@@ -752,18 +871,86 @@
     isProcessing: false,
     apiKey: '',
     nextId: 1,
+    savedAt: null,
   };
+
+  /* ═══════════════════════════════════════════════
+     LOCALSTORAGE — sparning med 8 timmars utgång
+  ═══════════════════════════════════════════════ */
+  const STORAGE_KEY   = 'rutt_scanner_v1';
+  const EXPIRY_HOURS  = 8;
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        routeData: state.routeData,
+        savedAt:   Date.now(),
+      }));
+    } catch (_) {}
+    updateStorageUI();
+  }
+
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const payload = JSON.parse(raw);
+      const ageHours = (Date.now() - payload.savedAt) / 3_600_000;
+      if (ageHours >= EXPIRY_HOURS) {
+        localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      state.routeData = payload.routeData ?? {};
+      state.savedAt   = payload.savedAt;
+    } catch (_) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    updateStorageUI();
+  }
+
+  function clearAllData() {
+    if (!confirm('Rensa all inläst data? Detta kan inte ångras.')) return;
+    state.routeData = {};
+    state.savedAt   = null;
+    localStorage.removeItem(STORAGE_KEY);
+    updateStorageUI();
+    renderSearchUI();
+    renderRoutesTab();
+    addLog('All data rensad.', 'err');
+  }
+
+  function updateStorageUI() {
+    const total   = Object.keys(state.routeData).length;
+    const badge   = document.getElementById('savedBadge');
+    const clearBtn = document.getElementById('clearDataBtn');
+
+    if (total === 0) {
+      badge.classList.add('hidden');
+      clearBtn.classList.add('hidden');
+      return;
+    }
+    clearBtn.classList.remove('hidden');
+
+    if (state.savedAt) {
+      const saved   = new Date(state.savedAt);
+      const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
+      const fmt     = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+      badge.textContent = `💾 ${total} KOF sparade sedan ${fmt(saved)} — raderas automatiskt ${fmt(expires)}`;
+      badge.classList.remove('hidden');
+    }
+  }
 
   /* ═══════════════════════════════════════════════
      TAB SWITCHING
   ═══════════════════════════════════════════════ */
   function switchTab(tab) {
     state.activeTab = tab;
-    document.getElementById('pane-scan').classList.toggle('hidden', tab !== 'scan');
-    document.getElementById('pane-search').classList.toggle('hidden', tab !== 'search');
-    document.getElementById('tab-scan').className = 'tab-btn' + (tab === 'scan' ? ' active' : '');
-    document.getElementById('tab-search').className = 'tab-btn' + (tab === 'search' ? ' active' : '');
+    ['scan','search','routes'].forEach(t => {
+      document.getElementById('pane-' + t).classList.toggle('hidden', tab !== t);
+      document.getElementById('tab-' + t).className = 'tab-btn' + (tab === t ? ' active' : '');
+    });
     if (tab === 'search') renderSearchUI();
+    if (tab === 'routes') renderRoutesTab();
   }
 
   /* ═══════════════════════════════════════════════
@@ -905,7 +1092,9 @@
     addLog(`Klar! Totalt ${total} KOF-nummer i databasen.`, 'ok');
 
     state.isProcessing = false;
+    state.savedAt = Date.now();
     updateProcessButton();
+    saveToStorage();
 
     document.getElementById('summaryTitle').textContent = `${total} KOF-nummer klara`;
     document.getElementById('summaryBox').classList.remove('hidden');
@@ -1148,20 +1337,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <div class="result-card-body">
             <div class="result-route">${escHtml(data.route)}</div>
             <div class="result-store">${escHtml(data.store)}</div>
-            <div class="result-boxes">
-              <div class="result-box">
-                <div class="result-box-label">PALL</div>
-                <div class="result-box-value ${data.pall ? '' : 'empty'}">${escHtml(data.pall) || '—'}</div>
-              </div>
-              <div class="result-box">
-                <div class="result-box-label">BUR</div>
-                <div class="result-box-value ${data.bur ? '' : 'empty'}">${escHtml(data.bur) || '—'}</div>
-              </div>
-              <div class="result-box">
-                <div class="result-box-label">HLV</div>
-                <div class="result-box-value ${data.hlv ? '' : 'empty'}">${escHtml(data.hlv) || '—'}</div>
-              </div>
-            </div>
+            ${data.pall ? `<div class="result-estimate">Ca ${escHtml(data.pall)} enheter</div>` : ''}
           </div>
         </div>
       `;
@@ -1185,6 +1361,59 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   /* ═══════════════════════════════════════════════
+     RUTTÖVERSIKT
+  ═══════════════════════════════════════════════ */
+  function renderRoutesTab() {
+    const empty = document.getElementById('routesEmpty');
+    const list  = document.getElementById('routesList');
+    const total = Object.keys(state.routeData).length;
+
+    if (total === 0) {
+      empty.classList.remove('hidden');
+      list.classList.add('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    list.classList.remove('hidden');
+
+    // Gruppera KOF per rutt
+    const groups = {};
+    for (const [kof, data] of Object.entries(state.routeData)) {
+      if (!groups[data.route]) groups[data.route] = [];
+      groups[data.route].push({ kof, ...data });
+    }
+
+    // Sortera rutter: Rutt 1, 2 ... sedan S1, S2 ...
+    const sorted = Object.keys(groups).sort((a, b) => {
+      const isS_a = a.startsWith('S'), isS_b = b.startsWith('S');
+      if (isS_a !== isS_b) return isS_a ? 1 : -1;
+      return parseInt(a.match(/\d+/)?.[0] ?? 0) - parseInt(b.match(/\d+/)?.[0] ?? 0);
+    });
+
+    list.innerHTML = sorted.map(routeName => {
+      const stops   = groups[routeName];
+      const isS     = routeName.startsWith('S');
+      const stopRows = stops.map(s => `
+        <div class="route-stop">
+          <div class="route-stop-kof">${escHtml(s.kof)}</div>
+          <div class="route-stop-store">${escHtml(s.store)}</div>
+          ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
+        </div>
+      `).join('');
+
+      return `
+        <div class="route-group">
+          <div class="route-group-header ${isS ? 's-route' : ''}">
+            <span>${escHtml(routeName)}</span>
+            <span class="route-group-count">${stops.length} stopp</span>
+          </div>
+          ${stopRows}
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ═══════════════════════════════════════════════
      UTILITIES
   ═══════════════════════════════════════════════ */
   function escHtml(str) {
@@ -1196,9 +1425,11 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   /* ═══════════════════════════════════════════════
-     INIT
+     INIT — ladda sparad data om den finns och inte gått ut
   ═══════════════════════════════════════════════ */
+  loadFromStorage();
   renderSearchUI();
+  updateStorageUI();
 </script>
 </body>
 </html>
