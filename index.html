@@ -68,7 +68,6 @@
       flex-direction: column;
     }
 
-    /* ── Header ── */
     .header {
       padding: 16px 16px 0;
       display: flex;
@@ -77,25 +76,19 @@
     }
 
     .header-icon {
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       background: var(--color-accent);
       border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
     .header-icon svg { display: block; }
-
     .header-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
     .header-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
 
-    /* ── Tabs ── */
     .tabs {
-      display: flex;
-      gap: 6px;
+      display: flex; gap: 6px;
       padding: 14px 16px 0;
     }
 
@@ -106,36 +99,21 @@
       border-radius: var(--radius-sm);
       background: var(--color-surface);
       color: var(--color-text-secondary);
-      font-size: 14px;
-      font-weight: 500;
-      font-family: var(--font);
+      font-size: 14px; font-weight: 500; font-family: var(--font);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: background 0.12s, color 0.12s, border-color 0.12s;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .tab-btn.active {
-      background: var(--color-accent);
-      color: #fff;
-      border-color: var(--color-accent);
-    }
-
+    .tab-btn.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
     .tab-btn:not(.active):active { background: var(--color-surface-2); }
 
-    /* ── Content ── */
     .content {
-      flex: 1;
-      padding: 14px 16px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex: 1; padding: 14px 16px 32px;
+      display: flex; flex-direction: column; gap: 10px;
     }
 
-    /* ── Card / Section ── */
     .card {
       background: var(--color-surface);
       border: 0.5px solid var(--color-border-strong);
@@ -145,51 +123,12 @@
 
     .card-inner { padding: 12px 14px; }
 
-    /* ── API Key ── */
-    .api-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 7px;
-    }
-
-    .api-row { display: flex; gap: 7px; align-items: center; }
-
-    .api-input {
-      flex: 1;
-      border: 0.5px solid var(--color-border-strong);
-      border-radius: var(--radius-xs);
-      padding: 8px 10px;
-      font-size: 13px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      letter-spacing: 0.03em;
-      background: var(--color-surface-2);
-      color: var(--color-text-primary);
-      outline: none;
-      min-width: 0;
-    }
-
-    .api-input:focus { border-color: var(--color-accent); }
-
-    .api-badge {
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* ── Upload zone ── */
     .upload-zone {
       background: var(--color-surface);
       border: 0.5px dashed var(--color-border-strong);
       border-radius: var(--radius);
       padding: 30px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: background 0.12s;
@@ -197,22 +136,14 @@
     }
 
     .upload-zone:active { background: var(--color-surface-2); }
-
     .upload-zone-icon { font-size: 34px; line-height: 1; }
     .upload-zone-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
     .upload-zone-sub { font-size: 12px; color: var(--color-text-secondary); }
 
-    /* ── Image list ── */
-    .image-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
+    .image-list { display: flex; flex-direction: column; gap: 0; }
 
     .image-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      display: flex; align-items: center; gap: 10px;
       padding: 10px 14px;
       border-bottom: 0.5px solid var(--color-border);
       transition: background 0.12s;
@@ -223,14 +154,12 @@
     .image-item.error { background: var(--color-error-bg); }
 
     @keyframes pulse-bg {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.55; }
+      0%, 100% { opacity: 1; } 50% { opacity: 0.55; }
     }
     .image-item.loading { animation: pulse-bg 1.1s ease-in-out infinite; }
 
     .image-thumb {
-      width: 42px;
-      height: 42px;
+      width: 42px; height: 42px;
       border-radius: var(--radius-xs);
       object-fit: cover;
       border: 0.5px solid var(--color-border);
@@ -239,50 +168,31 @@
 
     .image-info { flex: 1; min-width: 0; }
     .image-name { font-size: 13px; font-weight: 600; }
-
     .image-status {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .image-item.done .image-status { color: var(--color-success); }
     .image-item.error .image-status { color: var(--color-error); }
-
     .image-status-icon { font-size: 18px; flex-shrink: 0; }
 
-    /* ── Spinner ── */
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
+      display: inline-block; width: 18px; height: 18px;
       border: 2px solid var(--color-border-strong);
       border-top-color: var(--color-accent);
       border-radius: 50%;
       animation: spin 0.75s linear infinite;
     }
 
-    /* ── Process button ── */
     .process-btn {
-      width: 100%;
-      padding: 14px;
-      background: var(--color-accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 15px;
-      font-weight: 600;
-      font-family: var(--font);
+      width: 100%; padding: 14px;
+      background: var(--color-accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 15px; font-weight: 600; font-family: var(--font);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
       transition: opacity 0.12s;
       -webkit-tap-highlight-color: transparent;
     }
@@ -290,84 +200,57 @@
     .process-btn:disabled { opacity: 0.38; cursor: not-allowed; }
     .process-btn:not(:disabled):active { opacity: 0.82; }
 
-    /* ── Log box ── */
     .log-box {
       background: var(--color-surface);
       border: 0.5px solid var(--color-border-strong);
       border-radius: var(--radius);
-      padding: 10px 12px;
-      height: 130px;
-      overflow-y: auto;
+      padding: 10px 12px; height: 130px; overflow-y: auto;
       font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-      font-size: 11.5px;
-      line-height: 1.6;
+      font-size: 11.5px; line-height: 1.6;
       color: var(--color-text-secondary);
       scroll-behavior: smooth;
     }
 
     .log-box:empty::before {
       content: 'Loggar visas här under bearbetning…';
-      color: var(--color-text-tertiary);
-      font-style: italic;
+      color: var(--color-text-tertiary); font-style: italic;
     }
 
-    .log-line { }
     .log-line.ok { color: var(--color-success); }
     .log-line.err { color: var(--color-error); }
     .log-line.info { color: var(--color-accent); }
 
-    /* ── Summary ── */
     .summary-box {
       background: var(--color-success-bg);
       border: 0.5px solid var(--color-success-border);
       border-radius: var(--radius);
       padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
     }
 
     .summary-icon { font-size: 24px; flex-shrink: 0; }
-
     .summary-title { font-size: 14px; font-weight: 600; }
     .summary-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; }
 
     .summary-link-btn {
-      background: var(--color-success);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-xs);
-      padding: 5px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: var(--font);
-      cursor: pointer;
-      margin-top: 6px;
+      background: var(--color-success); color: #fff;
+      border: none; border-radius: var(--radius-xs);
+      padding: 5px 10px; font-size: 12px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; margin-top: 6px;
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Search tab ── */
     .empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 20px;
-      gap: 10px;
-      text-align: center;
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 48px 20px; gap: 10px; text-align: center;
     }
 
     .empty-icon { font-size: 52px; opacity: 0.35; }
     .empty-title { font-size: 17px; font-weight: 600; }
     .empty-sub { font-size: 13px; color: var(--color-text-secondary); }
 
-    .kof-count {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      text-align: right;
-      padding-bottom: 2px;
-    }
+    .kof-count { font-size: 12px; color: var(--color-text-secondary); text-align: right; padding-bottom: 2px; }
 
     .search-row { display: flex; gap: 8px; }
 
@@ -376,67 +259,42 @@
       border: 0.5px solid var(--color-border-strong);
       border-radius: var(--radius);
       padding: 13px 15px;
-      font-size: 22px;
-      letter-spacing: 0.14em;
+      font-size: 22px; letter-spacing: 0.14em;
       font-family: 'SF Mono', 'Fira Code', monospace;
       background: var(--color-surface);
       color: var(--color-text-primary);
-      outline: none;
-      min-width: 0;
+      outline: none; min-width: 0;
       -moz-appearance: textfield;
     }
 
     .kof-input::-webkit-inner-spin-button,
     .kof-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-
     .kof-input:focus { border-color: var(--color-accent); }
 
-    /* ── Input wrapper (för rensknapp) ── */
-    .input-wrapper {
-      flex: 1;
-      position: relative;
-      min-width: 0;
-    }
-
+    .input-wrapper { flex: 1; position: relative; min-width: 0; }
     .input-wrapper .kof-input { width: 100%; padding-right: 38px; }
 
     .clear-btn {
-      position: absolute;
-      right: 9px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--color-text-tertiary);
-      border: none;
-      color: #fff;
-      font-size: 14px;
-      line-height: 1;
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
+      position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--color-text-tertiary); border: none;
+      color: #fff; font-size: 14px; line-height: 1; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Autocomplete-förslag ── */
     .suggestions {
       background: var(--color-surface);
       border: 0.5px solid var(--color-border-strong);
       border-radius: var(--radius);
-      overflow: hidden;
-      margin-top: 6px;
+      overflow: hidden; margin-top: 6px;
     }
 
     .suggestion-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
       padding: 11px 14px;
       border-bottom: 0.5px solid var(--color-border);
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
 
     .suggestion-item:last-child { border-bottom: none; }
@@ -444,193 +302,67 @@
 
     .suggestion-kof {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      flex-shrink: 0;
+      font-size: 17px; font-weight: 700; letter-spacing: 0.06em; flex-shrink: 0;
     }
 
-    .suggestion-kof em {
-      color: var(--color-accent);
-      font-style: normal;
-    }
-
+    .suggestion-kof em { color: var(--color-accent); font-style: normal; }
     .suggestion-meta { flex: 1; min-width: 0; }
-
-    .suggestion-route {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--color-text-primary);
-    }
-
-    .suggestion-store {
-      font-size: 11px;
-      color: var(--color-text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .suggestion-route { font-size: 13px; font-weight: 700; color: var(--color-text-primary); }
+    .suggestion-store { font-size: 11px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .search-btn {
       padding: 13px 18px;
-      background: var(--color-accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 15px;
-      font-weight: 600;
-      font-family: var(--font);
+      background: var(--color-accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 15px; font-weight: 600; font-family: var(--font);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      display: flex; align-items: center; gap: 6px;
       flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
     .search-btn:active { opacity: 0.82; }
 
-    /* ── Result card ── */
-    .result-card {
-      border-radius: var(--radius);
-      border: 0.5px solid;
-      overflow: hidden;
-    }
-
-    .result-card.found {
-      background: var(--color-success-bg);
-      border-color: var(--color-success-border);
-    }
-
-    .result-card.notfound {
-      background: var(--color-error-bg);
-      border-color: var(--color-error-border);
-    }
-
+    .result-card { border-radius: var(--radius); border: 0.5px solid; overflow: hidden; }
+    .result-card.found { background: var(--color-success-bg); border-color: var(--color-success-border); }
+    .result-card.notfound { background: var(--color-error-bg); border-color: var(--color-error-border); }
     .result-card-body { padding: 16px; }
 
-    .result-route {
-      font-size: 42px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .result-store {
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.4;
-      margin-bottom: 10px;
-    }
-
-    .result-driver {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin-bottom: 6px;
-    }
-
-    .result-estimate {
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      font-style: italic;
-    }
-
-    .route-group-driver {
-      font-size: 11px;
-      font-weight: 500;
-      opacity: 0.85;
-      margin-top: 2px;
-    }
-
-    .result-boxes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .result-box {
-      background: var(--color-surface);
-      border: 0.5px solid var(--color-border-strong);
-      border-radius: var(--radius-sm);
-      padding: 10px 8px;
-      text-align: center;
-    }
-
-    .result-box-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--color-text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .result-box-value {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--color-text-primary);
-      margin-top: 4px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .result-box-value.empty { color: var(--color-text-tertiary); }
+    .result-route { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+    .result-store { font-size: 14px; color: var(--color-text-secondary); line-height: 1.4; margin-bottom: 10px; }
+    .result-driver { font-size: 13px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 6px; }
+    .result-estimate { font-size: 13px; color: var(--color-text-secondary); font-style: italic; }
+    .route-group-driver { font-size: 11px; font-weight: 500; opacity: 0.85; margin-top: 2px; }
 
     .result-header {
-      background: var(--color-success);
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
+      background: var(--color-success); padding: 8px 16px;
+      display: flex; align-items: center; gap: 7px;
     }
 
     .result-header.error-header { background: var(--color-error); }
 
     .result-header-text {
-      font-size: 12px;
-      font-weight: 700;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
+      font-size: 12px; font-weight: 700; color: #fff;
+      text-transform: uppercase; letter-spacing: 0.07em;
     }
 
-    .notfound-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--color-error);
-      margin-bottom: 6px;
-    }
-
+    .notfound-title { font-size: 17px; font-weight: 700; color: var(--color-error); margin-bottom: 6px; }
     .notfound-sub { font-size: 13px; color: var(--color-text-secondary); }
 
-    /* ── Divider ── */
-    .divider {
-      height: 0.5px;
-      background: var(--color-border);
-      margin: 0 -14px;
-    }
-
-    /* ── Rensa-knapp (scan-tab) ── */
     .clear-data-btn {
-      width: 100%;
-      padding: 11px;
+      width: 100%; padding: 11px;
       background: none;
       border: 0.5px solid var(--color-error-border);
       border-radius: var(--radius);
       color: var(--color-error);
-      font-size: 14px;
-      font-weight: 500;
-      font-family: var(--font);
+      font-size: 14px; font-weight: 500; font-family: var(--font);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
       -webkit-tap-highlight-color: transparent;
     }
+
     .clear-data-btn:active { opacity: 0.7; }
 
-    /* ── Ruttöversikt ── */
     .route-group {
       background: var(--color-surface);
       border: 0.5px solid var(--color-border-strong);
@@ -640,27 +372,16 @@
 
     .route-group-header {
       padding: 10px 14px;
-      background: var(--color-accent);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: var(--color-accent); color: #fff;
+      font-size: 15px; font-weight: 700;
+      display: flex; align-items: center; justify-content: space-between;
     }
 
     .route-group-header.s-route { background: #5856d6; }
-
-    .route-group-count {
-      font-size: 12px;
-      font-weight: 500;
-      opacity: 0.85;
-    }
+    .route-group-count { font-size: 12px; font-weight: 500; opacity: 0.85; }
 
     .route-stop {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      display: flex; align-items: center; gap: 10px;
       padding: 10px 14px;
       border-bottom: 0.5px solid var(--color-border);
     }
@@ -669,36 +390,176 @@
 
     .route-stop-kof {
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      flex-shrink: 0;
-      width: 58px;
+      font-size: 13px; font-weight: 600; color: var(--color-text-secondary);
+      flex-shrink: 0; width: 58px;
     }
 
-    .route-stop-store {
+    .route-stop-store { flex: 1; font-size: 13px; color: var(--color-text-primary); line-height: 1.35; }
+    .route-stop-pall { font-size: 12px; color: var(--color-text-tertiary); flex-shrink: 0; font-style: italic; }
+
+    .saved-badge { font-size: 11px; color: var(--color-success); text-align: center; padding: 4px 0 2px; }
+
+    /* ── API-nyckel setup ── */
+    .api-setup-card {
+      background: var(--color-accent-soft);
+      border: 0.5px solid var(--color-accent);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .api-setup-title {
+      font-size: 14px; font-weight: 700; color: var(--color-accent);
+      display: flex; align-items: center; gap: 7px;
+    }
+
+    .api-setup-sub { font-size: 12px; color: var(--color-text-secondary); }
+
+    .api-setup-row { display: flex; gap: 8px; }
+
+    .api-setup-input {
       flex: 1;
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
       font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--color-surface);
       color: var(--color-text-primary);
-      line-height: 1.35;
+      outline: none; min-width: 0;
     }
 
-    .route-stop-pall {
-      font-size: 12px;
-      color: var(--color-text-tertiary);
-      flex-shrink: 0;
-      font-style: italic;
+    .api-setup-input:focus { border-color: var(--color-accent); }
+
+    .api-save-btn {
+      padding: 10px 16px;
+      background: var(--color-accent); color: #fff;
+      border: none; border-radius: var(--radius-xs);
+      font-size: 14px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Sparad-badge ── */
-    .saved-badge {
-      font-size: 11px;
-      color: var(--color-success);
-      text-align: center;
-      padding: 4px 0 2px;
+    .api-save-btn:active { opacity: 0.82; }
+
+    .api-saved-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs);
     }
 
-    /* ── Util ── */
+    .api-saved-text { font-size: 12px; color: var(--color-success); font-weight: 500; }
+
+    .api-change-btn {
+      font-size: 12px; color: var(--color-text-secondary);
+      background: none; border: none; font-family: var(--font);
+      cursor: pointer; padding: 2px 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Kamera-scanner ── */
+    .camera-toggle-btn {
+      width: 100%; padding: 12px 16px;
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius);
+      color: var(--color-text-secondary);
+      font-size: 14px; font-weight: 500; font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .camera-toggle-btn.active {
+      background: var(--color-accent); color: #fff; border-color: var(--color-accent);
+    }
+
+    .camera-toggle-btn:not(.active):active { background: var(--color-surface-2); }
+
+    .camera-view {
+      position: relative; background: #000;
+      border-radius: var(--radius); overflow: hidden;
+      width: 100%; aspect-ratio: 4/3;
+    }
+
+    .camera-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Guide-ram med mörk vinjett */
+    .camera-frame-wrapper {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+
+    .camera-frame {
+      width: 74%; height: 58px;
+      border: 2px solid rgba(255,255,255,0.92);
+      border-radius: 9px;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,0.42);
+      position: relative;
+    }
+
+    /* Blå hörn-accenter */
+    .camera-frame::before, .camera-frame::after {
+      content: '';
+      position: absolute; width: 18px; height: 18px;
+      border-style: solid; border-color: var(--color-accent);
+      border-radius: 2px;
+    }
+
+    .camera-frame::before {
+      top: -3px; left: -3px;
+      border-width: 3px 0 0 3px;
+    }
+
+    .camera-frame::after {
+      bottom: -3px; right: -3px;
+      border-width: 0 3px 3px 0;
+    }
+
+    .camera-status-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 10px 14px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.68));
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      pointer-events: none;
+    }
+
+    .scan-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #4cd964; flex-shrink: 0;
+      animation: scan-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes scan-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.6); }
+    }
+
+    .camera-status-text {
+      font-size: 13px; color: rgba(255,255,255,0.92); font-weight: 500;
+    }
+
+    .camera-result-banner {
+      position: absolute; top: 10px; left: 10px; right: 10px;
+      padding: 10px 14px; border-radius: 8px;
+      font-size: 15px; font-weight: 700;
+      text-align: center; color: #fff;
+      animation: banner-in 0.2s ease;
+      pointer-events: none;
+    }
+
+    @keyframes banner-in {
+      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .camera-result-banner.found    { background: rgba(40,167,69,0.93); }
+    .camera-result-banner.notfound { background: rgba(220,53,69,0.93); }
+
     .hidden { display: none !important; }
     .flex-col { display: flex; flex-direction: column; gap: 10px; }
   </style>
@@ -750,46 +611,38 @@
   <!-- ════ SCAN TAB ════ -->
   <div id="pane-scan" class="content flex-col">
 
-    <!-- API Key -->
-    <div class="card">
-      <div class="card-inner">
-        <div class="api-label">Anthropic API-nyckel</div>
-        <div class="api-row">
-          <input
-            type="password"
-            class="api-input"
-            id="apiKeyInput"
-            placeholder="sk-ant-api03-…"
-            autocomplete="off"
-            spellcheck="false"
-            oninput="state.apiKey = this.value"
-          >
-          <span class="api-badge">Sparas ej</span>
-        </div>
+    <!-- API-nyckel setup (visas tills nyckel är sparad) -->
+    <div class="api-setup-card" id="apiSetupCard">
+      <div class="api-setup-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+        </svg>
+        Ange API-nyckel
+      </div>
+      <div class="api-setup-sub">Klistras in en gång — sparas i telefonen, syns aldrig i koden.</div>
+      <div class="api-setup-row">
+        <input type="password" class="api-setup-input" id="apiSetupInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
+        <button class="api-save-btn" onclick="saveApiKey()">Spara</button>
       </div>
     </div>
 
-    <!-- Upload zone -->
+    <!-- Nyckel sparad-rad (visas när nyckel finns) -->
+    <div class="api-saved-row hidden" id="apiSavedRow">
+      <span class="api-saved-text">🔑 API-nyckel sparad</span>
+      <button class="api-change-btn" onclick="changeApiKey()">Byt nyckel</button>
+    </div>
+
     <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
       <div class="upload-zone-icon">📷</div>
       <div class="upload-zone-title">Välj eller fotografera papper</div>
       <div class="upload-zone-sub">Kamerarulle, kamera eller filer — stöder flera</div>
     </div>
-    <input
-      type="file"
-      id="fileInput"
-      accept="image/*"
-      multiple
-      style="display:none"
-      onchange="handleFileSelect(this)"
-    >
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this)">
 
-    <!-- Image list -->
     <div class="card hidden" id="imageListCard">
       <div class="image-list" id="imageList"></div>
     </div>
 
-    <!-- Process button -->
     <button class="process-btn" id="processBtn" disabled onclick="processImages()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 5v14m7-7-7 7-7-7"/>
@@ -797,10 +650,8 @@
       <span id="processBtnLabel">Läs in 0 bilder</span>
     </button>
 
-    <!-- Log box -->
     <div class="log-box" id="logBox"></div>
 
-    <!-- Summary -->
     <div class="summary-box hidden" id="summaryBox">
       <div class="summary-icon">✅</div>
       <div>
@@ -810,11 +661,13 @@
       </div>
     </div>
 
-    <!-- Sparad-info + rensa -->
     <div id="savedBadge" class="saved-badge hidden"></div>
     <button class="clear-data-btn hidden" id="clearDataBtn" onclick="clearAllData()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
       </svg>
       Rensa all inläst data
     </button>
@@ -824,25 +677,21 @@
   <!-- ════ SEARCH TAB ════ -->
   <div id="pane-search" class="content hidden">
 
-    <!-- Empty state -->
     <div class="empty-state" id="emptyState">
       <div class="empty-icon">📋</div>
       <div class="empty-title">Inga ruttdata inlästa</div>
       <div class="empty-sub">Scanna ruttlistorna först och kom sedan tillbaka hit</div>
     </div>
 
-    <!-- Search UI -->
     <div id="searchContent" class="hidden flex-col">
       <div class="kof-count" id="kofCount"></div>
+
+      <!-- Manuell sökning -->
       <div class="search-row">
         <div class="input-wrapper">
           <input
-            type="number"
-            class="kof-input"
-            id="kofInput"
-            placeholder="123456"
-            inputmode="numeric"
-            pattern="[0-9]*"
+            type="number" class="kof-input" id="kofInput"
+            placeholder="123456" inputmode="numeric" pattern="[0-9]*"
             autocomplete="off"
             onkeydown="if(event.key==='Enter'){hideSuggestions();searchKof();}"
             oninput="handleKofInput(this)"
@@ -857,7 +706,31 @@
           Sök
         </button>
       </div>
+
       <div class="suggestions hidden" id="suggestions"></div>
+
+      <!-- Kamera-toggle -->
+      <button class="camera-toggle-btn" id="cameraToggleBtn" onclick="toggleCamera()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+        Scanna KOF med kamera
+      </button>
+
+      <!-- Kamera-vy -->
+      <div class="camera-view hidden" id="cameraView">
+        <video class="camera-video" id="cameraVideo" autoplay playsinline muted></video>
+        <div class="camera-frame-wrapper">
+          <div class="camera-frame"></div>
+        </div>
+        <div class="camera-result-banner hidden" id="cameraResultBanner"></div>
+        <div class="camera-status-bar">
+          <div class="scan-dot"></div>
+          <span class="camera-status-text" id="cameraScanStatus">Rikta KOF-numret mot rutan</span>
+        </div>
+      </div>
+
       <div id="resultArea"></div>
     </div>
 
@@ -880,8 +753,8 @@
   ═══════════════════════════════════════════════ */
   const state = {
     activeTab: 'scan',
-    images: [],          // { id, file, dataUrl, name, status, statusMsg }
-    routeData: {},       // kof (string) → { route, store, pall, bur, hlv }
+    images: [],
+    routeData: {},
     isProcessing: false,
     apiKey: '',
     nextId: 1,
@@ -889,16 +762,49 @@
   };
 
   /* ═══════════════════════════════════════════════
-     LOCALSTORAGE — sparning med 8 timmars utgång
+     API-NYCKEL — sparas i localStorage
   ═══════════════════════════════════════════════ */
-  const STORAGE_KEY   = 'rutt_scanner_v1';
-  const EXPIRY_HOURS  = 8;
+  const API_KEY_STORAGE = 'rutt_api_key';
+
+  function loadApiKey() {
+    const key = localStorage.getItem(API_KEY_STORAGE) || '';
+    state.apiKey = key;
+    updateApiKeyUI();
+  }
+
+  function saveApiKey() {
+    const input = document.getElementById('apiSetupInput');
+    const key = (input.value || '').trim();
+    if (!key || key.length < 20) { alert('Ange en giltig API-nyckel (sk-ant-…)'); return; }
+    localStorage.setItem(API_KEY_STORAGE, key);
+    state.apiKey = key;
+    input.value = '';
+    updateApiKeyUI();
+  }
+
+  function changeApiKey() {
+    localStorage.removeItem(API_KEY_STORAGE);
+    state.apiKey = '';
+    updateApiKeyUI();
+  }
+
+  function updateApiKeyUI() {
+    const hasKey = !!state.apiKey;
+    document.getElementById('apiSetupCard').classList.toggle('hidden', hasKey);
+    document.getElementById('apiSavedRow').classList.toggle('hidden', !hasKey);
+  }
+
+  /* ═══════════════════════════════════════════════
+     LOCALSTORAGE
+  ═══════════════════════════════════════════════ */
+  const STORAGE_KEY  = 'rutt_scanner_v1';
+  const EXPIRY_HOURS = 8;
 
   function saveToStorage() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         routeData: state.routeData,
-        savedAt:   Date.now(),
+        savedAt: Date.now(),
       }));
     } catch (_) {}
     updateStorageUI();
@@ -910,10 +816,7 @@
       if (!raw) return;
       const payload = JSON.parse(raw);
       const ageHours = (Date.now() - payload.savedAt) / 3_600_000;
-      if (ageHours >= EXPIRY_HOURS) {
-        localStorage.removeItem(STORAGE_KEY);
-        return;
-      }
+      if (ageHours >= EXPIRY_HOURS) { localStorage.removeItem(STORAGE_KEY); return; }
       state.routeData = payload.routeData ?? {};
       state.savedAt   = payload.savedAt;
     } catch (_) {
@@ -925,7 +828,7 @@
   function clearAllData() {
     if (!confirm('Rensa all inläst data? Detta kan inte ångras.')) return;
     state.routeData = {};
-    state.savedAt   = null;
+    state.savedAt = null;
     localStorage.removeItem(STORAGE_KEY);
     updateStorageUI();
     renderSearchUI();
@@ -934,21 +837,15 @@
   }
 
   function updateStorageUI() {
-    const total   = Object.keys(state.routeData).length;
-    const badge   = document.getElementById('savedBadge');
+    const total    = Object.keys(state.routeData).length;
+    const badge    = document.getElementById('savedBadge');
     const clearBtn = document.getElementById('clearDataBtn');
-
-    if (total === 0) {
-      badge.classList.add('hidden');
-      clearBtn.classList.add('hidden');
-      return;
-    }
+    if (total === 0) { badge.classList.add('hidden'); clearBtn.classList.add('hidden'); return; }
     clearBtn.classList.remove('hidden');
-
     if (state.savedAt) {
       const saved   = new Date(state.savedAt);
       const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
-      const fmt     = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+      const fmt = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
       badge.textContent = `💾 ${total} KOF sparade sedan ${fmt(saved)} — raderas automatiskt ${fmt(expires)}`;
       badge.classList.remove('hidden');
     }
@@ -958,6 +855,9 @@
      TAB SWITCHING
   ═══════════════════════════════════════════════ */
   function switchTab(tab) {
+    // Stäng kameran om vi lämnar söktabben
+    if (state.activeTab === 'search' && tab !== 'search') stopCamera();
+
     state.activeTab = tab;
     ['scan','search','routes'].forEach(t => {
       document.getElementById('pane-' + t).classList.toggle('hidden', tab !== t);
@@ -973,41 +873,24 @@
   function handleFileSelect(input) {
     const files = Array.from(input.files);
     if (!files.length) return;
-
     files.forEach(file => {
       const id = state.nextId++;
       const reader = new FileReader();
       reader.onload = e => {
-        state.images.push({
-          id,
-          file,
-          dataUrl: e.target.result,
-          name: file.name,
-          status: 'pending',
-          statusMsg: 'Väntar…',
-        });
+        state.images.push({ id, file, dataUrl: e.target.result, name: file.name, status: 'pending', statusMsg: 'Väntar…' });
         renderImageList();
         updateProcessButton();
       };
       reader.readAsDataURL(file);
     });
-
     input.value = '';
   }
 
-  /* ═══════════════════════════════════════════════
-     IMAGE LIST RENDER
-  ═══════════════════════════════════════════════ */
   function renderImageList() {
     const card = document.getElementById('imageListCard');
     const list = document.getElementById('imageList');
-
-    if (state.images.length === 0) {
-      card.classList.add('hidden');
-      return;
-    }
+    if (state.images.length === 0) { card.classList.add('hidden'); return; }
     card.classList.remove('hidden');
-
     list.innerHTML = state.images.map((img, i) => `
       <div class="image-item ${img.status}" id="img-row-${img.id}">
         <img class="image-thumb" src="${img.dataUrl}" alt="">
@@ -1020,11 +903,11 @@
     `).join('');
   }
 
-  function statusIcon(status) {
-    if (status === 'pending')  return '<span style="color:var(--color-text-tertiary);font-size:18px">⏳</span>';
-    if (status === 'loading')  return '<div class="spinner"></div>';
-    if (status === 'done')     return '<span style="color:var(--color-success);font-size:18px">✅</span>';
-    if (status === 'error')    return '<span style="color:var(--color-error);font-size:18px">❌</span>';
+  function statusIcon(s) {
+    if (s === 'pending') return '<span style="color:var(--color-text-tertiary);font-size:18px">⏳</span>';
+    if (s === 'loading') return '<div class="spinner"></div>';
+    if (s === 'done')    return '<span style="color:var(--color-success);font-size:18px">✅</span>';
+    if (s === 'error')   return '<span style="color:var(--color-error);font-size:18px">❌</span>';
     return '';
   }
 
@@ -1034,9 +917,6 @@
     renderImageList();
   }
 
-  /* ═══════════════════════════════════════════════
-     PROCESS BUTTON STATE
-  ═══════════════════════════════════════════════ */
   function updateProcessButton() {
     const pending = state.images.filter(i => i.status === 'pending').length;
     const btn = document.getElementById('processBtn');
@@ -1066,33 +946,24 @@
   ═══════════════════════════════════════════════ */
   async function processImages() {
     if (state.isProcessing) return;
-
-    if (!state.apiKey || state.apiKey.trim().length < 10) {
-      alert('Ange din Anthropic API-nyckel (sk-ant-…) ovanför.');
-      return;
-    }
-
     const pending = state.images.filter(i => i.status === 'pending');
     if (pending.length === 0) return;
 
     state.isProcessing = true;
     updateProcessButton();
     document.getElementById('summaryBox').classList.add('hidden');
-
     addLog(`Startar bearbetning av ${pending.length} bild(er)…`, 'info');
 
     for (const img of pending) {
       const idx = state.images.indexOf(img) + 1;
-      addLog(`[Bild ${idx}] Skickar till AI…`);
+      addLog(`[Bild ${idx}] Förbereder bild…`);
       updateImageItem(img.id, 'loading', 'Analyserar…');
-
       try {
-        addLog(`[Bild ${idx}] Förbereder bild (konverterar + krymper)…`);
         const jpegUrl = await toJpeg(img.dataUrl);
         addLog(`[Bild ${idx}] Skickar till AI…`);
         const result = await callClaudeApi(jpegUrl);
-        const count = storeEntries(result);
-        const msg = `Rutt ${result.routeNumber} — ${count} poster inlästa`;
+        const count  = storeEntries(result);
+        const msg    = `Rutt ${result.routeNumber} — ${count} poster inlästa`;
         updateImageItem(img.id, 'done', msg);
         addLog(`[Bild ${idx}] ✓ ${msg}`, 'ok');
       } catch (err) {
@@ -1115,25 +986,21 @@
   }
 
   /* ═══════════════════════════════════════════════
-     BILD → JPEG KONVERTERING (hanterar HEIC, PNG, stora filer)
+     BILD → JPEG
   ═══════════════════════════════════════════════ */
   function toJpeg(dataUrl, maxPx = 1600, quality = 0.88) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        let w = img.naturalWidth  || img.width;
+        let w = img.naturalWidth || img.width;
         let h = img.naturalHeight || img.height;
         if (w === 0 || h === 0) { reject(new Error('Kunde inte läsa bildstorlek')); return; }
-
-        // Krymper bilden om den är större än maxPx på längsta sidan
         if (w > maxPx || h > maxPx) {
           if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
           else        { w = Math.round(w * maxPx / h); h = maxPx; }
         }
-
         const canvas = document.createElement('canvas');
-        canvas.width  = w;
-        canvas.height = h;
+        canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
@@ -1146,31 +1013,34 @@
   }
 
   /* ═══════════════════════════════════════════════
-     ANTHROPIC API CALL
+     ANTHROPIC API — RUTT-INLÄSNING
   ═══════════════════════════════════════════════ */
   async function callClaudeApi(dataUrl) {
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) throw new Error('Ogiltig bildfil');
-    const mediaType  = match[1];   // alltid image/jpeg efter toJpeg()
-    const base64Data = match[2];
 
     const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
 {"routeNumber":"1","driver":"162 George/Marko","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
+
 Rules:
-- routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. The header looks like "Rutt 4- 161 Xhulijo" — routeNumber is "4", NOT "161" and NOT "4 161". It is always a small number (1–15).
-- driver: REQUIRED. The text after the dash/hyphen in the header line. Example: "Rutt 4- 161 Xhulijo :)" → driver is "161 Xhulijo". Example: "Rutt 1- 162 George/Marko :)" → driver is "162 George/Marko". Strip any trailing ":)" or emoji. If no name found, use "".
+- routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → routeNumber is "4". Always a small number (1–15).
+- driver: REQUIRED. The text after the dash/hyphen in the header line. Example: "Rutt 4- 161 Xhulijo :)" → driver is "161 Xhulijo". Strip trailing ":)" or emoji. Use "" if not found.
 - kof: the 6-digit number in the leftmost data column (ignore header rows)
-- store: the store name and address text from the Startplats column
-- pall/bur/hlv: value in that column, empty string if the cell is blank
-- isS: false for rows BEFORE the blank/empty separator row, true for rows AFTER it. If there is no blank separator row at all, all entries get isS: false.
-- Include ALL rows with a 6-digit KOF number, both before and after the separator.
+- store: the store name and address from the Startplats column
+- pall/bur/hlv: value in that column, empty string if blank
+- isS: CRITICAL — the sheet has TWO sections separated by one blank/empty row (a row with no KOF number and no store name).
+  * All KOF rows in the FIRST section (ABOVE the blank row) → isS: false → these become "Rutt N"
+  * All KOF rows in the SECOND section (BELOW the blank row) → isS: true → these become "SN"
+  * If there is NO blank separator row, all entries get isS: false.
+  * Getting isS correct is critical — double-check before returning.
+- Include ALL rows with a 6-digit KOF number, both sections.
 Return only the JSON object, no markdown fences, no explanation.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': state.apiKey.trim(),
+        'x-api-key': state.apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
@@ -1180,10 +1050,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64Data },
-            },
+            { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } },
             { type: 'text', text: PROMPT },
           ],
         }],
@@ -1192,44 +1059,30 @@ Return only the JSON object, no markdown fences, no explanation.`;
 
     if (!response.ok) {
       let errMsg = `API-fel ${response.status}`;
-      try {
-        const errBody = await response.json();
-        if (errBody?.error?.message) errMsg = errBody.error.message;
-      } catch (_) {}
+      try { const b = await response.json(); if (b?.error?.message) errMsg = b.error.message; } catch (_) {}
       throw new Error(errMsg);
     }
 
     const data = await response.json();
     const raw  = data.content?.[0]?.text?.trim() ?? '';
-
-    // Strip markdown code fences if present
     let jsonStr = raw;
     const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (fenceMatch) jsonStr = fenceMatch[1].trim();
 
-    try {
-      return JSON.parse(jsonStr);
-    } catch (_) {
-      throw new Error(`Kunde inte tolka AI-svaret: ${raw.slice(0, 80)}`);
-    }
+    try { return JSON.parse(jsonStr); }
+    catch (_) { throw new Error(`Kunde inte tolka AI-svaret: ${raw.slice(0, 80)}`); }
   }
 
   /* ═══════════════════════════════════════════════
-     STORE EXTRACTED ENTRIES
+     SPARA POSTER
   ═══════════════════════════════════════════════ */
   function storeEntries(parsed) {
-    // Plocka ut bara ruttnumret (1–2 siffror) ur det AI returnerar.
-    // Hanterar fall som "4", "4 161", "161", "Rutt 4" → alltid "4".
     const raw = String(parsed.routeNumber ?? '');
-    const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1]   // första 1-2-siffriga ord
-                  ?? raw.match(/(\d+)/)?.[1]             // annars första siffersekvens
-                  ?? '?';
+    const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1] ?? raw.match(/(\d+)/)?.[1] ?? '?';
     let count = 0;
-
     for (const entry of (parsed.entries ?? [])) {
-      const kof   = String(entry.kof ?? '').trim();
+      const kof = String(entry.kof ?? '').trim();
       if (!kof) continue;
-
       const route = entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`;
       state.routeData[kof] = {
         route,
@@ -1241,8 +1094,176 @@ Return only the JSON object, no markdown fences, no explanation.`;
       };
       count++;
     }
-
     return count;
+  }
+
+  /* ═══════════════════════════════════════════════
+     KAMERA-SCANNER
+  ═══════════════════════════════════════════════ */
+  const cam = {
+    stream:      null,
+    interval:    null,
+    busy:        false,
+    lastKof:     null,
+    lastKofTime: 0,
+    COOLDOWN:    5000,   // ms innan samma KOF scannas igen
+    INTERVAL:    2500,   // ms mellan scanningar
+  };
+
+  function toggleCamera() {
+    if (cam.stream) stopCamera();
+    else startCamera();
+  }
+
+  async function startCamera() {
+    if (!state.apiKey) { alert('Ingen API-nyckel konfigurerad.'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+        audio: false,
+      });
+      cam.stream = stream;
+      const video = document.getElementById('cameraVideo');
+      video.srcObject = stream;
+      await video.play();
+
+      document.getElementById('cameraView').classList.remove('hidden');
+      const btn = document.getElementById('cameraToggleBtn');
+      btn.classList.add('active');
+      btn.innerHTML = `
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>
+        </svg>
+        Stäng kamera`;
+
+      cam.interval = setInterval(scanFrame, cam.INTERVAL);
+    } catch (err) {
+      alert('Kunde inte starta kameran: ' + (err.message || err));
+    }
+  }
+
+  function stopCamera() {
+    clearInterval(cam.interval);
+    cam.interval = null;
+    if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); cam.stream = null; }
+    cam.busy = false;
+
+    const view = document.getElementById('cameraView');
+    if (view) view.classList.add('hidden');
+
+    const btn = document.getElementById('cameraToggleBtn');
+    if (btn) {
+      btn.classList.remove('active');
+      btn.innerHTML = `
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+        Scanna KOF med kamera`;
+    }
+  }
+
+  async function scanFrame() {
+    if (cam.busy || !cam.stream) return;
+    const video = document.getElementById('cameraVideo');
+    if (!video || video.readyState < 2 || !video.videoWidth) return;
+
+    cam.busy = true;
+    try {
+      // Beskär den centrerade guideramen (75% bredd, 35% höjd)
+      const vw = video.videoWidth, vh = video.videoHeight;
+      const cropW = Math.round(vw * 0.75);
+      const cropH = Math.round(vh * 0.35);
+      const cropX = Math.round((vw - cropW) / 2);
+      const cropY = Math.round((vh - cropH) / 2);
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = cropW;
+      canvas.height = cropH;
+      canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      const kof = await callClaudeForKof(dataUrl);
+      if (!kof) { setCamStatus('Söker KOF-nummer…'); cam.busy = false; return; }
+
+      const now = Date.now();
+      if (kof === cam.lastKof && now - cam.lastKofTime < cam.COOLDOWN) { cam.busy = false; return; }
+      cam.lastKof     = kof;
+      cam.lastKofTime = now;
+
+      const data = state.routeData[kof] ?? state.routeData[kof.padStart(6, '0')];
+      showCamResult(kof, data);
+      if (data) showResultFromCam(kof, data);
+
+    } catch (_) {}
+    cam.busy = false;
+  }
+
+  async function callClaudeForKof(dataUrl) {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return null;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 20,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: match[2] } },
+            { type: 'text', text: 'This is a cropped image from a logistics label or document. Find the 6-digit KOF store number. Return ONLY the 6 digits, nothing else. If no clear 6-digit number is visible, return exactly: NONE' },
+          ],
+        }],
+      }),
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const text = (data.content?.[0]?.text ?? '').trim();
+    const m = text.match(/\b(\d{6})\b/);
+    return m ? m[1] : null;
+  }
+
+  function showCamResult(kof, data) {
+    const banner = document.getElementById('cameraResultBanner');
+    banner.className = 'camera-result-banner ' + (data ? 'found' : 'notfound');
+    banner.textContent = data
+      ? `${data.route} — KOF ${kof}`
+      : `KOF ${kof} finns inte i ruttdata`;
+    banner.classList.remove('hidden');
+
+    setCamStatus(data ? '✓ Hittad! Fortsätter scanna…' : 'Hittades inte — söker vidare…');
+
+    if (!data) setTimeout(() => { if (banner) banner.classList.add('hidden'); }, 3000);
+  }
+
+  function setCamStatus(text) {
+    const el = document.getElementById('cameraScanStatus');
+    if (el) el.textContent = text;
+  }
+
+  function showResultFromCam(kof, data) {
+    document.getElementById('resultArea').innerHTML = `
+      <div class="result-card found">
+        <div class="result-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          <span class="result-header-text">Hittad — KOF ${escHtml(kof)}</span>
+        </div>
+        <div class="result-card-body">
+          <div class="result-route">${escHtml(data.route)}</div>
+          ${data.driver ? `<div class="result-driver">👤 ${escHtml(data.driver)}</div>` : ''}
+          <div class="result-store">${escHtml(data.store)}</div>
+          ${data.pall ? `<div class="result-estimate">Ca ${escHtml(data.pall)} enheter</div>` : ''}
+        </div>
+      </div>`;
   }
 
   /* ═══════════════════════════════════════════════
@@ -1250,53 +1271,25 @@ Return only the JSON object, no markdown fences, no explanation.`;
   ═══════════════════════════════════════════════ */
   function renderSearchUI() {
     const total = Object.keys(state.routeData).length;
-    const empty   = document.getElementById('emptyState');
-    const content = document.getElementById('searchContent');
-
-    if (total === 0) {
-      empty.classList.remove('hidden');
-      content.classList.add('hidden');
-    } else {
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
-      document.getElementById('kofCount').textContent = `${total} KOF-nummer inlästa`;
-    }
+    document.getElementById('emptyState').classList.toggle('hidden', total > 0);
+    document.getElementById('searchContent').classList.toggle('hidden', total === 0);
+    if (total > 0) document.getElementById('kofCount').textContent = `${total} KOF-nummer inlästa`;
   }
 
-  /* ── KOF-inmatning: rensknapp + förslag + auto-sök vid 6 siffror ── */
   function handleKofInput(input) {
     const val = input.value.replace(/\D/g, '').slice(0, 6);
     input.value = val;
-
-    // Rensknapp
     const clearBtn = document.getElementById('clearBtn');
     clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
-
-    if (val.length === 0) {
-      hideSuggestions();
-      document.getElementById('resultArea').innerHTML = '';
-      return;
-    }
-
-    // Auto-sök direkt vid exakt 6 siffror
-    if (val.length === 6) {
-      hideSuggestions();
-      searchKof();
-      return;
-    }
-
-    // Visa autocomplete-förslag
+    if (val.length === 0) { hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
+    if (val.length === 6) { hideSuggestions(); searchKof(); return; }
     showSuggestions(val);
   }
 
   function showSuggestions(query) {
-    const matches = Object.entries(state.routeData)
-      .filter(([kof]) => kof.startsWith(query))
-      .slice(0, 8);
-
+    const matches = Object.entries(state.routeData).filter(([kof]) => kof.startsWith(query)).slice(0, 8);
     const box = document.getElementById('suggestions');
     if (matches.length === 0) { box.classList.add('hidden'); return; }
-
     box.innerHTML = matches.map(([kof, data]) => `
       <div class="suggestion-item" ontouchstart="" onclick="selectSuggestion('${escHtml(kof)}')">
         <div class="suggestion-kof">
@@ -1308,13 +1301,10 @@ Return only the JSON object, no markdown fences, no explanation.`;
         </div>
       </div>
     `).join('');
-
     box.classList.remove('hidden');
   }
 
-  function hideSuggestions() {
-    document.getElementById('suggestions').classList.add('hidden');
-  }
+  function hideSuggestions() { document.getElementById('suggestions').classList.add('hidden'); }
 
   function selectSuggestion(kof) {
     const input = document.getElementById('kofInput');
@@ -1337,9 +1327,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const input = document.getElementById('kofInput');
     const raw   = input.value.trim();
     if (!raw) return;
-
-    // Exakt matchning, sedan nollpaddat
-    const kof6 = raw.padStart(6, '0');
+    const kof6  = raw.padStart(6, '0');
     const data  = state.routeData[raw] ?? state.routeData[kof6];
     const resultArea = document.getElementById('resultArea');
 
@@ -1356,8 +1344,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.pall ? `<div class="result-estimate">Ca ${escHtml(data.pall)} enheter</div>` : ''}
           </div>
-        </div>
-      `;
+        </div>`;
     } else {
       resultArea.innerHTML = `
         <div class="result-card notfound">
@@ -1369,11 +1356,8 @@ Return only the JSON object, no markdown fences, no explanation.`;
             <div class="notfound-title">KOF ${escHtml(raw)} finns inte</div>
             <div class="notfound-sub">Kontrollera numret eller scanna om pappren</div>
           </div>
-        </div>
-      `;
+        </div>`;
     }
-
-    // Scrolla ned till resultatet automatiskt på mobil
     setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
   }
 
@@ -1384,23 +1368,16 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const empty = document.getElementById('routesEmpty');
     const list  = document.getElementById('routesList');
     const total = Object.keys(state.routeData).length;
-
-    if (total === 0) {
-      empty.classList.remove('hidden');
-      list.classList.add('hidden');
-      return;
-    }
+    if (total === 0) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
     empty.classList.add('hidden');
     list.classList.remove('hidden');
 
-    // Gruppera KOF per rutt
     const groups = {};
     for (const [kof, data] of Object.entries(state.routeData)) {
       if (!groups[data.route]) groups[data.route] = [];
       groups[data.route].push({ kof, ...data });
     }
 
-    // Hitta alla unika ruttnummer (1, 2, 3 ...)
     const nums = new Set();
     for (const name of Object.keys(groups)) {
       const n = name.match(/\d+/)?.[0];
@@ -1414,18 +1391,15 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <div class="route-stop-kof">${escHtml(s.kof)}</div>
           <div class="route-stop-store">${escHtml(s.store)}</div>
           ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
-        </div>
-      `).join('');
+        </div>`).join('');
     }
 
-    // Bygg ett kort per ruttnummer med Rutt X och SX ihop
     list.innerHTML = sortedNums.map(n => {
       const mainKey = `Rutt ${n}`;
       const sKey    = `S${n}`;
       const main    = groups[mainKey];
       const s       = groups[sKey];
-
-      const driver = main?.[0]?.driver || s?.[0]?.driver || '';
+      const driver  = main?.[0]?.driver || s?.[0]?.driver || '';
 
       const mainSection = main ? `
         <div class="route-group-header">
@@ -1435,16 +1409,14 @@ Return only the JSON object, no markdown fences, no explanation.`;
           </div>
           <span class="route-group-count">${main.length} stopp</span>
         </div>
-        ${stopRows(main)}
-      ` : '';
+        ${stopRows(main)}` : '';
 
       const sSection = s ? `
         <div class="route-group-header s-route">
           <span>${escHtml(sKey)}</span>
           <span class="route-group-count">${s.length} stopp</span>
         </div>
-        ${stopRows(s)}
-      ` : '';
+        ${stopRows(s)}` : '';
 
       return `<div class="route-group">${mainSection}${sSection}</div>`;
     }).join('');
@@ -1455,15 +1427,14 @@ Return only the JSON object, no markdown fences, no explanation.`;
   ═══════════════════════════════════════════════ */
   function escHtml(str) {
     return String(str ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   /* ═══════════════════════════════════════════════
-     INIT — ladda sparad data om den finns och inte gått ut
+     INIT
   ═══════════════════════════════════════════════ */
+  loadApiKey();
   loadFromStorage();
   renderSearchUI();
   updateStorageUI();
