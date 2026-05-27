@@ -752,7 +752,6 @@
         };
       }
       if ((data ?? []).length > 0) {
-        if (!state.savedAt) state.savedAt = Date.now();
         updateStorageUI();
         renderSearchUI();
         renderRoutesTab();
@@ -912,6 +911,9 @@
       const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
       const fmt = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
       badge.textContent = `💾 ${total} KOF sparade sedan ${fmt(saved)} — raderas automatiskt ${fmt(expires)}`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.textContent = `☁️ ${total} KOF synkade från molnet`;
       badge.classList.remove('hidden');
     }
   }
