@@ -578,6 +578,60 @@
     .camera-result-banner.found    { background: rgba(40,167,69,0.93); }
     .camera-result-banner.notfound { background: rgba(220,53,69,0.93); }
 
+    .cam-mode-row {
+      display: flex; gap: 8px;
+    }
+
+    .cam-mode-btn {
+      flex: 1; padding: 10px;
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-secondary);
+      font-size: 14px; font-weight: 600; font-family: var(--font);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .cam-mode-btn.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+
+    .cam-result-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px; text-align: center; gap: 10px;
+    }
+
+    .cam-result-overlay-route {
+      font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1;
+    }
+
+    .cam-result-overlay-store {
+      font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2;
+    }
+
+    .cam-result-overlay-kof {
+      font-size: 18px; color: rgba(255,255,255,0.65); margin-top: 4px;
+    }
+
+    .cam-result-overlay-notfound {
+      font-size: 32px; font-weight: 700; color: #ff6b6b; line-height: 1.3;
+    }
+
+    .cam-manual-scan-btn {
+      width: 100%; min-height: 80px;
+      background: var(--color-accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 26px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; letter-spacing: 0.5px;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.12s;
+    }
+
+    .cam-manual-scan-btn:active { opacity: 0.82; }
+
     .edit-stop-btn {
       width: 38px; height: 38px; border-radius: var(--radius-xs);
       background: none; border: 0.5px solid var(--color-border-strong);
@@ -801,18 +855,27 @@
         Scanna KOF med kamera
       </button>
 
+      <!-- Lägesväxlare AUTO / MANUELL -->
+      <div class="cam-mode-row hidden" id="camModeRow">
+        <button class="cam-mode-btn active" id="camModeAuto" onclick="setCamMode('auto')">AUTO</button>
+        <button class="cam-mode-btn" id="camModeManual" onclick="setCamMode('manual')">MANUELL</button>
+      </div>
+
       <!-- Kamera-vy -->
       <div class="camera-view hidden" id="cameraView">
         <video class="camera-video" id="cameraVideo" autoplay playsinline muted></video>
         <div class="camera-frame-wrapper">
           <div class="camera-frame"></div>
         </div>
-        <div class="camera-result-banner hidden" id="cameraResultBanner"></div>
+        <div class="cam-result-overlay hidden" id="camResultOverlay"></div>
         <div class="camera-status-bar">
           <div class="scan-dot"></div>
-          <span class="camera-status-text" id="cameraScanStatus">Rikta KOF-numret mot rutan</span>
+          <span class="camera-status-text" id="cameraScanStatus">Letar efter nummer…</span>
         </div>
       </div>
+
+      <!-- Manuell scan-knapp -->
+      <button class="cam-manual-scan-btn hidden" id="camManualScanBtn" onclick="manualScan()">📷 SCANNA</button>
 
       <div id="resultArea"></div>
     </div>
@@ -1316,6 +1379,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     stream:      null,
     interval:    null,
     busy:        false,
+    mode:        'auto',
     lastKof:     null,
     lastKofTime: 0,
     COOLDOWN:    5000,   // ms innan samma KOF scannas igen
@@ -1339,6 +1403,13 @@ Return only the JSON object, no markdown fences, no explanation.`;
       await video.play();
 
       document.getElementById('cameraView').classList.remove('hidden');
+      document.getElementById('camModeRow').classList.remove('hidden');
+      cam.mode = 'auto';
+      document.getElementById('camModeAuto').classList.add('active');
+      document.getElementById('camModeManual').classList.remove('active');
+      document.getElementById('camManualScanBtn').classList.add('hidden');
+      setCamStatus('Letar efter nummer…');
+
       const btn = document.getElementById('cameraToggleBtn');
       btn.classList.add('active');
       btn.innerHTML = `
@@ -1363,6 +1434,10 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const view = document.getElementById('cameraView');
     if (view) view.classList.add('hidden');
 
+    document.getElementById('camModeRow').classList.add('hidden');
+    document.getElementById('camManualScanBtn').classList.add('hidden');
+    hideCamOverlay();
+
     const btn = document.getElementById('cameraToggleBtn');
     if (btn) {
       btn.classList.remove('active');
@@ -1376,44 +1451,61 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   async function scanFrame() {
+    if (cam.mode !== 'auto') return;
+    await captureAndSend(false);
+  }
+
+  async function manualScan() {
+    await captureAndSend(true);
+  }
+
+  async function captureAndSend(manual) {
     if (cam.busy || !cam.stream) return;
     const video = document.getElementById('cameraVideo');
     if (!video || video.readyState < 2 || !video.videoWidth) return;
 
     cam.busy = true;
+    if (manual) setCamStatus('Scannar…');
     const frameStart = Date.now();
     try {
-      // Beskär den centrerade guideramen (74% bredd, 22% höjd)
       const vw = video.videoWidth, vh = video.videoHeight;
-      const cropW = Math.round(vw * 0.74);
-      const cropH = Math.round(vh * 0.22);
-      const cropX = Math.round((vw - cropW) / 2);
-      const cropY = Math.round((vh - cropH) / 2);
+      const cropW = Math.round(vw * 0.4);
+      const cropH = Math.round(vh * 0.4);
 
       const canvas = document.createElement('canvas');
       canvas.width  = cropW;
       canvas.height = cropH;
-      canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      canvas.getContext('2d').drawImage(video, 0, 0, cropW, cropH, 0, 0, cropW, cropH);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       const kof = await callClaudeForKof(dataUrl);
       console.log('[scanFrame] callClaudeForKof returnerade:', kof);
-      if (!kof) { setCamStatus('Söker KOF-nummer…'); cam.busy = false; return; }
 
-      const now = Date.now();
-      if (kof === cam.lastKof && now - cam.lastKofTime < cam.COOLDOWN) { cam.busy = false; return; }
-      cam.lastKof     = kof;
-      cam.lastKofTime = now;
+      if (!kof) {
+        setCamStatus(manual ? 'Inget KOF-nummer hittades — försök igen' : 'Letar efter nummer…');
+        cam.busy = false;
+        return;
+      }
 
       const data = state.routeData[kof] ?? state.routeData[kof.padStart(6, '0')];
       logSearch(kof, data ?? null, Date.now() - frameStart);
-      showCamResult(kof, data);
+      showCamOverlay(kof, data);
       if (data) showResultFromCam(kof, data);
+
+      if (!manual) {
+        setTimeout(() => {
+          hideCamOverlay();
+          setCamStatus('Letar efter nummer…');
+          cam.busy = false;
+        }, 3000);
+      } else {
+        cam.busy = false;
+      }
 
     } catch (err) {
       setCamStatus(`Fel: ${err.message ?? err}`);
+      cam.busy = false;
     }
-    cam.busy = false;
   }
 
   async function callClaudeForKof(dataUrl) {
@@ -1453,17 +1545,45 @@ Return only the JSON object, no markdown fences, no explanation.`;
     return m ? m[1] : null;
   }
 
-  function showCamResult(kof, data) {
-    const banner = document.getElementById('cameraResultBanner');
-    banner.className = 'camera-result-banner ' + (data ? 'found' : 'notfound');
-    banner.textContent = data
-      ? `${data.route} — KOF ${kof}`
-      : `KOF ${kof} finns inte i ruttdata`;
-    banner.classList.remove('hidden');
+  function showCamOverlay(kof, data) {
+    const overlay = document.getElementById('camResultOverlay');
+    if (!overlay) return;
+    if (data) {
+      overlay.innerHTML = `
+        <div class="cam-result-overlay-route">${escHtml(data.route)}</div>
+        <div class="cam-result-overlay-store">${escHtml(data.store)}</div>
+        <div class="cam-result-overlay-kof">KOF ${escHtml(kof)}</div>`;
+    } else {
+      overlay.innerHTML = `<div class="cam-result-overlay-notfound">KOF ${escHtml(kof)}<br>finns inte i ruttdata</div>`;
+    }
+    overlay.classList.remove('hidden');
+    setCamStatus(data ? '✓ Hittad!' : 'Hittades inte');
+  }
 
-    setCamStatus(data ? '✓ Hittad! Fortsätter scanna…' : 'Hittades inte — söker vidare…');
+  function hideCamOverlay() {
+    const overlay = document.getElementById('camResultOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
 
-    if (!data) setTimeout(() => { if (banner) banner.classList.add('hidden'); }, 3000);
+  function setCamMode(mode) {
+    cam.mode = mode;
+    document.getElementById('camModeAuto').classList.toggle('active', mode === 'auto');
+    document.getElementById('camModeManual').classList.toggle('active', mode === 'manual');
+    const manualBtn = document.getElementById('camManualScanBtn');
+    if (mode === 'auto') {
+      manualBtn.classList.add('hidden');
+      hideCamOverlay();
+      if (!cam.interval && cam.stream) {
+        cam.interval = setInterval(scanFrame, cam.INTERVAL);
+        setCamStatus('Letar efter nummer…');
+      }
+    } else {
+      clearInterval(cam.interval);
+      cam.interval = null;
+      cam.busy = false;
+      manualBtn.classList.remove('hidden');
+      setCamStatus('Tryck SCANNA för att läsa KOF');
+    }
   }
 
   function setCamStatus(text) {
