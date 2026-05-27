@@ -1319,7 +1319,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     lastKof:     null,
     lastKofTime: 0,
     COOLDOWN:    5000,   // ms innan samma KOF scannas igen
-    INTERVAL:    800,    // ms mellan scanningar
+    INTERVAL:    2500,   // ms mellan scanningar
   };
 
   function toggleCamera() {
@@ -1430,7 +1430,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 20,
         messages: [{
           role: 'user',
