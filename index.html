@@ -1116,20 +1116,21 @@
     if (!match) throw new Error('Ogiltig bildfil');
 
     const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"1","driver":"162 George/Marko","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","isS":false}]}
+{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"","hlv":"","route":"S4"}]}
 
 Rules:
-- routeNumber: ONLY the single number that comes directly after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → routeNumber is "4". Always a small number (1–15).
-- driver: REQUIRED. The text after the dash/hyphen in the header line. Example: "Rutt 4- 161 Xhulijo :)" → driver is "161 Xhulijo". Strip trailing ":)" or emoji. Use "" if not found.
-- kof: the 6-digit number in the leftmost data column (ignore header rows)
-- store: the store name and address from the Startplats column
-- pall/bur/hlv: value in that column, empty string if blank
-- isS: CRITICAL — the sheet has TWO sections separated by one blank/empty row (a row with no KOF number and no store name).
-  * All KOF rows in the FIRST section (ABOVE the blank row) → isS: false → these become "Rutt N"
-  * All KOF rows in the SECOND section (BELOW the blank row) → isS: true → these become "SN"
-  * If there is NO blank separator row, all entries get isS: false.
-  * Getting isS correct is critical — double-check before returning.
-- Include ALL rows with a 6-digit KOF number, both sections.
+- routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
+- driver: REQUIRED. Text after the dash in the header. Example: "Rutt 4- 161 Xhulijo :)" → "161 Xhulijo". Strip trailing ":)" or emoji. Use "" if not found.
+- kof: the 6-digit number in the leftmost data column (skip header rows).
+- store: store name and address from the Startplats column.
+- pall/bur/hlv: value in that column, empty string if blank.
+- route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
+  Step 1: Scan the table top-to-bottom and find the ONE completely blank row — a row with no KOF number and no store name. This blank row is the separator between the two sections.
+  Step 2: Every KOF row ABOVE the blank separator row → route: "Rutt N" (example: "Rutt 4").
+  Step 3: Every KOF row BELOW the blank separator row → route: "SN" (example: "S4").
+  Step 4: If there is NO blank separator row anywhere in the table → all entries get route: "Rutt N".
+  Double-check every entry's route value before returning. This is the most important field.
+- Include ALL rows with a 6-digit KOF number from both sections.
 Return only the JSON object, no markdown fences, no explanation.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1179,7 +1180,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     for (const entry of (parsed.entries ?? [])) {
       const kof = String(entry.kof ?? '').trim();
       if (!kof) continue;
-      const route = entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`;
+      const route = entry.route ?? (entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`);
       state.routeData[kof] = {
         route,
         driver: String(parsed.driver ?? '').trim(),
