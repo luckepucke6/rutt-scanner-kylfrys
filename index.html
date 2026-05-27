@@ -752,7 +752,7 @@
         };
       }
       if ((data ?? []).length > 0) {
-        state.savedAt = Date.now();
+        if (!state.savedAt) state.savedAt = Date.now();
         updateStorageUI();
         renderSearchUI();
         renderRoutesTab();
@@ -860,14 +860,14 @@
   const EXPIRY_HOURS = 8;
 
   function saveToStorage() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        routeData: state.routeData,
-        savedAt: Date.now(),
-      }));
-    } catch (_) {}
-    updateStorageUI();
-  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      routeData: state.routeData,
+      savedAt: state.savedAt || Date.now(),  // ← enda ändringen
+    }));
+  } catch (_) {}
+  updateStorageUI();
+}
 
   function loadFromStorage() {
     try {

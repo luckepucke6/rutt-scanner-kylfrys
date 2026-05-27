@@ -1,16 +1,10 @@
-Jag har en webbapp (index.html) på GitHub Pages som heter Rutt-scanner. Jag vill integrera Supabase så att ruttdata och loggning delas mellan alla enheter.
-Gör följande:
+19:43Claude responded: > Ta bort kamera-scanningen helt från index.
+Ta bort kamera-scanningen helt från index.html — ta bort kamera-fliken, all kamera-kod, kamera-UI och tillhörande funktioner.
+Ersätt sök-knappen bredvid sökfältet med en stor rensa-knapp (×) som:
 
-1. Skapa en .env fil med variablerna SUPABASE_URL och SUPABASE_ANON_KEY (lämna dem tomma, jag fyller i värdena själv)
-2. Skapa eller uppdatera .gitignore så att .env inte pushas till GitHub
-3. Uppdatera index.html så att den:
+Tömmer sökfältet när man trycker på den
+Sätter fokus tillbaka i sökfältet automatiskt efter rensning
+Är minst 48px bred och hög så den är lätt att trycka på med tummen
+Bara syns när det finns text i fältet, annars dold
 
-- Laddar Supabase JS-biblioteket via CDN
-- Läser URL och anon key från en konfigurationsvariabel längst upp i filen (som jag enkelt kan byta ut mot mina riktiga värden)
-- Sparar alla inlästa ruttdata till Supabase-tabellen route_entries (kolumner: kof, route, store_name, driver)
-- Hämtar ruttdata från Supabase vid start så att alla enheter ser samma data
-- Loggar varje sökning till tabellen search_logs (kolumner: kof, route_found, success, device_id, searched_at)
-- Genererar ett unikt device_id per telefon och sparar det i localStorage
-
-
-4. Behåll all befintlig funktionalitet — kamera-scanning, S-rutt-logik, förarnamn, ruttöversikt
+Gör inga andra ändringar. Committa och pusha när klart.
