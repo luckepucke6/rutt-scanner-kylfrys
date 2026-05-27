@@ -812,14 +812,34 @@
     if (error) console.warn('Supabase upsert-fel:', error);
   }
 
-  function logSearch(kof, data) {
+  const SESSION_TIMEOUT_MS = 60_000;
+  let currentSessionId = crypto.randomUUID ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let lastSearchTime = 0;
+
+  function getSessionId() {
+    const now = Date.now();
+    if (now - lastSearchTime > SESSION_TIMEOUT_MS) {
+      currentSessionId = crypto.randomUUID ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + now.toString(36);
+    }
+    lastSearchTime = now;
+    return currentSessionId;
+  }
+
+  let searchStartTime = 0;
+
+  function logSearch(kof, data, responseTimeMs = null) {
     if (!sb) return;
     sb.from('search_logs').insert({
       kof,
-      route_found: data?.route ?? null,
-      success:     !!data,
-      device_id:   getDeviceId(),
-      searched_at: new Date().toISOString(),
+      route_found:        data?.route ?? null,
+      success:            !!data,
+      device_id:          getDeviceId(),
+      searched_at:        new Date().toISOString(),
+      response_time_ms:   responseTimeMs,
+      session_id:         getSessionId(),
+      manual_baseline_ms: 30000,
     }).then(({ error }) => { if (error) console.warn('Supabase logg-fel:', error); });
   }
 
@@ -1246,6 +1266,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     if (!video || video.readyState < 2 || !video.videoWidth) return;
 
     cam.busy = true;
+    const frameStart = Date.now();
     try {
       // Beskär den centrerade guideramen (75% bredd, 35% höjd)
       const vw = video.videoWidth, vh = video.videoHeight;
@@ -1269,7 +1290,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       cam.lastKofTime = now;
 
       const data = state.routeData[kof] ?? state.routeData[kof.padStart(6, '0')];
-      logSearch(kof, data ?? null);
+      logSearch(kof, data ?? null, Date.now() - frameStart);
       showCamResult(kof, data);
       if (data) showResultFromCam(kof, data);
 
@@ -1358,7 +1379,8 @@ Return only the JSON object, no markdown fences, no explanation.`;
     input.value = val;
     const clearBtn = document.getElementById('clearBtn');
     clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
-    if (val.length === 0) { hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
+    if (val.length === 0) { searchStartTime = 0; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
+    if (val.length === 1 && searchStartTime === 0) searchStartTime = Date.now();
     if (val.length === 6) { hideSuggestions(); searchKof(); return; }
     showSuggestions(val);
   }
@@ -1392,6 +1414,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   function clearSearch() {
+    searchStartTime = 0;
     const input = document.getElementById('kofInput');
     input.value = '';
     document.getElementById('clearBtn').style.display = 'none';
@@ -1406,7 +1429,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
     if (!raw) return;
     const kof6  = raw.padStart(6, '0');
     const data  = state.routeData[raw] ?? state.routeData[kof6];
-    logSearch(raw, data ?? null);
+    const responseTime = searchStartTime > 0 ? Date.now() - searchStartTime : null;
+    searchStartTime = 0;
+    logSearch(raw, data ?? null, responseTime);
     const resultArea = document.getElementById('resultArea');
 
     if (data) {
