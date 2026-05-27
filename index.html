@@ -495,7 +495,7 @@
     }
 
     .camera-frame {
-      width: 74%; height: 58px;
+      width: 74%; height: 80px;
       border: 2px solid rgba(255,255,255,0.92);
       border-radius: 9px;
       box-shadow: 0 0 0 1000px rgba(0,0,0,0.42);
@@ -1204,7 +1204,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     lastKof:     null,
     lastKofTime: 0,
     COOLDOWN:    5000,   // ms innan samma KOF scannas igen
-    INTERVAL:    2500,   // ms mellan scanningar
+    INTERVAL:    1200,   // ms mellan scanningar
   };
 
   function toggleCamera() {
@@ -1269,10 +1269,10 @@ Return only the JSON object, no markdown fences, no explanation.`;
     cam.busy = true;
     const frameStart = Date.now();
     try {
-      // Beskär den centrerade guideramen (75% bredd, 35% höjd)
+      // Beskär den centrerade guideramen (74% bredd, 22% höjd)
       const vw = video.videoWidth, vh = video.videoHeight;
-      const cropW = Math.round(vw * 0.75);
-      const cropH = Math.round(vh * 0.35);
+      const cropW = Math.round(vw * 0.74);
+      const cropH = Math.round(vh * 0.22);
       const cropX = Math.round((vw - cropW) / 2);
       const cropY = Math.round((vh - cropH) / 2);
 
