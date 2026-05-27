@@ -636,7 +636,6 @@
     .flex-col { display: flex; flex-direction: column; gap: 10px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <div id="app">
@@ -1414,31 +1413,36 @@ Return only the JSON object, no markdown fences, no explanation.`;
     cam.busy = false;
   }
 
-  let tWorker = null;
-
-  async function getTesseractWorker() {
-    if (!tWorker) {
-      setCamStatus('Laddar OCR-motor (första gången)…');
-      tWorker = await Tesseract.createWorker('eng');
-      await tWorker.setParameters({
-        tessedit_char_whitelist: '0123456789',
-        tessedit_pageseg_mode: '7',
-      });
-    }
-    return tWorker;
-  }
-
   async function callClaudeForKof(dataUrl) {
-    try {
-      const worker = await getTesseractWorker();
-      const { data: { text } } = await worker.recognize(dataUrl);
-      const clean = text.replace(/\D/g, '');
-      const m = clean.match(/\d{6}/);
-      return m ? m[0] : null;
-    } catch (err) {
-      console.warn('Tesseract fel:', err);
-      return null;
-    }
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return null;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 20,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: match[2] } },
+            { type: 'text', text: 'This is a crop from a logistics label. Return ONLY the 6-digit KOF number you see, nothing else. If you cannot find a 6-digit number, return null.' },
+          ],
+        }],
+      }),
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const text = (data.content?.[0]?.text ?? '').trim();
+    const m = text.match(/\b(\d{6})\b/);
+    return m ? m[1] : null;
   }
 
   function showCamResult(kof, data) {
