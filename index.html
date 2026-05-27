@@ -1417,6 +1417,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   async function callClaudeForKof(dataUrl) {
+    if (!state.apiKey) { setCamStatus('Ingen API-nyckel — gå till Scanna-fliken'); return null; }
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) return null;
 
@@ -1441,7 +1442,11 @@ Return only the JSON object, no markdown fences, no explanation.`;
       }),
     });
 
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      setCamStatus(`API-fel ${resp.status}: ${errData?.error?.message ?? 'okänt fel'}`);
+      return null;
+    }
     const data = await resp.json();
     const text = (data.content?.[0]?.text ?? '').trim();
     const m = text.match(/\b(\d{6})\b/);
