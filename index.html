@@ -272,17 +272,16 @@
     .kof-input::-webkit-outer-spin-button { -webkit-appearance: none; }
     .kof-input:focus { border-color: var(--color-accent); }
 
-    .input-wrapper { flex: 1; position: relative; min-width: 0; }
-    .input-wrapper .kof-input { width: 100%; padding-right: 38px; }
-
     .clear-btn {
-      position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--color-text-tertiary); border: none;
-      color: #fff; font-size: 14px; line-height: 1; cursor: pointer;
+      width: 48px; height: 48px; border-radius: var(--radius-sm);
+      background: var(--color-surface-2);
+      border: 0.5px solid var(--color-border-strong);
+      color: var(--color-text-secondary);
+      font-size: 22px; line-height: 1; cursor: pointer; flex-shrink: 0;
       display: none; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
     }
+    .clear-btn:active { background: var(--color-border); }
 
     .suggestions {
       background: var(--color-surface);
@@ -311,18 +310,6 @@
     .suggestion-route { font-size: 13px; font-weight: 700; color: var(--color-text-primary); }
     .suggestion-store { font-size: 11px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .search-btn {
-      padding: 13px 18px;
-      background: var(--color-accent); color: #fff;
-      border: none; border-radius: var(--radius);
-      font-size: 15px; font-weight: 600; font-family: var(--font);
-      cursor: pointer;
-      display: flex; align-items: center; gap: 6px;
-      flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .search-btn:active { opacity: 0.82; }
 
     .result-card { border-radius: var(--radius); border: 0.5px solid; overflow: hidden; }
     .result-card.found { background: var(--color-success-bg); border-color: var(--color-success-border); }
@@ -477,160 +464,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Kamera-scanner ── */
-    .camera-toggle-btn {
-      width: 100%; padding: 12px 16px;
-      background: var(--color-surface);
-      border: 0.5px solid var(--color-border-strong);
-      border-radius: var(--radius);
-      color: var(--color-text-secondary);
-      font-size: 14px; font-weight: 500; font-family: var(--font);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: background 0.12s, color 0.12s, border-color 0.12s;
-      -webkit-tap-highlight-color: transparent;
-    }
 
-    .camera-toggle-btn.active {
-      background: var(--color-accent); color: #fff; border-color: var(--color-accent);
-    }
-
-    .camera-toggle-btn:not(.active):active { background: var(--color-surface-2); }
-
-    .camera-view {
-      position: relative; background: #000;
-      border-radius: var(--radius); overflow: hidden;
-      width: 100%; aspect-ratio: 4/3;
-    }
-
-    .camera-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-    /* Guide-ram med mörk vinjett */
-    .camera-frame-wrapper {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none;
-    }
-
-    .camera-frame {
-      width: 74%; height: 80px;
-      border: 2px solid rgba(255,255,255,0.92);
-      border-radius: 9px;
-      box-shadow: 0 0 0 1000px rgba(0,0,0,0.42);
-      position: relative;
-    }
-
-    /* Blå hörn-accenter */
-    .camera-frame::before, .camera-frame::after {
-      content: '';
-      position: absolute; width: 18px; height: 18px;
-      border-style: solid; border-color: var(--color-accent);
-      border-radius: 2px;
-    }
-
-    .camera-frame::before {
-      top: -3px; left: -3px;
-      border-width: 3px 0 0 3px;
-    }
-
-    .camera-frame::after {
-      bottom: -3px; right: -3px;
-      border-width: 0 3px 3px 0;
-    }
-
-    .camera-status-bar {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 10px 14px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.68));
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      pointer-events: none;
-    }
-
-    .scan-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #4cd964; flex-shrink: 0;
-      animation: scan-pulse 1.4s ease-in-out infinite;
-    }
-
-    @keyframes scan-pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.3; transform: scale(0.6); }
-    }
-
-    .camera-status-text {
-      font-size: 13px; color: rgba(255,255,255,0.92); font-weight: 500;
-    }
-
-    .camera-result-banner {
-      position: absolute; top: 10px; left: 10px; right: 10px;
-      padding: 10px 14px; border-radius: 8px;
-      font-size: 15px; font-weight: 700;
-      text-align: center; color: #fff;
-      animation: banner-in 0.2s ease;
-      pointer-events: none;
-    }
-
-    @keyframes banner-in {
-      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .camera-result-banner.found    { background: rgba(40,167,69,0.93); }
-    .camera-result-banner.notfound { background: rgba(220,53,69,0.93); }
-
-    .cam-mode-row {
-      display: flex; gap: 8px;
-    }
-
-    .cam-mode-btn {
-      flex: 1; padding: 10px;
-      background: var(--color-surface);
-      border: 0.5px solid var(--color-border-strong);
-      border-radius: var(--radius-sm);
-      color: var(--color-text-secondary);
-      font-size: 14px; font-weight: 600; font-family: var(--font);
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.12s, color 0.12s, border-color 0.12s;
-    }
-
-    .cam-mode-btn.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-
-    .cam-result-overlay {
-      position: absolute; inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 24px; text-align: center; gap: 10px;
-    }
-
-    .cam-result-overlay-route {
-      font-size: 38px; font-weight: 800; color: #fff; line-height: 1.1;
-    }
-
-    .cam-result-overlay-store {
-      font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2;
-    }
-
-    .cam-result-overlay-kof {
-      font-size: 18px; color: rgba(255,255,255,0.65); margin-top: 4px;
-    }
-
-    .cam-result-overlay-notfound {
-      font-size: 32px; font-weight: 700; color: #ff6b6b; line-height: 1.3;
-    }
-
-    .cam-manual-scan-btn {
-      width: 100%; min-height: 80px;
-      background: var(--color-accent); color: #fff;
-      border: none; border-radius: var(--radius);
-      font-size: 26px; font-weight: 700; font-family: var(--font);
-      cursor: pointer; letter-spacing: 0.5px;
-      -webkit-tap-highlight-color: transparent;
-      transition: opacity 0.12s;
-    }
-
-    .cam-manual-scan-btn:active { opacity: 0.82; }
 
     .edit-stop-btn {
       width: 38px; height: 38px; border-radius: var(--radius-xs);
@@ -825,57 +659,17 @@
 
       <!-- Manuell sökning -->
       <div class="search-row">
-        <div class="input-wrapper">
-          <input
-            type="number" class="kof-input" id="kofInput"
-            placeholder="123456" inputmode="numeric" pattern="[0-9]*"
-            autocomplete="off"
-            onkeydown="if(event.key==='Enter'){hideSuggestions();searchKof();}"
-            oninput="handleKofInput(this)"
-          >
-          <button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
-        </div>
-        <button class="search-btn" onclick="hideSuggestions();searchKof()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="10" cy="10" r="7"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          Sök
-        </button>
+        <input
+          type="number" class="kof-input" id="kofInput"
+          placeholder="123456" inputmode="numeric" pattern="[0-9]*"
+          autocomplete="off"
+          onkeydown="if(event.key==='Enter'){hideSuggestions();searchKof();}"
+          oninput="handleKofInput(this)"
+        >
+        <button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
       </div>
 
       <div class="suggestions hidden" id="suggestions"></div>
-
-      <!-- Kamera-toggle -->
-      <button class="camera-toggle-btn" id="cameraToggleBtn" onclick="toggleCamera()">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/>
-          <circle cx="12" cy="13" r="3"/>
-        </svg>
-        Scanna KOF med kamera
-      </button>
-
-      <!-- Lägesväxlare AUTO / MANUELL -->
-      <div class="cam-mode-row hidden" id="camModeRow">
-        <button class="cam-mode-btn active" id="camModeAuto" onclick="setCamMode('auto')">AUTO</button>
-        <button class="cam-mode-btn" id="camModeManual" onclick="setCamMode('manual')">MANUELL</button>
-      </div>
-
-      <!-- Kamera-vy -->
-      <div class="camera-view hidden" id="cameraView">
-        <video class="camera-video" id="cameraVideo" autoplay playsinline muted></video>
-        <div class="camera-frame-wrapper">
-          <div class="camera-frame"></div>
-        </div>
-        <div class="cam-result-overlay hidden" id="camResultOverlay"></div>
-        <div class="camera-status-bar">
-          <div class="scan-dot"></div>
-          <span class="camera-status-text" id="cameraScanStatus">Letar efter nummer…</span>
-        </div>
-      </div>
-
-      <!-- Manuell scan-knapp -->
-      <button class="cam-manual-scan-btn hidden" id="camManualScanBtn" onclick="manualScan()">📷 SCANNA</button>
 
       <div id="resultArea"></div>
     </div>
@@ -1126,9 +920,6 @@
      TAB SWITCHING
   ═══════════════════════════════════════════════ */
   function switchTab(tab) {
-    // Stäng kameran om vi lämnar söktabben
-    if (state.activeTab === 'search' && tab !== 'search') stopCamera();
-
     state.activeTab = tab;
     ['scan','search','routes'].forEach(t => {
       document.getElementById('pane-' + t).classList.toggle('hidden', tab !== t);
@@ -1375,238 +1166,6 @@ Return only the JSON object, no markdown fences, no explanation.`;
   /* ═══════════════════════════════════════════════
      KAMERA-SCANNER
   ═══════════════════════════════════════════════ */
-  const cam = {
-    stream:      null,
-    interval:    null,
-    busy:        false,
-    mode:        'auto',
-    lastKof:     null,
-    lastKofTime: 0,
-    COOLDOWN:    5000,   // ms innan samma KOF scannas igen
-    INTERVAL:    2500,   // ms mellan scanningar
-  };
-
-  function toggleCamera() {
-    if (cam.stream) stopCamera();
-    else startCamera();
-  }
-
-  async function startCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
-        audio: false,
-      });
-      cam.stream = stream;
-      const video = document.getElementById('cameraVideo');
-      video.srcObject = stream;
-      await video.play();
-
-      document.getElementById('cameraView').classList.remove('hidden');
-      document.getElementById('camModeRow').classList.remove('hidden');
-      cam.mode = 'auto';
-      document.getElementById('camModeAuto').classList.add('active');
-      document.getElementById('camModeManual').classList.remove('active');
-      document.getElementById('camManualScanBtn').classList.add('hidden');
-      setCamStatus('Letar efter nummer…');
-
-      const btn = document.getElementById('cameraToggleBtn');
-      btn.classList.add('active');
-      btn.innerHTML = `
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>
-        </svg>
-        Stäng kamera`;
-
-      cam.interval = setInterval(scanFrame, cam.INTERVAL);
-    } catch (err) {
-      alert('Kunde inte starta kameran: ' + (err.message || err));
-    }
-  }
-
-  function stopCamera() {
-    clearInterval(cam.interval);
-    cam.interval = null;
-    if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); cam.stream = null; }
-    cam.busy = false;
-
-    const view = document.getElementById('cameraView');
-    if (view) view.classList.add('hidden');
-
-    document.getElementById('camModeRow').classList.add('hidden');
-    document.getElementById('camManualScanBtn').classList.add('hidden');
-    hideCamOverlay();
-
-    const btn = document.getElementById('cameraToggleBtn');
-    if (btn) {
-      btn.classList.remove('active');
-      btn.innerHTML = `
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/>
-          <circle cx="12" cy="13" r="3"/>
-        </svg>
-        Scanna KOF med kamera`;
-    }
-  }
-
-  async function scanFrame() {
-    if (cam.mode !== 'auto') return;
-    await captureAndSend(false);
-  }
-
-  async function manualScan() {
-    await captureAndSend(true);
-  }
-
-  async function captureAndSend(manual) {
-    if (cam.busy || !cam.stream) return;
-    const video = document.getElementById('cameraVideo');
-    if (!video || video.readyState < 2 || !video.videoWidth) return;
-
-    cam.busy = true;
-    if (manual) setCamStatus('Scannar…');
-    const frameStart = Date.now();
-    try {
-      const vw = video.videoWidth, vh = video.videoHeight;
-      const cropW = Math.round(vw * 0.4);
-      const cropH = Math.round(vh * 0.4);
-
-      const canvas = document.createElement('canvas');
-      canvas.width  = cropW;
-      canvas.height = cropH;
-      canvas.getContext('2d').drawImage(video, 0, 0, cropW, cropH, 0, 0, cropW, cropH);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-      const kof = await callClaudeForKof(dataUrl);
-      console.log('[scanFrame] callClaudeForKof returnerade:', kof);
-
-      if (!kof) {
-        setCamStatus(manual ? 'Inget KOF-nummer hittades — försök igen' : 'Letar efter nummer…');
-        cam.busy = false;
-        return;
-      }
-
-      const data = state.routeData[kof] ?? state.routeData[kof.padStart(6, '0')];
-      logSearch(kof, data ?? null, Date.now() - frameStart);
-      showCamOverlay(kof, data);
-      if (data) showResultFromCam(kof, data);
-
-      if (!manual) {
-        setTimeout(() => {
-          hideCamOverlay();
-          setCamStatus('Letar efter nummer…');
-          cam.busy = false;
-        }, 3000);
-      } else {
-        cam.busy = false;
-      }
-
-    } catch (err) {
-      setCamStatus(`Fel: ${err.message ?? err}`);
-      cam.busy = false;
-    }
-  }
-
-  async function callClaudeForKof(dataUrl) {
-    if (!state.apiKey) { setCamStatus('Ingen API-nyckel — gå till Scanna-fliken'); return null; }
-    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!match) return null;
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': state.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 20,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: match[2] } },
-            { type: 'text', text: 'This is a crop from a logistics label. Return ONLY the 6-digit KOF number you see, nothing else. If you cannot find a 6-digit number, return null.' },
-          ],
-        }],
-      }),
-    });
-
-    if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({}));
-      setCamStatus(`API-fel ${resp.status}: ${errData?.error?.message ?? 'okänt fel'}`);
-      return null;
-    }
-    const data = await resp.json();
-    const text = (data.content?.[0]?.text ?? '').trim();
-    const m = text.match(/\b(\d{6})\b/);
-    return m ? m[1] : null;
-  }
-
-  function showCamOverlay(kof, data) {
-    const overlay = document.getElementById('camResultOverlay');
-    if (!overlay) return;
-    if (data) {
-      overlay.innerHTML = `
-        <div class="cam-result-overlay-route">${escHtml(data.route)}</div>
-        <div class="cam-result-overlay-store">${escHtml(data.store)}</div>
-        <div class="cam-result-overlay-kof">KOF ${escHtml(kof)}</div>`;
-    } else {
-      overlay.innerHTML = `<div class="cam-result-overlay-notfound">KOF ${escHtml(kof)}<br>finns inte i ruttdata</div>`;
-    }
-    overlay.classList.remove('hidden');
-    setCamStatus(data ? '✓ Hittad!' : 'Hittades inte');
-  }
-
-  function hideCamOverlay() {
-    const overlay = document.getElementById('camResultOverlay');
-    if (overlay) overlay.classList.add('hidden');
-  }
-
-  function setCamMode(mode) {
-    cam.mode = mode;
-    document.getElementById('camModeAuto').classList.toggle('active', mode === 'auto');
-    document.getElementById('camModeManual').classList.toggle('active', mode === 'manual');
-    const manualBtn = document.getElementById('camManualScanBtn');
-    if (mode === 'auto') {
-      manualBtn.classList.add('hidden');
-      hideCamOverlay();
-      if (!cam.interval && cam.stream) {
-        cam.interval = setInterval(scanFrame, cam.INTERVAL);
-        setCamStatus('Letar efter nummer…');
-      }
-    } else {
-      clearInterval(cam.interval);
-      cam.interval = null;
-      cam.busy = false;
-      manualBtn.classList.remove('hidden');
-      setCamStatus('Tryck SCANNA för att läsa KOF');
-    }
-  }
-
-  function setCamStatus(text) {
-    const el = document.getElementById('cameraScanStatus');
-    if (el) el.textContent = text;
-  }
-
-  function showResultFromCam(kof, data) {
-    document.getElementById('resultArea').innerHTML = `
-      <div class="result-card found">
-        <div class="result-header">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
-          <span class="result-header-text">Hittad — KOF ${escHtml(kof)}</span>
-        </div>
-        <div class="result-card-body">
-          <div class="result-route">${escHtml(data.route)}</div>
-          ${data.driver ? `<div class="result-driver">👤 ${escHtml(data.driver)}</div>` : ''}
-          <div class="result-store">${escHtml(data.store)}</div>
-          ${data.pall ? `<div class="result-estimate">Ca ${escHtml(data.pall)} enheter</div>` : ''}
-        </div>
-      </div>`;
-  }
-
   /* ═══════════════════════════════════════════════
      SEARCH TAB
   ═══════════════════════════════════════════════ */
