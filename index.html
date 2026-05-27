@@ -560,6 +560,60 @@
     .camera-result-banner.found    { background: rgba(40,167,69,0.93); }
     .camera-result-banner.notfound { background: rgba(220,53,69,0.93); }
 
+    .edit-stop-btn {
+      width: 38px; height: 38px; border-radius: var(--radius-xs);
+      background: none; border: 0.5px solid var(--color-border-strong);
+      color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .edit-stop-btn:active { background: var(--color-surface-2); }
+
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.48);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .modal-sheet {
+      background: var(--color-surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%; max-width: 420px;
+      padding: 20px 16px 44px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; }
+    .modal-field { display: flex; flex-direction: column; gap: 5px; }
+    .modal-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .modal-input, .modal-select {
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs);
+      padding: 12px 13px;
+      font-size: 16px; font-family: var(--font);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      outline: none; width: 100%;
+      -webkit-appearance: none;
+    }
+    .modal-input:focus, .modal-select:focus { border-color: var(--color-accent); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 2px; }
+    .modal-save-btn {
+      flex: 1; padding: 15px;
+      background: var(--color-accent); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 16px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .modal-save-btn:active { opacity: 0.82; }
+    .modal-cancel-btn {
+      padding: 15px 20px;
+      background: none; border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius);
+      font-size: 16px; font-weight: 500; font-family: var(--font);
+      color: var(--color-text-secondary); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .modal-cancel-btn:active { background: var(--color-surface-2); }
+
     .hidden { display: none !important; }
     .flex-col { display: flex; flex-direction: column; gap: 10px; }
   </style>
@@ -748,6 +802,30 @@
   </div>
 
 </div>
+
+<!-- Redigera-modal -->
+<div class="modal-overlay hidden" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-sheet">
+    <div class="modal-title">Redigera stopp</div>
+    <div class="modal-field">
+      <div class="modal-label">KOF-nummer</div>
+      <input type="number" class="modal-input" id="editKofInput" inputmode="numeric" pattern="[0-9]*" maxlength="6">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Butik / adress</div>
+      <input type="text" class="modal-input" id="editStoreInput">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Rutt</div>
+      <select class="modal-select" id="editRouteSelect"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeEditModal()">Avbryt</button>
+      <button class="modal-save-btn" onclick="saveEdit()">Spara</button>
+    </div>
+  </div>
+</div>
+
 <script>
   /* ═══════════════════════════════════════════════
      SUPABASE — ersätt med dina egna värden
@@ -1495,6 +1573,12 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <div class="route-stop-kof">${escHtml(s.kof)}</div>
           <div class="route-stop-store">${escHtml(s.store)}</div>
           ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
+          <button class="edit-stop-btn" onclick="openEditModal('${escHtml(s.kof)}')" title="Redigera">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
         </div>`).join('');
     }
 
@@ -1524,6 +1608,69 @@ Return only the JSON object, no markdown fences, no explanation.`;
 
       return `<div class="route-group">${mainSection}${sSection}</div>`;
     }).join('');
+  }
+
+  /* ═══════════════════════════════════════════════
+     REDIGERA STOPP
+  ═══════════════════════════════════════════════ */
+  let editingKof = null;
+
+  function openEditModal(kof) {
+    const data = state.routeData[kof];
+    if (!data) return;
+    editingKof = kof;
+
+    document.getElementById('editKofInput').value = kof;
+    document.getElementById('editStoreInput').value = data.store;
+
+    const routes = [...new Set(Object.values(state.routeData).map(d => d.route))].sort((a, b) => {
+      const na = parseInt(a.match(/\d+/)?.[0] ?? 0);
+      const nb = parseInt(b.match(/\d+/)?.[0] ?? 0);
+      if (na !== nb) return na - nb;
+      return a.startsWith('S') ? 1 : -1;
+    });
+    const select = document.getElementById('editRouteSelect');
+    select.innerHTML = routes.map(r =>
+      `<option value="${escHtml(r)}"${r === data.route ? ' selected' : ''}>${escHtml(r)}</option>`
+    ).join('');
+
+    document.getElementById('editModal').classList.remove('hidden');
+  }
+
+  function closeEditModal() {
+    editingKof = null;
+    document.getElementById('editModal').classList.add('hidden');
+  }
+
+  async function saveEdit() {
+    const newKof   = document.getElementById('editKofInput').value.trim();
+    const newStore = document.getElementById('editStoreInput').value.trim();
+    const newRoute = document.getElementById('editRouteSelect').value;
+
+    if (!/^\d{6}$/.test(newKof)) { alert('KOF-numret måste vara exakt 6 siffror.'); return; }
+    if (!newStore) { alert('Butiksnamn får inte vara tomt.'); return; }
+
+    const oldData = state.routeData[editingKof];
+    const updated = { ...oldData, store: newStore, route: newRoute };
+
+    if (newKof !== editingKof) delete state.routeData[editingKof];
+    state.routeData[newKof] = updated;
+
+    if (sb) {
+      if (newKof !== editingKof) {
+        await sb.from('route_entries').delete().eq('kof', editingKof);
+      }
+      const { error } = await sb.from('route_entries').upsert(
+        { kof: newKof, route: newRoute, store_name: newStore, driver: updated.driver },
+        { onConflict: 'kof' }
+      );
+      if (error) console.warn('Supabase redigerings-fel:', error);
+    }
+
+    saveToStorage();
+    closeEditModal();
+    renderRoutesTab();
+    renderSearchUI();
   }
 
   /* ═══════════════════════════════════════════════
