@@ -363,6 +363,23 @@
 
     .clear-data-btn:active { opacity: 0.7; }
 
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row .clear-data-btn { flex: 1; width: auto; }
+
+    .sync-btn {
+      flex: 1;
+      padding: 11px;
+      background: none;
+      border: 0.5px solid rgba(0,122,255,0.35);
+      border-radius: var(--radius);
+      color: var(--color-accent);
+      font-size: 14px; font-weight: 500; font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sync-btn:active { opacity: 0.7; }
+
     .route-group {
       background: var(--color-surface);
       border: 0.5px solid var(--color-border-strong);
@@ -718,15 +735,25 @@
     </div>
 
     <div id="savedBadge" class="saved-badge hidden"></div>
-    <button class="clear-data-btn hidden" id="clearDataBtn" onclick="clearAllData()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-        <path d="M10 11v6M14 11v6"/>
-        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-      </svg>
-      Rensa all inläst data
-    </button>
+    <div class="btn-row hidden" id="btnRow">
+      <button class="sync-btn" id="syncBtn" onclick="syncToCloud()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Synka till molnet
+      </button>
+      <button class="clear-data-btn" id="clearDataBtn" onclick="clearAllData()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Rensa all inläst data
+      </button>
+    </div>
 
   </div>
 
@@ -879,16 +906,17 @@
   }
 
   async function saveToSupabase() {
-    if (!sb) return;
+    if (!sb) return false;
     const rows = Object.entries(state.routeData).map(([kof, d]) => ({
       kof,
       route:      d.route,
       store_name: d.store,
       driver:     d.driver,
     }));
-    if (!rows.length) return;
+    if (!rows.length) return false;
     const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
-    if (error) console.warn('Supabase upsert-fel:', error);
+    if (error) { console.warn('Supabase upsert-fel:', error); return false; }
+    return true;
   }
 
   const SESSION_TIMEOUT_MS = 60_000;
@@ -999,6 +1027,12 @@
     updateStorageUI();
   }
 
+  async function syncToCloud() {
+    addLog('Synkar till molnet…', 'info');
+    const synced = await saveToSupabase();
+    addLog(synced ? '☁ Sparat till Supabase.' : '⚠ Supabase-sparning misslyckades.', synced ? 'ok' : 'err');
+  }
+
   function clearAllData() {
     if (!confirm('Rensa all inläst data? Detta kan inte ångras.')) return;
     state.routeData = {};
@@ -1011,11 +1045,11 @@
   }
 
   function updateStorageUI() {
-    const total    = Object.keys(state.routeData).length;
-    const badge    = document.getElementById('savedBadge');
-    const clearBtn = document.getElementById('clearDataBtn');
-    if (total === 0) { badge.classList.add('hidden'); clearBtn.classList.add('hidden'); return; }
-    clearBtn.classList.remove('hidden');
+    const total  = Object.keys(state.routeData).length;
+    const badge  = document.getElementById('savedBadge');
+    const btnRow = document.getElementById('btnRow');
+    if (total === 0) { badge.classList.add('hidden'); btnRow.classList.add('hidden'); return; }
+    btnRow.classList.remove('hidden');
     if (state.savedAt) {
       const saved   = new Date(state.savedAt);
       const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
@@ -1154,7 +1188,9 @@
     state.savedAt = Date.now();
     updateProcessButton();
     saveToStorage();
-    saveToSupabase();
+    addLog('Synkar till molnet…', 'info');
+    const synced = await saveToSupabase();
+    addLog(synced ? '☁ Sparat till Supabase.' : '⚠ Supabase-sparning misslyckades.', synced ? 'ok' : 'err');
 
     document.getElementById('summaryTitle').textContent = `${total} KOF-nummer klara`;
     document.getElementById('summaryBox').classList.remove('hidden');
