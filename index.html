@@ -563,6 +563,7 @@
     .hidden { display: none !important; }
     .flex-col { display: flex; flex-direction: column; gap: 10px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="app">
@@ -748,6 +749,80 @@
 
 </div>
 <script>
+  /* ═══════════════════════════════════════════════
+     SUPABASE — ersätt med dina egna värden
+  ═══════════════════════════════════════════════ */
+  const SUPABASE_URL      = 'https://sblqelvbomnmgiojpppp.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_toq2EmwH59pf-_JZW_9aMg_nf6Q4eYW';
+
+  let sb = null;
+
+  function initSupabase() {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }
+
+  function getDeviceId() {
+    let id = localStorage.getItem('rutt_device_id');
+    if (!id) {
+      id = crypto.randomUUID ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('rutt_device_id', id);
+    }
+    return id;
+  }
+
+  async function loadFromSupabase() {
+    if (!sb) return;
+    try {
+      const { data, error } = await sb.from('route_entries').select('*');
+      if (error) throw error;
+      for (const row of (data ?? [])) {
+        state.routeData[row.kof] = {
+          route:  row.route,
+          driver: row.driver ?? '',
+          store:  row.store_name ?? '',
+          pall:   row.pall ?? '',
+          bur:    row.bur ?? '',
+          hlv:    row.hlv ?? '',
+        };
+      }
+      if ((data ?? []).length > 0) {
+        state.savedAt = Date.now();
+        updateStorageUI();
+        renderSearchUI();
+        renderRoutesTab();
+      }
+    } catch (err) {
+      console.warn('Supabase laddningsfel:', err);
+    }
+  }
+
+  async function saveToSupabase() {
+    if (!sb) return;
+    const rows = Object.entries(state.routeData).map(([kof, d]) => ({
+      kof,
+      route:      d.route,
+      store_name: d.store,
+      driver:     d.driver,
+    }));
+    if (!rows.length) return;
+    const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
+    if (error) console.warn('Supabase upsert-fel:', error);
+  }
+
+  function logSearch(kof, data) {
+    if (!sb) return;
+    sb.from('search_logs').insert({
+      kof,
+      route_found: data?.route ?? null,
+      success:     !!data,
+      device_id:   getDeviceId(),
+      searched_at: new Date().toISOString(),
+    }).then(({ error }) => { if (error) console.warn('Supabase logg-fel:', error); });
+  }
+
   /* ═══════════════════════════════════════════════
      STATE
   ═══════════════════════════════════════════════ */
@@ -980,6 +1055,7 @@
     state.savedAt = Date.now();
     updateProcessButton();
     saveToStorage();
+    saveToSupabase();
 
     document.getElementById('summaryTitle').textContent = `${total} KOF-nummer klara`;
     document.getElementById('summaryBox').classList.remove('hidden');
@@ -1193,6 +1269,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       cam.lastKofTime = now;
 
       const data = state.routeData[kof] ?? state.routeData[kof.padStart(6, '0')];
+      logSearch(kof, data ?? null);
       showCamResult(kof, data);
       if (data) showResultFromCam(kof, data);
 
@@ -1329,6 +1406,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     if (!raw) return;
     const kof6  = raw.padStart(6, '0');
     const data  = state.routeData[raw] ?? state.routeData[kof6];
+    logSearch(raw, data ?? null);
     const resultArea = document.getElementById('resultArea');
 
     if (data) {
@@ -1434,10 +1512,13 @@ Return only the JSON object, no markdown fences, no explanation.`;
   /* ═══════════════════════════════════════════════
      INIT
   ═══════════════════════════════════════════════ */
+  initSupabase();
+  getDeviceId();
   loadApiKey();
   loadFromStorage();
   renderSearchUI();
   updateStorageUI();
+  loadFromSupabase();
 </script>
 </body>
 </html>
