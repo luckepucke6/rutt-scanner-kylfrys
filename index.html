@@ -1397,6 +1397,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       const kof = await callClaudeForKof(dataUrl);
+      console.log('[scanFrame] callClaudeForKof returnerade:', kof);
       if (!kof) { setCamStatus('Söker KOF-nummer…'); cam.busy = false; return; }
 
       const now = Date.now();
@@ -1409,7 +1410,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
       showCamResult(kof, data);
       if (data) showResultFromCam(kof, data);
 
-    } catch (_) {}
+    } catch (err) {
+      setCamStatus(`Fel: ${err.message ?? err}`);
+    }
     cam.busy = false;
   }
 
