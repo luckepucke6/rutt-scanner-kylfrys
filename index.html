@@ -253,7 +253,7 @@
 
     .kof-count { font-size: 12px; color: var(--color-text-secondary); text-align: right; padding-bottom: 2px; }
 
-    .search-row { display: flex; gap: 8px; }
+    .search-row { display: flex; gap: 8px; position: relative; }
 
     .kof-input {
       flex: 1;
@@ -273,13 +273,15 @@
     .kof-input:focus { border-color: var(--color-accent); }
 
     .clear-btn {
-      width: 48px; height: 48px; border-radius: var(--radius-sm);
-      background: var(--color-surface-2);
-      border: 0.5px solid var(--color-border-strong);
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 48px;
+      background: none;
+      border: none;
       color: var(--color-text-secondary);
-      font-size: 22px; line-height: 1; cursor: pointer; flex-shrink: 0;
+      font-size: 22px; line-height: 1; cursor: pointer;
       display: none; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
+      border-radius: var(--radius) 0 0 var(--radius);
     }
     .clear-btn:active { background: var(--color-border); }
 
@@ -1339,6 +1341,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     input.value = val;
     const clearBtn = document.getElementById('clearBtn');
     clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
+    input.style.paddingLeft = val.length > 0 ? '54px' : '15px';
     if (val.length === 0) { searchStartTime = 0; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
     if (val.length === 1 && searchStartTime === 0) searchStartTime = Date.now();
     if (val.length === 6) { hideSuggestions(); searchKof(); return; }
@@ -1369,6 +1372,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const input = document.getElementById('kofInput');
     input.value = kof;
     document.getElementById('clearBtn').style.display = 'flex';
+    input.style.paddingLeft = '54px';
     hideSuggestions();
     searchKof();
   }
@@ -1377,6 +1381,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     searchStartTime = 0;
     const input = document.getElementById('kofInput');
     input.value = '';
+    input.style.paddingLeft = '15px';
     document.getElementById('clearBtn').style.display = 'none';
     document.getElementById('resultArea').innerHTML = '';
     hideSuggestions();

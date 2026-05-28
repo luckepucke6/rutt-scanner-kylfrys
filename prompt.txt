@@ -1,3 +1,5 @@
-Jag vill göra två saker i index.html:
-1. Byt plats på flikarna — ordningen ska vara: Rutter, Sök KOF, Scanna (istället för Scanna, Sök KOF, Rutter). Uppdatera både HTML-flikarna och se till att standardfliken som visas vid start blir Rutter.
-2. Lägg till språkbyte mellan svenska och engelska — skapa ett språkobjekt med alla synliga textsträngar i appen på både svenska och engelska. Lägg till en liten språkväljare (knapp eller dropdown) i headern. Spara valt språk i localStorage så det behålls mellan sessioner. Det kanske även tillkommer fler språk senare.
+
+
+Flytta rensa-knappen (×) i sökfältet från höger sida till vänster sida av fältet.
+Justera så att texten i sökfältet inte överlappar knappen — lägg till rätt padding-left på inputfältet så texten börjar efter knappen.
+Gör inga andra ändringar. Committa och pusha när klart.
