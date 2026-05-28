@@ -1599,7 +1599,7 @@
     addLog(synced ? t('logSynced') : t('logSyncFailed'), synced ? 'ok' : 'err');
   }
 
-  function clearAllData() {
+  async function clearAllData() {
     if (!confirm(t('confirmClear'))) return;
     state.routeData  = {};
     state.routeOrder = [];
@@ -1610,6 +1610,10 @@
     renderSearchUI();
     renderRoutesTab();
     addLog(t('logCleared'), 'err');
+    if (sb) {
+      const { error } = await sb.from('route_entries').delete().not('kof', 'is', null);
+      if (error) console.warn('Supabase clearAllData-fel:', error);
+    }
   }
 
   function updateStorageUI() {
