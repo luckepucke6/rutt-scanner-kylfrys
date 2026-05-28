@@ -1132,7 +1132,8 @@
       const { data, error } = await sb.from('route_entries').select('*');
       if (error) throw error;
       for (const row of (data ?? [])) {
-        state.routeData[row.kof] = {
+        if (!state.routeData[row.kof]) state.routeOrder.push(row.kof);
+      state.routeData[row.kof] = {
           route:  row.route,
           driver: row.driver ?? '',
           store:  row.store_name ?? '',
@@ -1514,6 +1515,7 @@
     lang: 'sv',
     images: [],
     routeData: {},
+    routeOrder: [],
     routes: {},
     isProcessing: false,
     abortController: null,
@@ -1565,6 +1567,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         routeData: state.routeData,
+        routeOrder: state.routeOrder,
         routes: state.routes,
         savedAt: state.savedAt || Date.now(),
       }));
@@ -1579,8 +1582,9 @@
       const payload = JSON.parse(raw);
       const ageHours = (Date.now() - payload.savedAt) / 3_600_000;
       if (ageHours >= EXPIRY_HOURS) { localStorage.removeItem(STORAGE_KEY); return; }
-      state.routeData = payload.routeData ?? {};
-      state.routes    = payload.routes    ?? {};
+      state.routeData  = payload.routeData  ?? {};
+      state.routeOrder = payload.routeOrder ?? Object.keys(state.routeData);
+      state.routes     = payload.routes     ?? {};
       state.savedAt   = payload.savedAt;
       syncRoutesMeta();
     } catch (_) {
@@ -1597,9 +1601,10 @@
 
   function clearAllData() {
     if (!confirm(t('confirmClear'))) return;
-    state.routeData = {};
-    state.routes = {};
-    state.savedAt = null;
+    state.routeData  = {};
+    state.routeOrder = [];
+    state.routes     = {};
+    state.savedAt    = null;
     localStorage.removeItem(STORAGE_KEY);
     updateStorageUI();
     renderSearchUI();
@@ -1876,6 +1881,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       const kof = String(entry.kof ?? '').trim();
       if (!kof) continue;
       const route = entry.route ?? (entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`);
+      if (!state.routeData[kof]) state.routeOrder.push(kof);
       state.routeData[kof] = {
         route,
         driver: String(parsed.driver ?? '').trim(),
@@ -2015,7 +2021,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
     document.getElementById('summaryUnitsTotal').textContent = totalUnits;
 
     const groups = {};
-    for (const [kof, data] of Object.entries(state.routeData)) {
+    for (const kof of state.routeOrder) {
+      const data = state.routeData[kof];
+      if (!data) continue;
       if (!groups[data.route]) groups[data.route] = [];
       groups[data.route].push({ kof, ...data });
     }
@@ -2147,7 +2155,12 @@ Return only the JSON object, no markdown fences, no explanation.`;
                       pall: oldData.pall ?? '', bur: oldData.bur ?? '', hlv: oldData.hlv ?? '',
                       units: newUnits };
 
-    if (!isNew && newKof !== editingKof) delete state.routeData[editingKof];
+    if (!isNew && newKof !== editingKof) {
+      delete state.routeData[editingKof];
+      const idx = state.routeOrder.indexOf(editingKof);
+      if (idx !== -1) state.routeOrder.splice(idx, 1, newKof);
+    }
+    if (!state.routeData[newKof]) state.routeOrder.push(newKof);
     state.routeData[newKof] = updated;
     syncRoutesMeta();
 
@@ -2256,7 +2269,10 @@ Return only the JSON object, no markdown fences, no explanation.`;
   async function deleteRoute(routeName) {
     if (!confirm(t('confirmDeleteRoute'))) return;
     for (const kof of Object.keys(state.routeData)) {
-      if (state.routeData[kof].route === routeName) delete state.routeData[kof];
+      if (state.routeData[kof].route === routeName) {
+        delete state.routeData[kof];
+        state.routeOrder = state.routeOrder.filter(k => k !== kof);
+      }
     }
     delete state.routes[routeName];
     if (sb) await sb.from('route_entries').delete().eq('route', routeName);
@@ -2273,6 +2289,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
   async function deleteKof(kof) {
     if (!confirm(tf('confirmDeleteKof', {kof}))) return;
     delete state.routeData[kof];
+    state.routeOrder = state.routeOrder.filter(k => k !== kof);
     if (sb) await sb.from('route_entries').delete().eq('kof', kof);
     closeEditModal();
     saveToStorage();
