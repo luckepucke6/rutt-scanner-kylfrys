@@ -1150,7 +1150,6 @@
       kof,
       route:      d.route,
       store_name: d.store,
-      driver:     d.driver,
       units:      d.units ?? 0,
     }));
     if (!rows.length) return false;
@@ -2148,7 +2147,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         await sb.from('route_entries').delete().eq('kof', editingKof);
       }
       const { error } = await sb.from('route_entries').upsert(
-        { kof: newKof, route: newRoute, store_name: newStore, driver: newDriver, units: newUnits },
+        { kof: newKof, route: newRoute, store_name: newStore, units: newUnits },
         { onConflict: 'kof' }
       );
       if (error) console.warn('Supabase redigerings-fel:', error);
@@ -2219,7 +2218,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       if (sb) {
         const rows = Object.entries(state.routeData)
           .filter(([, d]) => d.route === newName)
-          .map(([kof, d]) => ({ kof, route: newName, store_name: d.store, driver: newDriver }));
+          .map(([kof, d]) => ({ kof, route: newName, store_name: d.store }));
         if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
       }
     } else if (editingRoute) {
@@ -2232,7 +2231,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       if (sb) {
         const rows = Object.entries(state.routeData)
           .filter(([, d]) => d.route === editingRoute)
-          .map(([kof, d]) => ({ kof, route: editingRoute, store_name: d.store, driver: newDriver }));
+          .map(([kof, d]) => ({ kof, route: editingRoute, store_name: d.store }));
         if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
       }
     }
