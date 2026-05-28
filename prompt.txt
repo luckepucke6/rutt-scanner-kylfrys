@@ -1,19 +1,16 @@
-> **Kör dessa tre prompts en i taget, vänta tills varje steg är committat och pushat innan du går vidare till nästa.**
->
-> ---
->
-> **Prompt 1 — Behåll dokumentets ordning på KOF-nummer**
->
-> I `index.html`, hitta där KOF-numren/rutterna sorteras eller ordnas efter att `processImages()` är klar. Ta bort all sortering så att `state.routeData` behåller den ordning som Claude API returnerade dem i — alltså dokumentets naturliga ordning. Visa dem i samma ordning i både sök-UI och ruttöversikten. Gör inga andra ändringar. Committa och pusha när klart.
->
-> ---
->
-> **Prompt 2 — Radering synkar till Supabase och alla enheter**
->
-> I `index.html`, hitta `clearAllData()`-funktionen. Lägg till att den även raderar alla rader i Supabase-tabellen `route_entries` som tillhör nuvarande session — filtrera på `session_id` från `getSessionId()`. När Supabase-raderingen är klar ska `loadFromSupabase()` anropas automatiskt på alla aktiva instanser, eller åtminstone nästa gång en annan enhet laddar appen. Gör inga andra ändringar. Committa och pusha när klart.
->
-> ---
->
-> **Prompt 3 — Debug extra rutter**
->
-> I `index.html`, lägg till ett `console.log` i `processImages()` som skriver ut exakt vad Claude API returnerar innan det sparas i `state.routeData`. Logga även hela `state.routeData` direkt efter att det uppdaterats. Gör inga andra ändringar. Committa och pusha när klart.
+Skapa ett testskript test.js (Node.js) som:
+
+1. Läser in alla bildfiler från en mapp test-images/ i repot
+2. Skickar varje bild till Claude API med exakt samma prompt och modell som processImages() i index.html använder — konvertera bilderna till base64 precis som appen gör
+3. Skriver ut resultatet för varje bild och validerar:
+
+- Att varje post har ett 6-siffrigt KOF-nummer
+- Att varje post har ett ruttnamn
+- Att inga dubbletter finns
+- Att ordningen matchar dokumentets ordning (inte numerisk sortering)
+
+
+4. Skriver tydligt "✅ OK" eller "❌ FEL: [beskrivning]" för varje kontroll
+5. Skriver en sammanfattning i slutet med totalt antal KOF-nummer hittade och eventuella fel
+
+Lägg även till en README-test.md med instruktioner för hur man kör skriptet. Committa och pusha när klart.
