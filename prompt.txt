@@ -1,5 +1,14 @@
+Flytta all borttagningsfunktionalitet så att den bara finns inuti redigera-vyn (pennan).
+Rutter
 
+Ta bort den separata ta bort-knappen från rutt-headern
+Inuti redigera-formuläret för rutten: lägg till en röd "Ta bort rutt"-knapp längst ner, separerad från övriga knappar med lite extra mellanrum
+Bekräftelsedialog kvar: "Är du säker? Detta tar bort alla KOF-nummer i rutten"
 
-Flytta rensa-knappen (×) i sökfältet från höger sida till vänster sida av fältet.
-Justera så att texten i sökfältet inte överlappar knappen — lägg till rätt padding-left på inputfältet så texten börjar efter knappen.
+KOF-nummer
+
+Ta bort den separata ta bort-ikonen från varje KOF-rad
+Inuti redigera-formuläret för KOF-numret: lägg till en röd "Ta bort KOF-nummer"-knapp längst ner
+Bekräftelsedialog kvar innan borttagning
+
 Gör inga andra ändringar. Committa och pusha när klart.

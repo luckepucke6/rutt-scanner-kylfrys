@@ -601,6 +601,16 @@
       -webkit-tap-highlight-color: transparent;
     }
     .add-route-btn:active { background: var(--color-surface); }
+
+    .modal-delete-btn {
+      width: 100%; padding: 14px; margin-top: 14px;
+      background: none; border: 0.5px solid var(--color-error-border);
+      border-radius: var(--radius);
+      color: var(--color-error); font-size: 15px; font-weight: 600;
+      font-family: var(--font); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .modal-delete-btn:active { background: var(--color-error-bg); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -808,6 +818,7 @@
       <button class="modal-cancel-btn" onclick="closeEditModal()" data-i18n="modalCancel">Avbryt</button>
       <button class="modal-save-btn" onclick="saveEdit()" data-i18n="modalSave">Spara</button>
     </div>
+    <button class="modal-delete-btn hidden" id="kofDeleteBtn" onclick="deleteKof(editingKof)" data-i18n="deleteKofBtn">Ta bort KOF-nummer</button>
   </div>
 </div>
 
@@ -827,6 +838,7 @@
       <button class="modal-cancel-btn" onclick="closeRouteModal()" data-i18n="modalCancel">Avbryt</button>
       <button class="modal-save-btn" onclick="saveRouteModal()" data-i18n="modalSave">Spara</button>
     </div>
+    <button class="modal-delete-btn hidden" id="routeDeleteBtn" onclick="deleteRoute(editingRoute)" data-i18n="deleteRouteBtn">Ta bort rutt</button>
   </div>
 </div>
 
@@ -973,6 +985,8 @@
       confirmDeleteRoute: 'Är du säker? Detta tar bort alla KOF-nummer i rutten.',
       confirmDeleteKof: 'Ta bort KOF {kof}? Detta kan inte ångras.',
       toastSaved: 'Sparat!', toastDeleted: 'Borttaget!',
+      deleteRouteBtn: 'Ta bort rutt',
+      deleteKofBtn: 'Ta bort KOF-nummer',
       stopCount: '{n} stopp', imageN: 'Bild {n}',
       statusPending: 'Väntar…', statusAnalyzing: 'Analyserar…',
       logStarting: 'Startar bearbetning av {n} bild(er)…',
@@ -1029,6 +1043,8 @@
       confirmDeleteRoute: 'Are you sure? This will delete all KOF numbers in this route.',
       confirmDeleteKof: 'Delete KOF {kof}? This cannot be undone.',
       toastSaved: 'Saved!', toastDeleted: 'Deleted!',
+      deleteRouteBtn: 'Delete route',
+      deleteKofBtn: 'Delete KOF number',
       stopCount: '{n} stops', imageN: 'Image {n}',
       statusPending: 'Waiting…', statusAnalyzing: 'Analyzing…',
       logStarting: 'Starting processing of {n} image(s)…',
@@ -1603,9 +1619,6 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <button class="edit-stop-btn" onclick="openEditModal('${escHtml(s.kof)}')" title="${escHtml(t('editTooltip'))}">
             ${editSvg}
           </button>
-          <button class="delete-stop-btn" onclick="deleteKof('${escHtml(s.kof)}')" title="${escHtml(t('toastDeleted'))}">
-            ${trashSvg}
-          </button>
         </div>`).join('');
     }
 
@@ -1622,7 +1635,6 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <div class="route-header-actions">
             <span class="route-group-count">${escHtml(tf('stopCount', {n: stops.length}))}</span>
             <button class="route-header-btn" onclick="openRouteModal('${escHtml(routeKey)}')" title="${escHtml(t('editTooltip'))}">${editSvg}</button>
-            <button class="route-header-btn" onclick="deleteRoute('${escHtml(routeKey)}')" title="${escHtml(t('toastDeleted'))}">${trashSvg}</button>
           </div>
         </div>
         ${stopRows(stops)}
@@ -1675,6 +1687,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       select.innerHTML += `<option value="${escHtml(currentRoute)}" selected>${escHtml(currentRoute)}</option>`;
     }
 
+    document.getElementById('kofDeleteBtn').classList.toggle('hidden', isNew);
     document.getElementById('editModal').classList.remove('hidden');
   }
 
@@ -1751,6 +1764,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     document.getElementById('routeNameInput').value = routeName ?? '';
     document.getElementById('routeDriverInput').value =
       routeName ? (state.routes[routeName] ?? '') : '';
+    document.getElementById('routeDeleteBtn').classList.toggle('hidden', !routeName);
     document.getElementById('routeModal').classList.remove('hidden');
   }
 
@@ -1809,6 +1823,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     }
     delete state.routes[routeName];
     if (sb) await sb.from('route_entries').delete().eq('route', routeName);
+    closeRouteModal();
     saveToStorage();
     renderRoutesTab();
     renderSearchUI();
@@ -1822,6 +1837,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     if (!confirm(tf('confirmDeleteKof', {kof}))) return;
     delete state.routeData[kof];
     if (sb) await sb.from('route_entries').delete().eq('kof', kof);
+    closeEditModal();
     saveToStorage();
     renderRoutesTab();
     renderSearchUI();
