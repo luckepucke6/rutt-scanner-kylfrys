@@ -1,16 +1,26 @@
-Skapa ett testskript test.js (Node.js) som:
-
-1. Läser in alla bildfiler från en mapp test-images/ i repot
-2. Skickar varje bild till Claude API med exakt samma prompt och modell som processImages() i index.html använder — konvertera bilderna till base64 precis som appen gör
-3. Skriver ut resultatet för varje bild och validerar:
-
-- Att varje post har ett 6-siffrigt KOF-nummer
-- Att varje post har ett ruttnamn
-- Att inga dubbletter finns
-- Att ordningen matchar dokumentets ordning (inte numerisk sortering)
 
 
-4. Skriver tydligt "✅ OK" eller "❌ FEL: [beskrivning]" för varje kontroll
-5. Skriver en sammanfattning i slutet med totalt antal KOF-nummer hittade och eventuella fel
+Se exempelbilderna i docs/-mappen för att förstå exakt hur dokumentformatet ser ut innan du gör några ändringar.
+I index.html, uppdatera processImages() med följande fyra förbättringar:
+1 — Sortering:
+Ta bort all .sort() eller Object.keys().sort() på KOF-listan. Bevara exakt den ordning API-svaret returnerar.
+2 — Dokumentformat och påhittade nummer:
+Uppdatera prompten som skickas till Claude API med denna exakta beskrivning av dokumentformatet:
+"Dokumentet är en tabell med leveransrutter. Strukturen är:
 
-Lägg även till en README-test.md med instruktioner för hur man kör skriptet. Committa och pusha när klart.
+- En rubrikrad med ruttnamnet, t.ex. 'Rutt 2' eller 'S2'
+- Därunder rader med: KOF-nummer (6 siffror) i kolumn 1, butiksnamn och adress i kolumn 2, antal enheter (en siffra) i kolumn 3
+- Ett tomt utrymme separerar huvudrutten från S-rutten
+- S-rutten har samma struktur men med eget rubrikhuvud, t.ex. 'S2'
+
+Returnera ENDAST rader som faktiskt syns i bilden. Hitta inte på nummer, fyll inte i luckor, gissa inte. Returnera raderna i exakt den ordning de förekommer uppifrån och ned."
+3 — Osäkerhetsflagg:
+Låt Claude returnera ett confidence-fält per rad: "high", "medium" eller "low". Sätt "low" om KOF-numret är suddigt, avklippt eller svårläst. Visa ⚠️ bredvid poster med "low" eller "medium" i både sökresultat och ruttöversikt med texten "Osäker avläsning — kontrollera mot dokumentet".
+4 — Validering av ruttkoppling:
+Lägg till en valideringscheck efter API-svaret:
+
+- Varje post måste ha ett 6-siffrigt KOF-nummer
+- Varje post måste ha ett ruttnummer som matchar "Rutt X" eller "SX" där X är en siffra
+- Poster som inte klarar valideringen ska visas som "❌ Kunde inte tolka — kontrollera manuellt" och inte läggas in i state.routeData
+
+Gör inga andra ändringar. Committa och pusha när klart.

@@ -177,6 +177,8 @@
     .image-item.done .image-status { color: var(--color-success); }
     .image-item.error .image-status { color: var(--color-error); }
     .image-status-icon { font-size: 18px; flex-shrink: 0; }
+    .image-retry-btn { margin-top: 6px; padding: 5px 12px; background: none; border: 0.5px solid var(--color-error-border); border-radius: var(--radius-xs); color: var(--color-error); font-size: 12px; font-weight: 600; font-family: var(--font); cursor: pointer; }
+    .image-retry-btn:active { background: var(--color-error-bg); }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
@@ -410,6 +412,8 @@
     .route-stop-store { flex: 1; font-size: 13px; color: var(--color-text-primary); line-height: 1.35; }
     .route-stop-pall { font-size: 12px; color: var(--color-text-tertiary); flex-shrink: 0; font-style: italic; }
     .route-stop-units { font-size: 12px; font-weight: 600; color: var(--color-accent); flex-shrink: 0; min-width: 18px; text-align: right; }
+    .confidence-warn { font-size: 11px; color: #b45309; margin-left: 4px; cursor: default; flex-shrink: 0; }
+    .result-warn { font-size: 12px; color: #b45309; margin-top: 4px; }
 
     .route-summary-card {
       background: var(--color-accent);
@@ -1215,6 +1219,9 @@
       logPlaceholder: 'Loggar visas här under bearbetning…',
       summarySub: 'Klart att använda', summaryLink: 'Öppna Sök KOF →',
       summaryTitle: '{total} KOF-nummer klara',
+      summaryPartial: '✅ {ok} av {total} bilder lyckades — {failed} misslyckades',
+      retryBtn: 'Försök igen',
+      uncertainWarning: 'Osäker avläsning — kontrollera mot dokumentet',
       syncBtn: 'Synka till molnet', clearDataBtn: 'Rensa all inläst data',
       confirmClear: 'Rensa all inläst data? Detta kan inte ångras.',
       badgeSaved: '💾 {total} KOF sparade sedan {saved} — raderas automatiskt {expires}',
@@ -1258,6 +1265,7 @@
       logSynced: '☁ Sparat till Supabase.', logSyncFailed: '⚠ Supabase-sparning misslyckades.',
       logCleared: 'All data rensad.',
       logCancelled: 'Inläsning avbruten',
+      errNoKof: 'Bild {n} — inga KOF-nummer hittades',
       scanGuideLink: 'Osäker på hur man gör? Se användningsguiden →',
       scanWarning: 'Stäng inte appen under inläsning – det kan avbryta processen',
       scanCancel: 'Avbryt',
@@ -1302,6 +1310,9 @@
       logPlaceholder: 'Logs will appear here during processing…',
       summarySub: 'Ready to use', summaryLink: 'Open Search KOF →',
       summaryTitle: '{total} KOF numbers ready',
+      summaryPartial: '✅ {ok} of {total} images succeeded — {failed} failed',
+      retryBtn: 'Try again',
+      uncertainWarning: 'Uncertain reading — check against document',
       syncBtn: 'Sync to cloud', clearDataBtn: 'Clear all loaded data',
       confirmClear: 'Clear all loaded data? This cannot be undone.',
       badgeSaved: '💾 {total} KOF saved since {saved} — auto-deleted at {expires}',
@@ -1345,6 +1356,7 @@
       logSynced: '☁ Saved to Supabase.', logSyncFailed: '⚠ Supabase sync failed.',
       logCleared: 'All data cleared.',
       logCancelled: 'Loading cancelled',
+      errNoKof: 'Image {n} — no KOF numbers found',
       scanGuideLink: 'Not sure how? See the user guide →',
       scanWarning: 'Do not close the app during loading – it may interrupt the process',
       scanCancel: 'Cancel',
@@ -1389,6 +1401,9 @@
       logPlaceholder: 'Журналы появятся здесь во время обработки…',
       summarySub: 'Готово к использованию', summaryLink: 'Открыть Поиск КОФ →',
       summaryTitle: '{total} КОФ-номеров готово',
+      summaryPartial: '✅ {ok} из {total} изображений успешно — {failed} ошибок',
+      retryBtn: 'Повторить',
+      uncertainWarning: 'Неточное считывание — проверьте по документу',
       syncBtn: 'Синхронизировать с облаком', clearDataBtn: 'Очистить все данные',
       confirmClear: 'Очистить все данные? Это нельзя отменить.',
       badgeSaved: '💾 {total} КОФ сохранено с {saved} — автоудаление {expires}',
@@ -1431,6 +1446,7 @@
       logSynced: '☁ Сохранено в Supabase.', logSyncFailed: '⚠ Синхронизация с Supabase не удалась.',
       logCleared: 'Все данные очищены.',
       logCancelled: 'Загрузка отменена',
+      errNoKof: 'Изображение {n} — КОФ-номера не найдены',
       scanGuideLink: 'Не знаете как? Смотрите руководство →',
       scanWarning: 'Не закрывайте приложение во время загрузки — это может прервать процесс',
       scanCancel: 'Отмена',
@@ -1677,6 +1693,7 @@
         <div class="image-info">
           <div class="image-name">${escHtml(tf('imageN', {n: i + 1}))}</div>
           <div class="image-status">${escHtml(img.statusMsg)}</div>
+          ${img.status === 'error' && !img.retrying ? `<button class="image-retry-btn" onclick="retryImage(${img.id})">${escHtml(t('retryBtn'))}</button>` : ''}
         </div>
         <div class="image-status-icon">${statusIcon(img.status)}</div>
       </div>
@@ -1714,6 +1731,47 @@
     addLog(t('logCancelled'), 'err');
   }
 
+  async function retryImage(id) {
+    const img = state.images.find(i => i.id === id);
+    if (!img || state.isProcessing) return;
+    const idx = state.images.indexOf(img) + 1;
+    img.retrying = true;
+    updateImageItem(id, 'loading', t('statusAnalyzing'));
+    try {
+      const jpegUrl = await toJpeg(img.dataUrl);
+      state.abortController = new AbortController();
+      const result = await callClaudeApi(jpegUrl);
+      state.abortController = null;
+      const { count, invalid } = storeEntries(result);
+      for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
+      if (count === 0) {
+        img.retrying = false;
+        updateImageItem(id, 'error', tf('errNoKof', {n: idx}));
+        return;
+      }
+      img.retrying = false;
+      const invalidNote = invalid.length ? ` (${invalid.length} ogiltiga)` : '';
+      const msg = tf('logResult', {route: result.routeNumber, count}) + invalidNote;
+      updateImageItem(id, 'done', msg);
+      addLog(tf('logDone', {n: idx, msg}), 'ok');
+      state.savedAt = Date.now();
+      saveToStorage();
+      saveToSupabase();
+      renderRoutesTab();
+      // Update summary icon/title if all are now done
+      const remaining = state.images.filter(i => i.status === 'error').length;
+      if (remaining === 0) {
+        const total = Object.keys(state.routeData).length;
+        document.getElementById('summaryTitle').textContent = tf('summaryTitle', {total});
+        document.querySelector('#summaryBox .summary-icon').textContent = '✅';
+      }
+    } catch (err) {
+      state.abortController = null;
+      img.retrying = false;
+      updateImageItem(id, 'error', String(err.message || err).slice(0, 160));
+    }
+  }
+
   /* ═══════════════════════════════════════════════
      LOGGING
   ═══════════════════════════════════════════════ */
@@ -1743,6 +1801,9 @@
     document.getElementById('summaryBox').classList.add('hidden');
     addLog(tf('logStarting', {n: pending.length}), 'info');
 
+    let okCount = 0;
+    let failCount = 0;
+
     for (const img of pending) {
       const idx = state.images.indexOf(img) + 1;
       addLog(tf('logPrep', {n: idx}));
@@ -1752,11 +1813,21 @@
         addLog(tf('logSending', {n: idx}));
         const result = await callClaudeApi(jpegUrl);
         console.log('[processImages] Claude API svar bild', idx, result);
-        const count  = storeEntries(result);
+        const { count, invalid } = storeEntries(result);
         console.log('[processImages] state.routeData efter uppdatering:', JSON.parse(JSON.stringify(state.routeData)));
-        const msg    = tf('logResult', {route: result.routeNumber, count});
-        updateImageItem(img.id, 'done', msg);
-        addLog(tf('logDone', {n: idx, msg}), 'ok');
+        for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
+        if (count === 0) {
+          const errMsg = tf('errNoKof', {n: idx});
+          updateImageItem(img.id, 'error', errMsg);
+          addLog(errMsg, 'err');
+          failCount++;
+        } else {
+          const invalidNote = invalid.length ? ` (${invalid.length} ogiltiga)` : '';
+          const msg = tf('logResult', {route: result.routeNumber, count}) + invalidNote;
+          updateImageItem(img.id, 'done', msg);
+          addLog(tf('logDone', {n: idx, msg}), 'ok');
+          okCount++;
+        }
       } catch (err) {
         if (err.name === 'AbortError') {
           updateImageItem(img.id, 'error', t('logCancelled'));
@@ -1765,6 +1836,7 @@
         const errMsg = String(err.message || err).slice(0, 160);
         updateImageItem(img.id, 'error', errMsg);
         addLog(tf('logError', {n: idx, msg: errMsg}), 'err');
+        failCount++;
       }
     }
 
@@ -1780,7 +1852,14 @@
     const synced = await saveToSupabase();
     addLog(synced ? t('logSynced') : t('logSyncFailed'), synced ? 'ok' : 'err');
 
-    document.getElementById('summaryTitle').textContent = tf('summaryTitle', {total});
+    const processedCount = okCount + failCount;
+    if (failCount > 0 && processedCount > 0) {
+      document.getElementById('summaryTitle').textContent = tf('summaryPartial', {ok: okCount, total: processedCount, failed: failCount});
+      document.querySelector('#summaryBox .summary-icon').textContent = '⚠️';
+    } else {
+      document.getElementById('summaryTitle').textContent = tf('summaryTitle', {total});
+      document.querySelector('#summaryBox .summary-icon').textContent = '✅';
+    }
     document.getElementById('summaryBox').classList.remove('hidden');
   }
 
@@ -1818,14 +1897,22 @@
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) throw new Error(t('errImageInvalid'));
 
-    const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
+    const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else.
+
+Dokumentet är en tabell med leveransrutter. Strukturen är:
+- En rubrikrad med ruttnamnet, t.ex. "Rutt 2" eller "S2"
+- Därunder rader med: KOF-nummer (6 siffror) i kolumn 1, butiksnamn och adress i kolumn 2, antal enheter (en siffra) i kolumn 3
+- Ett tomt utrymme separerar huvudrutten från S-rutten
+- S-rutten har samma struktur men med eget rubrikhuvud, t.ex. "S2"
+Returnera ENDAST rader som faktiskt syns i bilden. Hitta inte på nummer, fyll inte i luckor, gissa inte. Returnera raderna i exakt den ordning de förekommer uppifrån och ned.
+
+{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
 Rules:
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
-- driver: REQUIRED. Text after the dash in the header. Example: "Rutt 4- 161 Xhulijo :)" → "161 Xhulijo". Strip trailing ":)" or emoji. Use "" if not found.
-- kof: the 6-digit number in the leftmost data column (skip header rows).
-- store: store name and address from the Startplats column.
+- driver: Text after the dash in the header. Strip trailing ":)" or emoji. Use "" if not found.
+- kof: the 6-digit number in the leftmost data column (skip header rows). Do NOT invent or guess digits — only include what is clearly visible.
+- store: store name and address from the middle column.
 - pall/bur/hlv: value in that column, empty string if blank.
 - units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
 - route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
@@ -1834,7 +1921,8 @@ Rules:
   Step 3: Every KOF row BELOW the blank separator row → route: "SN" (example: "S4").
   Step 4: If there is NO blank separator row anywhere in the table → all entries get route: "Rutt N".
   Double-check every entry's route value before returning. This is the most important field.
-- Include ALL rows with a 6-digit KOF number from both sections.
+- confidence: "high" = all 6 KOF digits clearly readable; "medium" = partially obscured or uncertain; "low" = blurry, cut-off, or hard to read.
+- Include ALL rows with a 6-digit KOF number. Do NOT invent KOF numbers or fill gaps.
 Return only the JSON object, no markdown fences, no explanation.`;
 
     state.abortController = new AbortController();
@@ -1849,7 +1937,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        max_tokens: 3000,
         messages: [{
           role: 'user',
           content: [
@@ -1879,28 +1967,41 @@ Return only the JSON object, no markdown fences, no explanation.`;
   /* ═══════════════════════════════════════════════
      SPARA POSTER
   ═══════════════════════════════════════════════ */
+  function validateEntry(entry) {
+    if (!/^\d{6}$/.test(String(entry.kof ?? ''))) return false;
+    if (!/^(Rutt \d{1,2}|S\d{1,2})$/.test(String(entry.route ?? ''))) return false;
+    return true;
+  }
+
   function storeEntries(parsed) {
     const raw = String(parsed.routeNumber ?? '');
     const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1] ?? raw.match(/(\d+)/)?.[1] ?? '?';
     let count = 0;
+    const invalid = [];
     for (const entry of (parsed.entries ?? [])) {
       const kof = String(entry.kof ?? '').trim();
       if (!kof) continue;
       const route = entry.route ?? (entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`);
+      const normalized = { ...entry, kof, route };
+      if (!validateEntry(normalized)) {
+        invalid.push(normalized);
+        continue;
+      }
       if (!state.routeData[kof]) state.routeOrder.push(kof);
       state.routeData[kof] = {
         route,
-        driver: String(parsed.driver ?? '').trim(),
-        store:  entry.store ?? '',
-        pall:   entry.pall  ?? '',
-        bur:    entry.bur   ?? '',
-        hlv:    entry.hlv   ?? '',
-        units:  parseInt(entry.units ?? 0) || 0,
+        driver:     String(parsed.driver ?? '').trim(),
+        store:      entry.store ?? '',
+        pall:       entry.pall  ?? '',
+        bur:        entry.bur   ?? '',
+        hlv:        entry.hlv   ?? '',
+        units:      parseInt(entry.units ?? 0) || 0,
+        confidence: entry.confidence ?? 'high',
       };
       count++;
     }
     syncRoutesMeta();
-    return count;
+    return { count, invalid };
   }
 
   /* ═══════════════════════════════════════════════
@@ -1930,7 +2031,11 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   function showSuggestions(query) {
-    const matches = Object.entries(state.routeData).filter(([kof]) => kof.startsWith(query)).slice(0, 8);
+    const matches = state.routeOrder
+      .filter(kof => kof.startsWith(query))
+      .slice(0, 8)
+      .map(kof => [kof, state.routeData[kof]])
+      .filter(([, d]) => d);
     const box = document.getElementById('suggestions');
     if (matches.length === 0) { box.classList.add('hidden'); return; }
     box.innerHTML = matches.map(([kof, data]) => `
@@ -1993,6 +2098,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
             ${data.driver ? `<div class="result-driver">👤 ${escHtml(data.driver)}</div>` : ''}
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.pall ? `<div class="result-estimate">${escHtml(tf('estimate', {n: data.pall}))}</div>` : ''}
+            ${(data.confidence === 'low' || data.confidence === 'medium') ? `<div class="result-warn">⚠️ ${escHtml(t('uncertainWarning'))}</div>` : ''}
           </div>
         </div>`;
     } else {
@@ -2061,7 +2167,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     function stopRows(stops) {
       return stops.map(s => `
         <div class="route-stop">
-          <div class="route-stop-kof">${escHtml(s.kof)}</div>
+          <div class="route-stop-kof">${escHtml(s.kof)}${(s.confidence === 'low' || s.confidence === 'medium') ? `<span class="confidence-warn" title="${escHtml(t('uncertainWarning'))}">⚠️</span>` : ''}</div>
           <div class="route-stop-store">${escHtml(s.store)}</div>
           ${s.units ? `<div class="route-stop-units">${s.units}</div>` : ''}
           <button class="edit-stop-btn" onclick="openEditModal('${escHtml(s.kof)}')" title="${escHtml(t('editTooltip'))}">
