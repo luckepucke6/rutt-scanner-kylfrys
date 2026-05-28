@@ -546,6 +546,61 @@
       flex-shrink: 0;
     }
     .lang-select:focus { outline: none; border-color: var(--color-accent); }
+
+    .modal-input, .modal-select { min-height: 48px; }
+
+    .toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      background: #1a1a1a; color: #fff;
+      padding: 10px 22px; border-radius: 20px;
+      font-size: 14px; font-weight: 500;
+      z-index: 300; white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.hidden { display: none; }
+
+    .route-header-actions { display: flex; gap: 6px; align-items: center; }
+
+    .route-header-btn {
+      width: 30px; height: 30px; border-radius: 6px;
+      background: rgba(255,255,255,0.15); border: none;
+      color: #fff; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .route-header-btn:active { background: rgba(255,255,255,0.30); }
+
+    .delete-stop-btn {
+      width: 38px; height: 38px; border-radius: var(--radius-xs);
+      background: none; border: 0.5px solid var(--color-error-border);
+      color: var(--color-error); cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .delete-stop-btn:active { background: var(--color-error-bg); }
+
+    .add-kof-row { padding: 8px 14px; border-top: 0.5px solid var(--color-border); }
+    .add-kof-btn {
+      width: 100%; padding: 9px;
+      background: none; border: 0.5px dashed var(--color-border-strong);
+      border-radius: var(--radius-xs);
+      color: var(--color-text-secondary); font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .add-kof-btn:active { background: var(--color-surface-2); }
+
+    .add-route-btn {
+      width: 100%; padding: 12px;
+      background: none; border: 0.5px dashed var(--color-border-strong);
+      border-radius: var(--radius);
+      color: var(--color-text-secondary); font-size: 14px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .add-route-btn:active { background: var(--color-surface); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -718,15 +773,21 @@
       <div class="empty-title" data-i18n="routesEmptyTitle">Inga ruttdata inlästa</div>
       <div class="empty-sub" data-i18n="routesEmptySub">Scanna ruttlistorna så visas alla stopp här</div>
     </div>
+    <button class="add-route-btn hidden" id="addRouteBtn" onclick="openRouteModal(null)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span data-i18n="addRoute">+ Ny rutt</span>
+    </button>
     <div id="routesList" class="hidden flex-col"></div>
   </div>
 
 </div>
 
-<!-- Redigera-modal -->
+<!-- Redigera/Nytt KOF-modal -->
 <div class="modal-overlay hidden" id="editModal" onclick="if(event.target===this)closeEditModal()">
   <div class="modal-sheet">
-    <div class="modal-title" data-i18n="modalTitle">Redigera stopp</div>
+    <div class="modal-title" id="editModalTitle" data-i18n="modalTitle">Redigera stopp</div>
     <div class="modal-field">
       <div class="modal-label" data-i18n="modalKofLabel">KOF-nummer</div>
       <input type="number" class="modal-input" id="editKofInput" inputmode="numeric" pattern="[0-9]*" maxlength="6">
@@ -734,6 +795,10 @@
     <div class="modal-field">
       <div class="modal-label" data-i18n="modalStoreLabel">Butik / adress</div>
       <input type="text" class="modal-input" id="editStoreInput">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" data-i18n="modalDriverLabel">Förare</div>
+      <input type="text" class="modal-input" id="editDriverInput">
     </div>
     <div class="modal-field">
       <div class="modal-label" data-i18n="modalRouteLabel">Rutt</div>
@@ -745,6 +810,28 @@
     </div>
   </div>
 </div>
+
+<!-- Ny/Redigera rutt-modal -->
+<div class="modal-overlay hidden" id="routeModal" onclick="if(event.target===this)closeRouteModal()">
+  <div class="modal-sheet">
+    <div class="modal-title" id="routeModalTitle"></div>
+    <div class="modal-field">
+      <div class="modal-label" data-i18n="routeNameLabel">Ruttnamn</div>
+      <input type="text" class="modal-input" id="routeNameInput">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" data-i18n="routeDriverLabel">Förare</div>
+      <input type="text" class="modal-input" id="routeDriverInput">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeRouteModal()" data-i18n="modalCancel">Avbryt</button>
+      <button class="modal-save-btn" onclick="saveRouteModal()" data-i18n="modalSave">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
 
 <script>
   /* ═══════════════════════════════════════════════
@@ -787,6 +874,7 @@
         };
       }
       if ((data ?? []).length > 0) {
+        syncRoutesMeta();
         updateStorageUI();
         renderSearchUI();
         renderRoutesTab();
@@ -871,12 +959,20 @@
       notFoundTitle: 'KOF {kof} finns inte',
       notFoundSub: 'Kontrollera numret eller scanna om pappren',
       estimate: 'Ca {n} enheter',
-      modalTitle: 'Redigera stopp', modalKofLabel: 'KOF-nummer',
-      modalStoreLabel: 'Butik / adress', modalRouteLabel: 'Rutt',
+      modalTitle: 'Redigera stopp', modalTitleNew: 'Nytt KOF-nummer',
+      modalKofLabel: 'KOF-nummer',
+      modalStoreLabel: 'Butik / adress', modalDriverLabel: 'Förare', modalRouteLabel: 'Rutt',
       modalCancel: 'Avbryt', modalSave: 'Spara',
       editTooltip: 'Redigera',
       editKofInvalid: 'KOF-numret måste vara exakt 6 siffror.',
       editStoreEmpty: 'Butiksnamn får inte vara tomt.',
+      addRoute: '+ Ny rutt', addKof: '+ Nytt KOF',
+      newRouteTitle: 'Ny rutt', editRouteTitle: 'Redigera rutt',
+      routeNameLabel: 'Ruttnamn', routeDriverLabel: 'Förare',
+      routeNameEmpty: 'Ange ett ruttnamn.',
+      confirmDeleteRoute: 'Är du säker? Detta tar bort alla KOF-nummer i rutten.',
+      confirmDeleteKof: 'Ta bort KOF {kof}? Detta kan inte ångras.',
+      toastSaved: 'Sparat!', toastDeleted: 'Borttaget!',
       stopCount: '{n} stopp', imageN: 'Bild {n}',
       statusPending: 'Väntar…', statusAnalyzing: 'Analyserar…',
       logStarting: 'Startar bearbetning av {n} bild(er)…',
@@ -919,12 +1015,20 @@
       notFoundTitle: 'KOF {kof} not found',
       notFoundSub: 'Check the number or re-scan the papers',
       estimate: 'Approx. {n} units',
-      modalTitle: 'Edit stop', modalKofLabel: 'KOF number',
-      modalStoreLabel: 'Store / address', modalRouteLabel: 'Route',
+      modalTitle: 'Edit stop', modalTitleNew: 'New KOF number',
+      modalKofLabel: 'KOF number',
+      modalStoreLabel: 'Store / address', modalDriverLabel: 'Driver', modalRouteLabel: 'Route',
       modalCancel: 'Cancel', modalSave: 'Save',
       editTooltip: 'Edit',
       editKofInvalid: 'KOF number must be exactly 6 digits.',
       editStoreEmpty: 'Store name cannot be empty.',
+      addRoute: '+ New route', addKof: '+ New KOF',
+      newRouteTitle: 'New route', editRouteTitle: 'Edit route',
+      routeNameLabel: 'Route name', routeDriverLabel: 'Driver',
+      routeNameEmpty: 'Enter a route name.',
+      confirmDeleteRoute: 'Are you sure? This will delete all KOF numbers in this route.',
+      confirmDeleteKof: 'Delete KOF {kof}? This cannot be undone.',
+      toastSaved: 'Saved!', toastDeleted: 'Deleted!',
       stopCount: '{n} stops', imageN: 'Image {n}',
       statusPending: 'Waiting…', statusAnalyzing: 'Analyzing…',
       logStarting: 'Starting processing of {n} image(s)…',
@@ -986,6 +1090,7 @@
     lang: 'sv',
     images: [],
     routeData: {},
+    routes: {},
     isProcessing: false,
     apiKey: '',
     nextId: 1,
@@ -1032,14 +1137,15 @@
   const EXPIRY_HOURS = 8;
 
   function saveToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      routeData: state.routeData,
-      savedAt: state.savedAt || Date.now(),  // ← enda ändringen
-    }));
-  } catch (_) {}
-  updateStorageUI();
-}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        routeData: state.routeData,
+        routes: state.routes,
+        savedAt: state.savedAt || Date.now(),
+      }));
+    } catch (_) {}
+    updateStorageUI();
+  }
 
   function loadFromStorage() {
     try {
@@ -1049,7 +1155,9 @@
       const ageHours = (Date.now() - payload.savedAt) / 3_600_000;
       if (ageHours >= EXPIRY_HOURS) { localStorage.removeItem(STORAGE_KEY); return; }
       state.routeData = payload.routeData ?? {};
+      state.routes    = payload.routes    ?? {};
       state.savedAt   = payload.savedAt;
+      syncRoutesMeta();
     } catch (_) {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -1065,6 +1173,7 @@
   function clearAllData() {
     if (!confirm(t('confirmClear'))) return;
     state.routeData = {};
+    state.routes = {};
     state.savedAt = null;
     localStorage.removeItem(STORAGE_KEY);
     updateStorageUI();
@@ -1335,6 +1444,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
       };
       count++;
     }
+    syncRoutesMeta();
     return count;
   }
 
@@ -1450,12 +1560,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
      RUTTÖVERSIKT
   ═══════════════════════════════════════════════ */
   function renderRoutesTab() {
-    const empty = document.getElementById('routesEmpty');
-    const list  = document.getElementById('routesList');
-    const total = Object.keys(state.routeData).length;
-    if (total === 0) { empty.classList.remove('hidden'); list.classList.add('hidden'); return; }
-    empty.classList.add('hidden');
-    list.classList.remove('hidden');
+    const empty      = document.getElementById('routesEmpty');
+    const list       = document.getElementById('routesList');
+    const addRouteBtn = document.getElementById('addRouteBtn');
 
     const groups = {};
     for (const [kof, data] of Object.entries(state.routeData)) {
@@ -1463,12 +1570,29 @@ Return only the JSON object, no markdown fences, no explanation.`;
       groups[data.route].push({ kof, ...data });
     }
 
+    // All route names: union of explicit state.routes and routeData routes
+    const allRouteNames = new Set([...Object.keys(state.routes), ...Object.keys(groups)]);
+
+    if (allRouteNames.size === 0) {
+      empty.classList.remove('hidden');
+      addRouteBtn.classList.add('hidden');
+      list.classList.add('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    addRouteBtn.classList.remove('hidden');
+    list.classList.remove('hidden');
+
     const nums = new Set();
-    for (const name of Object.keys(groups)) {
+    for (const name of allRouteNames) {
       const n = name.match(/\d+/)?.[0];
       if (n) nums.add(parseInt(n));
     }
     const sortedNums = [...nums].sort((a, b) => a - b);
+
+    const editSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const trashSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    const plusSvg  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`;
 
     function stopRows(stops) {
       return stops.map(s => `
@@ -1477,38 +1601,43 @@ Return only the JSON object, no markdown fences, no explanation.`;
           <div class="route-stop-store">${escHtml(s.store)}</div>
           ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
           <button class="edit-stop-btn" onclick="openEditModal('${escHtml(s.kof)}')" title="${escHtml(t('editTooltip'))}">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+            ${editSvg}
+          </button>
+          <button class="delete-stop-btn" onclick="deleteKof('${escHtml(s.kof)}')" title="${escHtml(t('toastDeleted'))}">
+            ${trashSvg}
           </button>
         </div>`).join('');
+    }
+
+    function routeSection(routeKey, isSRoute) {
+      const stops  = groups[routeKey] ?? [];
+      const driver = state.routes[routeKey] ?? stops[0]?.driver ?? '';
+      const hdrClass = 'route-group-header' + (isSRoute ? ' s-route' : '');
+      return `
+        <div class="${hdrClass}">
+          <div>
+            <div>${escHtml(routeKey)}</div>
+            ${driver ? `<div class="route-group-driver">👤 ${escHtml(driver)}</div>` : ''}
+          </div>
+          <div class="route-header-actions">
+            <span class="route-group-count">${escHtml(tf('stopCount', {n: stops.length}))}</span>
+            <button class="route-header-btn" onclick="openRouteModal('${escHtml(routeKey)}')" title="${escHtml(t('editTooltip'))}">${editSvg}</button>
+            <button class="route-header-btn" onclick="deleteRoute('${escHtml(routeKey)}')" title="${escHtml(t('toastDeleted'))}">${trashSvg}</button>
+          </div>
+        </div>
+        ${stopRows(stops)}
+        <div class="add-kof-row">
+          <button class="add-kof-btn" onclick="openNewKofModal('${escHtml(routeKey)}')">${plusSvg} ${escHtml(t('addKof'))}</button>
+        </div>`;
     }
 
     list.innerHTML = sortedNums.map(n => {
       const mainKey = `Rutt ${n}`;
       const sKey    = `S${n}`;
-      const main    = groups[mainKey];
-      const s       = groups[sKey];
-      const driver  = main?.[0]?.driver || s?.[0]?.driver || '';
-
-      const mainSection = main ? `
-        <div class="route-group-header">
-          <div>
-            <div>${escHtml(mainKey)}</div>
-            ${driver ? `<div class="route-group-driver">👤 ${escHtml(driver)}</div>` : ''}
-          </div>
-          <span class="route-group-count">${escHtml(tf('stopCount', {n: main.length}))}</span>
-        </div>
-        ${stopRows(main)}` : '';
-
-      const sSection = s ? `
-        <div class="route-group-header s-route">
-          <span>${escHtml(sKey)}</span>
-          <span class="route-group-count">${escHtml(tf('stopCount', {n: s.length}))}</span>
-        </div>
-        ${stopRows(s)}` : '';
-
+      const hasMain = allRouteNames.has(mainKey);
+      const hasS    = allRouteNames.has(sKey);
+      const mainSection = hasMain ? routeSection(mainKey, false) : '';
+      const sSection    = hasS    ? routeSection(sKey,    true)  : '';
       return `<div class="route-group">${mainSection}${sSection}</div>`;
     }).join('');
   }
@@ -1518,24 +1647,33 @@ Return only the JSON object, no markdown fences, no explanation.`;
   ═══════════════════════════════════════════════ */
   let editingKof = null;
 
-  function openEditModal(kof) {
-    const data = state.routeData[kof];
-    if (!data) return;
+  function openEditModal(kof, presetRoute) {
     editingKof = kof;
+    const data = kof ? (state.routeData[kof] ?? {}) : {};
+    const isNew = !kof;
 
-    document.getElementById('editKofInput').value = kof;
-    document.getElementById('editStoreInput').value = data.store;
+    document.getElementById('editModalTitle').textContent =
+      isNew ? t('modalTitleNew') : t('modalTitle');
+    document.getElementById('editModalTitle').removeAttribute('data-i18n');
 
-    const routes = [...new Set(Object.values(state.routeData).map(d => d.route))].sort((a, b) => {
+    document.getElementById('editKofInput').value  = kof ?? '';
+    document.getElementById('editStoreInput').value = data.store ?? '';
+    document.getElementById('editDriverInput').value = data.driver ?? (presetRoute ? (state.routes[presetRoute] ?? '') : '');
+
+    const allRoutes = Object.keys(state.routes).sort((a, b) => {
       const na = parseInt(a.match(/\d+/)?.[0] ?? 0);
       const nb = parseInt(b.match(/\d+/)?.[0] ?? 0);
       if (na !== nb) return na - nb;
       return a.startsWith('S') ? 1 : -1;
     });
+    const currentRoute = data.route ?? presetRoute ?? allRoutes[0] ?? '';
     const select = document.getElementById('editRouteSelect');
-    select.innerHTML = routes.map(r =>
-      `<option value="${escHtml(r)}"${r === data.route ? ' selected' : ''}>${escHtml(r)}</option>`
+    select.innerHTML = allRoutes.map(r =>
+      `<option value="${escHtml(r)}"${r === currentRoute ? ' selected' : ''}>${escHtml(r)}</option>`
     ).join('');
+    if (!allRoutes.includes(currentRoute) && currentRoute) {
+      select.innerHTML += `<option value="${escHtml(currentRoute)}" selected>${escHtml(currentRoute)}</option>`;
+    }
 
     document.getElementById('editModal').classList.remove('hidden');
   }
@@ -1546,25 +1684,29 @@ Return only the JSON object, no markdown fences, no explanation.`;
   }
 
   async function saveEdit() {
-    const newKof   = document.getElementById('editKofInput').value.trim();
-    const newStore = document.getElementById('editStoreInput').value.trim();
-    const newRoute = document.getElementById('editRouteSelect').value;
+    const newKof    = document.getElementById('editKofInput').value.trim();
+    const newStore  = document.getElementById('editStoreInput').value.trim();
+    const newDriver = document.getElementById('editDriverInput').value.trim();
+    const newRoute  = document.getElementById('editRouteSelect').value;
 
     if (!/^\d{6}$/.test(newKof)) { alert(t('editKofInvalid')); return; }
     if (!newStore) { alert(t('editStoreEmpty')); return; }
 
-    const oldData = state.routeData[editingKof];
-    const updated = { ...oldData, store: newStore, route: newRoute };
+    const isNew   = !editingKof;
+    const oldData = isNew ? {} : (state.routeData[editingKof] ?? {});
+    const updated = { ...oldData, store: newStore, route: newRoute, driver: newDriver,
+                      pall: oldData.pall ?? '', bur: oldData.bur ?? '', hlv: oldData.hlv ?? '' };
 
-    if (newKof !== editingKof) delete state.routeData[editingKof];
+    if (!isNew && newKof !== editingKof) delete state.routeData[editingKof];
     state.routeData[newKof] = updated;
+    syncRoutesMeta();
 
     if (sb) {
-      if (newKof !== editingKof) {
+      if (!isNew && newKof !== editingKof) {
         await sb.from('route_entries').delete().eq('kof', editingKof);
       }
       const { error } = await sb.from('route_entries').upsert(
-        { kof: newKof, route: newRoute, store_name: newStore, driver: updated.driver },
+        { kof: newKof, route: newRoute, store_name: newStore, driver: newDriver },
         { onConflict: 'kof' }
       );
       if (error) console.warn('Supabase redigerings-fel:', error);
@@ -1574,6 +1716,120 @@ Return only the JSON object, no markdown fences, no explanation.`;
     closeEditModal();
     renderRoutesTab();
     renderSearchUI();
+    showToast(t('toastSaved'));
+  }
+
+  /* ═══════════════════════════════════════════════
+     ROUTES META SYNC
+  ═══════════════════════════════════════════════ */
+  function syncRoutesMeta() {
+    for (const d of Object.values(state.routeData)) {
+      if (!state.routes[d.route]) state.routes[d.route] = d.driver ?? '';
+    }
+  }
+
+  /* ═══════════════════════════════════════════════
+     TOAST
+  ═══════════════════════════════════════════════ */
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.add('hidden'), 2000);
+  }
+
+  /* ═══════════════════════════════════════════════
+     ROUTE CRUD
+  ═══════════════════════════════════════════════ */
+  let editingRoute = null;
+
+  function openRouteModal(routeName) {
+    editingRoute = routeName;
+    document.getElementById('routeModalTitle').textContent =
+      routeName ? t('editRouteTitle') : t('newRouteTitle');
+    document.getElementById('routeNameInput').value = routeName ?? '';
+    document.getElementById('routeDriverInput').value =
+      routeName ? (state.routes[routeName] ?? '') : '';
+    document.getElementById('routeModal').classList.remove('hidden');
+  }
+
+  function closeRouteModal() {
+    editingRoute = null;
+    document.getElementById('routeModal').classList.add('hidden');
+  }
+
+  async function saveRouteModal() {
+    const newName   = document.getElementById('routeNameInput').value.trim();
+    const newDriver = document.getElementById('routeDriverInput').value.trim();
+    if (!newName) { alert(t('routeNameEmpty')); return; }
+
+    if (editingRoute && editingRoute !== newName) {
+      // Rename: update all KOF entries
+      for (const kof of Object.keys(state.routeData)) {
+        if (state.routeData[kof].route === editingRoute) {
+          state.routeData[kof].route  = newName;
+          state.routeData[kof].driver = newDriver;
+        }
+      }
+      delete state.routes[editingRoute];
+      if (sb) {
+        const rows = Object.entries(state.routeData)
+          .filter(([, d]) => d.route === newName)
+          .map(([kof, d]) => ({ kof, route: newName, store_name: d.store, driver: newDriver }));
+        if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
+      }
+    } else if (editingRoute) {
+      // Driver change only
+      for (const kof of Object.keys(state.routeData)) {
+        if (state.routeData[kof].route === editingRoute) {
+          state.routeData[kof].driver = newDriver;
+        }
+      }
+      if (sb) {
+        const rows = Object.entries(state.routeData)
+          .filter(([, d]) => d.route === editingRoute)
+          .map(([kof, d]) => ({ kof, route: editingRoute, store_name: d.store, driver: newDriver }));
+        if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
+      }
+    }
+
+    state.routes[newName] = newDriver;
+    saveToStorage();
+    closeRouteModal();
+    renderRoutesTab();
+    renderSearchUI();
+    showToast(t('toastSaved'));
+  }
+
+  async function deleteRoute(routeName) {
+    if (!confirm(t('confirmDeleteRoute'))) return;
+    for (const kof of Object.keys(state.routeData)) {
+      if (state.routeData[kof].route === routeName) delete state.routeData[kof];
+    }
+    delete state.routes[routeName];
+    if (sb) await sb.from('route_entries').delete().eq('route', routeName);
+    saveToStorage();
+    renderRoutesTab();
+    renderSearchUI();
+    showToast(t('toastDeleted'));
+  }
+
+  /* ═══════════════════════════════════════════════
+     KOF DELETE + NEW
+  ═══════════════════════════════════════════════ */
+  async function deleteKof(kof) {
+    if (!confirm(tf('confirmDeleteKof', {kof}))) return;
+    delete state.routeData[kof];
+    if (sb) await sb.from('route_entries').delete().eq('kof', kof);
+    saveToStorage();
+    renderRoutesTab();
+    renderSearchUI();
+    showToast(t('toastDeleted'));
+  }
+
+  function openNewKofModal(routeName) {
+    openEditModal(null, routeName);
   }
 
   /* ═══════════════════════════════════════════════
