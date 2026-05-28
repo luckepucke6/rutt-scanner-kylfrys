@@ -1,1 +1,19 @@
-I index.html, lägg till en funktion cleanupOldSupabaseData() som raderar rader äldre än 30 dagar från tabellerna route_entries och search_logs i Supabase. Filtrera på inserted_at eller searched_at som är äldre än new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(). Anropa funktionen en gång vid app-start, direkt efter initSupabase(). Fel ska loggas tyst med console.warn och aldrig visas för användaren. Gör inga andra ändringar. Committa och pusha när klart.
+> **Kör dessa tre prompts en i taget, vänta tills varje steg är committat och pushat innan du går vidare till nästa.**
+>
+> ---
+>
+> **Prompt 1 — Behåll dokumentets ordning på KOF-nummer**
+>
+> I `index.html`, hitta där KOF-numren/rutterna sorteras eller ordnas efter att `processImages()` är klar. Ta bort all sortering så att `state.routeData` behåller den ordning som Claude API returnerade dem i — alltså dokumentets naturliga ordning. Visa dem i samma ordning i både sök-UI och ruttöversikten. Gör inga andra ändringar. Committa och pusha när klart.
+>
+> ---
+>
+> **Prompt 2 — Radering synkar till Supabase och alla enheter**
+>
+> I `index.html`, hitta `clearAllData()`-funktionen. Lägg till att den även raderar alla rader i Supabase-tabellen `route_entries` som tillhör nuvarande session — filtrera på `session_id` från `getSessionId()`. När Supabase-raderingen är klar ska `loadFromSupabase()` anropas automatiskt på alla aktiva instanser, eller åtminstone nästa gång en annan enhet laddar appen. Gör inga andra ändringar. Committa och pusha när klart.
+>
+> ---
+>
+> **Prompt 3 — Debug extra rutter**
+>
+> I `index.html`, lägg till ett `console.log` i `processImages()` som skriver ut exakt vad Claude API returnerar innan det sparas i `state.routeData`. Logga även hela `state.routeData` direkt efter att det uppdaterats. Gör inga andra ändringar. Committa och pusha när klart.

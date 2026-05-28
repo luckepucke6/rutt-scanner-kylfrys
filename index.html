@@ -1751,7 +1751,9 @@
         const jpegUrl = await toJpeg(img.dataUrl);
         addLog(tf('logSending', {n: idx}));
         const result = await callClaudeApi(jpegUrl);
+        console.log('[processImages] Claude API svar bild', idx, result);
         const count  = storeEntries(result);
+        console.log('[processImages] state.routeData efter uppdatering:', JSON.parse(JSON.stringify(state.routeData)));
         const msg    = tf('logResult', {route: result.routeNumber, count});
         updateImageItem(img.id, 'done', msg);
         addLog(tf('logDone', {n: idx, msg}), 'ok');
