@@ -1107,6 +1107,15 @@
     }
   }
 
+  async function cleanupOldSupabaseData() {
+    if (!sb) return;
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: e1 } = await sb.from('route_entries').delete().lt('inserted_at', cutoff);
+    if (e1) console.warn('Supabase cleanup route_entries:', e1);
+    const { error: e2 } = await sb.from('search_logs').delete().lt('searched_at', cutoff);
+    if (e2) console.warn('Supabase cleanup search_logs:', e2);
+  }
+
   function getDeviceId() {
     let id = localStorage.getItem('rutt_device_id');
     if (!id) {
@@ -2289,6 +2298,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
      INIT
   ═══════════════════════════════════════════════ */
   initSupabase();
+  cleanupOldSupabaseData();
   getDeviceId();
   loadApiKey();
   loadFromStorage();
