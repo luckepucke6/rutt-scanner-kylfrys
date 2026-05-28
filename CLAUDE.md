@@ -21,19 +21,21 @@ The entire application is a single file: `index.html`. It contains all HTML stru
 A single `state` object is the source of truth:
 
 ```js
-state.routeData   // { [kof: string]: { route, driver, store, pall, bur, hlv } }
-state.images      // pending/processing image queue
-state.apiKey      // Anthropic key loaded from localStorage
+state.routeData      // { [kof: string]: { route, driver, store, pall, bur, hlv } }
+state.images         // pending/processing image queue
+state.apiKey         // Anthropic key loaded from localStorage
 state.isProcessing
+state.abortController  // AbortController for in-flight callClaudeApi fetch; null when idle
 ```
 
 `routeData` is persisted to `localStorage` under key `rutt_scanner_v1` with an 8-hour expiry. The API key is stored separately under `rutt_api_key`.
 
-### Three-tab UI
+### Four-tab UI
 
-- **Scan tab** — Upload/photograph printed route sheets → compress to JPEG → call Claude API → parse JSON → merge into `state.routeData`
+- **Routes tab** — Grouped view of all loaded stops, sorted by route number (default tab)
 - **Search tab** — Type-ahead search over KOF numbers; also supports live camera scanning via `scanFrame()` loop
-- **Routes tab** — Grouped view of all loaded stops, sorted by route number
+- **Scan tab** — Upload/photograph printed route sheets → compress to JPEG → call Claude API → parse JSON → merge into `state.routeData`. Includes `cancelProcessing()` which aborts the active fetch via `state.abortController` and resets processing state.
+- **Guide tab** — Static HTML with 4 instructional sections and inline SVG illustrations; no JS rendering needed.
 
 ### Claude API usage
 

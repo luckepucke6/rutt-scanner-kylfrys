@@ -1,14 +1,49 @@
-Flytta all borttagningsfunktionalitet så att den bara finns inuti redigera-vyn (pennan).
-Rutter
+Skapa en ny flik "Guide" i navigationsfältet (lämplig ikon t.ex. ti-book eller ti-help).
+Fliken ska innehålla en användningsguide med fyra sektioner:
+1. Ta bilden rätt (innan du scannar)
 
-Ta bort den separata ta bort-knappen från rutt-headern
-Inuti redigera-formuläret för rutten: lägg till en röd "Ta bort rutt"-knapp längst ner, separerad från övriga knappar med lite extra mellanrum
-Bekräftelsedialog kvar: "Är du säker? Detta tar bort alla KOF-nummer i rutten"
+- Ta bilderna med din vanliga kameraapp först, sedan väljer du alla bilder samtidigt i appen
+- Lägg pappret på en plan yta med bra belysning
+- Hela pappret ska vara med i bilden – inga avklippta kanter
+- Undvik skuggor och reflexer
+- Håll kameran rakt ovanifrån, inte i vinkel
+- Illustrera med en enkel SVG: ett papper med en grön bock (rätt) och ett papper i vinkel med ett rött kryss (fel)
 
-KOF-nummer
+2. Scanna in dokument (morgonen)
 
-Ta bort den separata ta bort-ikonen från varje KOF-rad
-Inuti redigera-formuläret för KOF-numret: lägg till en röd "Ta bort KOF-nummer"-knapp längst ner
-Bekräftelsedialog kvar innan borttagning
+- Gå till Scan-fliken
+- Tryck "Choose or photograph paper" och välj alla bilder du tog
+- Tryck "Load images" – appen läser av alla KOF-nummer automatiskt
+- Vänta tills loggboxen visar att alla bilder är klara – stäng inte appen under inläsning
+- Tryck "Sync to cloud" så att kollegorna också får tillgång till datan
+- Illustrera med en enkel SVG som visar flödet: Bilder → App → Moln
 
-Gör inga andra ändringar. Committa och pusha när klart.
+3. Söka upp en bur
+
+- Gå till Search KOF-fliken
+- Skriv in KOF-numret från buretiketten
+- Rutten visas direkt – ingen knapp att trycka på
+- Illustrera med en enkel SVG: etikett med siffror → sökfält → ruttkort
+
+4. Ändra eller rätta fel
+
+- Gå till Routes-fliken
+- Tryck på pennikonen på en rad för att redigera KOF-nummer, butiksnamn eller rutt
+- Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten
+- Alla ändringar sparas direkt till molnet
+
+Övriga krav:
+
+- Varje sektion har en tydlig rubrik med ikon och ett steg-för-steg-format med numrerade punkter
+- Illustrationerna ska vara enkla SVG:er byggda i CSS/HTML, inga externa bilder
+- Mobilanpassad layout, samma stil som resten av appen
+- Längst ner på sidan: "Fortfarande osäker? Fråga din arbetsledare."
+
+I Scan-fliken:
+
+- Lägg till en liten länktext under "Choose or photograph paper"-knappen: "Osäker på hur man gör? Se användningsguiden →" som navigerar till Guide-fliken när man trycker på den
+- Visa en tydlig varningstext när bilderna laddas: "Stäng inte appen under inläsning – det kan avbryta processen"
+- Visa en "Avbryt"-knapp bredvid laddningsindikatorn under pågående inläsning
+- När man trycker Avbryt: stoppa alla pågående API-anrop, visa "Inläsning avbruten" i loggboxen, återställ knapparna till ursprungsläget
+
+Uppdatera CLAUDE.md med de ändringar som gjorts. Gör inga andra ändringar. Committa och pusha när klart.
