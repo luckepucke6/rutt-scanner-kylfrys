@@ -1,49 +1,33 @@
-Skapa en ny flik "Guide" i navigationsfältet (lämplig ikon t.ex. ti-book eller ti-help).
-Fliken ska innehålla en användningsguide med fyra sektioner:
-1. Ta bilden rätt (innan du scannar)
+Lägg till ryskt språkstöd i appen med både automatisk och manuell språkväxling.
+1. Översätt hela appen till ryska
+Skapa en komplett rysk översättning av alla texter i appen – alla flikar, knappar, labels, felmeddelanden, loggtexter, guide-innehållet och bekräftelsedialoger. Använd korrekt ryska, inte maskinöversättning – om du är osäker på en formulering, välj den enklaste och tydligaste varianten.
+2. Automatisk språkdetektering
 
-- Ta bilderna med din vanliga kameraapp först, sedan väljer du alla bilder samtidigt i appen
-- Lägg pappret på en plan yta med bra belysning
-- Hela pappret ska vara med i bilden – inga avklippta kanter
-- Undvik skuggor och reflexer
-- Håll kameran rakt ovanifrån, inte i vinkel
-- Illustrera med en enkel SVG: ett papper med en grön bock (rätt) och ett papper i vinkel med ett rött kryss (fel)
+- Vid appstart: kontrollera telefonens språkinställning via navigator.language
+- Om telefonen är inställd på ryska (ru) → sätt ryska som standard
+- Annars → sätt svenska som standard
+- Spara valet i localStorage så det håller sig mellan sessioner
 
-2. Scanna in dokument (morgonen)
+3. Manuell språkväxling
 
-- Gå till Scan-fliken
-- Tryck "Choose or photograph paper" och välj alla bilder du tog
-- Tryck "Load images" – appen läser av alla KOF-nummer automatiskt
-- Vänta tills loggboxen visar att alla bilder är klara – stäng inte appen under inläsning
-- Tryck "Sync to cloud" så att kollegorna också får tillgång till datan
-- Illustrera med en enkel SVG som visar flödet: Bilder → App → Moln
+- Den befintliga EN-knappen längst upp till höger ska bli en språkväljare
+- Den ska visa aktuellt språk: "EN", "SV" eller "RU"
+- Tryck på den → visa en liten dropdown med tre val: Svenska, English, Русский
+- Valet sparas i localStorage och gäller direkt utan att ladda om sidan
 
-3. Söka upp en bur
+4. Språken som ska stödjas
 
-- Gå till Search KOF-fliken
-- Skriv in KOF-numret från buretiketten
-- Rutten visas direkt – ingen knapp att trycka på
-- Illustrera med en enkel SVG: etikett med siffror → sökfält → ruttkort
+- Svenska (SV) – befintlig
+- Engelska (EN) – befintlig
+- Ryska (RU) – ny
 
-4. Ändra eller rätta fel
+5. Guide-fliken
+Översätt hela guide-innehållet inklusive alla steg-för-steg-instruktioner och SVG-illustrationernas textetiketter till ryska.
+6. Easter egg – endast i ryska versionen
+Lägg till en liten sektion längst ned på Scan-fliken som bara visas när språket är inställt på ryska:
 
-- Gå till Routes-fliken
-- Tryck på pennikonen på en rad för att redigera KOF-nummer, butiksnamn eller rutt
-- Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten
-- Alla ändringar sparas direkt till molnet
-
-Övriga krav:
-
-- Varje sektion har en tydlig rubrik med ikon och ett steg-för-steg-format med numrerade punkter
-- Illustrationerna ska vara enkla SVG:er byggda i CSS/HTML, inga externa bilder
-- Mobilanpassad layout, samma stil som resten av appen
-- Längst ner på sidan: "Fortfarande osäker? Fråga din arbetsledare."
-
-I Scan-fliken:
-
-- Lägg till en liten länktext under "Choose or photograph paper"-knappen: "Osäker på hur man gör? Se användningsguiden →" som navigerar till Guide-fliken när man trycker på den
-- Visa en tydlig varningstext när bilderna laddas: "Stäng inte appen under inläsning – det kan avbryta processen"
-- Visa en "Avbryt"-knapp bredvid laddningsindikatorn under pågående inläsning
-- När man trycker Avbryt: stoppa alla pågående API-anrop, visa "Inläsning avbruten" i loggboxen, återställ knapparna till ursprungsläget
+- Header: "Программа для Томаса" (Ett program för Tomas)
+- Undertext: "Томас — король" (Tomas är kung)
+- Samma diskreta stil som resten av appen, ingen stor grej av det
 
 Uppdatera CLAUDE.md med de ändringar som gjorts. Gör inga andra ändringar. Committa och pusha när klart.

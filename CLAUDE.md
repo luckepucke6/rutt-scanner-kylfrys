@@ -21,12 +21,14 @@ The entire application is a single file: `index.html`. It contains all HTML stru
 A single `state` object is the source of truth:
 
 ```js
-state.routeData      // { [kof: string]: { route, driver, store, pall, bur, hlv } }
+state.routeData      // { [kof: string]: { route, driver, store, pall, bur, hlv, units } }
 state.images         // pending/processing image queue
 state.apiKey         // Anthropic key loaded from localStorage
 state.isProcessing
 state.abortController  // AbortController for in-flight callClaudeApi fetch; null when idle
 ```
+
+`routeData[kof].units` is an integer — the sum of pall+bur+hlv for that entry, extracted by the AI and persisted to Supabase. Requires a `units integer DEFAULT 0` column on `route_entries` (run `ALTER TABLE route_entries ADD COLUMN IF NOT EXISTS units integer DEFAULT 0;`).
 
 `routeData` is persisted to `localStorage` under key `rutt_scanner_v1` with an 8-hour expiry. The API key is stored separately under `rutt_api_key`.
 
@@ -35,7 +37,7 @@ state.abortController  // AbortController for in-flight callClaudeApi fetch; nul
 - **Routes tab** — Grouped view of all loaded stops, sorted by route number (default tab)
 - **Search tab** — Type-ahead search over KOF numbers; also supports live camera scanning via `scanFrame()` loop
 - **Scan tab** — Upload/photograph printed route sheets → compress to JPEG → call Claude API → parse JSON → merge into `state.routeData`. Includes `cancelProcessing()` which aborts the active fetch via `state.abortController` and resets processing state.
-- **Guide tab** — Static HTML with 4 instructional sections and inline SVG illustrations; no JS rendering needed.
+- **Guide tab** — Static HTML with 4 instructional sections and inline SVG illustrations; all text nodes use `data-i18n` for full translation support.
 
 ### Claude API usage
 
@@ -54,6 +56,10 @@ Each route sheet has two sections separated by a blank row:
 - Rows below the blank → `isS: true` → stored as `"SN"` (e.g. `"S4"`)
 
 The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → routeNumber `"4"`, driver `"161 Xhulijo"`.
+
+### Language support
+
+`LANGS` object has three entries: `sv` (Swedish, default), `en` (English), `ru` (Russian). `loadLang()` auto-detects Russian via `navigator.language` if no saved preference in `localStorage` (`rutt_lang` key), otherwise defaults to Swedish. The easter egg section `#easterEggRu` in the Scan tab is only visible when `state.lang === 'ru'`.
 
 ### Camera scanner
 

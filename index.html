@@ -409,6 +409,16 @@
 
     .route-stop-store { flex: 1; font-size: 13px; color: var(--color-text-primary); line-height: 1.35; }
     .route-stop-pall { font-size: 12px; color: var(--color-text-tertiary); flex-shrink: 0; font-style: italic; }
+    .route-stop-units { font-size: 12px; font-weight: 600; color: var(--color-accent); flex-shrink: 0; min-width: 18px; text-align: right; }
+
+    .route-summary-card {
+      background: var(--color-accent);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .route-summary-total { font-size: 16px; font-weight: 700; color: #fff; }
+    .route-summary-breakdown { font-size: 13px; color: rgba(255,255,255,0.8); display: flex; gap: 12px; flex-wrap: wrap; }
 
     .saved-badge { font-size: 11px; color: var(--color-success); text-align: center; padding: 4px 0 2px; }
 
@@ -656,6 +666,14 @@
       cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
     .cancel-btn:active { background: var(--color-error-bg); }
+
+    /* Easter egg — RU only */
+    .easter-egg-ru {
+      text-align: center; padding: 10px 0 4px;
+      border-top: 0.5px solid var(--color-border);
+    }
+    .easter-egg-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); }
+    .easter-egg-sub { font-size: 12px; color: var(--color-text-tertiary); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -680,6 +698,7 @@
     <select id="lang-select" class="lang-select" onchange="setLang(this.value)">
       <option value="sv">SV</option>
       <option value="en">EN</option>
+      <option value="ru">RU</option>
     </select>
   </div>
 
@@ -796,6 +815,11 @@
       </button>
     </div>
 
+    <div class="easter-egg-ru hidden" id="easterEggRu">
+      <div class="easter-egg-title">Программа для Томаса</div>
+      <div class="easter-egg-sub">Томас — король</div>
+    </div>
+
   </div>
 
   <!-- ════ GUIDE TAB ════ -->
@@ -810,14 +834,14 @@
             <circle cx="12" cy="13" r="3"/>
           </svg>
         </div>
-        <div class="guide-section-title">1. Ta bilden rätt</div>
+        <div class="guide-section-title" data-i18n="guideSec1Title">1. Ta bilden rätt</div>
       </div>
       <ol class="guide-steps">
-        <li>Ta bilderna med din vanliga kameraapp först, välj sedan alla bilder samtidigt i appen</li>
-        <li>Lägg pappret på en plan yta med bra belysning</li>
-        <li>Hela pappret ska vara med i bilden – inga avklippta kanter</li>
-        <li>Undvik skuggor och reflexer</li>
-        <li>Håll kameran rakt ovanifrån, inte i vinkel</li>
+        <li data-i18n="guideSec1Step1">Ta bilderna med din vanliga kameraapp först, välj sedan alla bilder samtidigt i appen</li>
+        <li data-i18n="guideSec1Step2">Lägg pappret på en plan yta med bra belysning</li>
+        <li data-i18n="guideSec1Step3">Hela pappret ska vara med i bilden – inga avklippta kanter</li>
+        <li data-i18n="guideSec1Step4">Undvik skuggor och reflexer</li>
+        <li data-i18n="guideSec1Step5">Håll kameran rakt ovanifrån, inte i vinkel</li>
       </ol>
       <div class="guide-illustration">
         <svg width="240" height="110" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -829,7 +853,7 @@
           <line x1="22" y1="62" x2="80" y2="62" stroke="#94a3b8" stroke-width="1.5"/>
           <circle cx="83" cy="22" r="10" fill="#22c55e"/>
           <path d="M78 22l3.5 3.5L88 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="55" y="98" text-anchor="middle" font-size="11" fill="#22c55e" font-family="system-ui, sans-serif" font-weight="600">Rätt ✓</text>
+          <text x="55" y="98" text-anchor="middle" font-size="11" fill="#22c55e" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusRight">Rätt ✓</text>
           <!-- Right panel: wrong (tilted paper + red X) -->
           <g transform="translate(140,55) rotate(-18) translate(-45,-35)">
             <rect x="0" y="0" width="90" height="70" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
@@ -840,7 +864,7 @@
           </g>
           <circle cx="218" cy="22" r="10" fill="#ef4444"/>
           <path d="M213 17l10 10M223 17l-10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <text x="185" y="98" text-anchor="middle" font-size="11" fill="#ef4444" font-family="system-ui, sans-serif" font-weight="600">Fel ✗</text>
+          <text x="185" y="98" text-anchor="middle" font-size="11" fill="#ef4444" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusWrong">Fel ✗</text>
         </svg>
       </div>
     </div>
@@ -855,35 +879,35 @@
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
           </svg>
         </div>
-        <div class="guide-section-title">2. Scanna in dokument</div>
+        <div class="guide-section-title" data-i18n="guideSec2Title">2. Scanna in dokument</div>
       </div>
       <ol class="guide-steps">
-        <li>Gå till Scanna-fliken</li>
-        <li>Tryck på uppladdningsrutan och välj alla bilder du tog</li>
-        <li>Tryck "Läs in bilder" – appen läser av alla KOF-nummer automatiskt</li>
-        <li>Vänta tills loggboxen visar att alla bilder är klara – stäng inte appen under inläsning</li>
-        <li>Tryck "Synka till molnet" så att kollegorna också får tillgång till datan</li>
+        <li data-i18n="guideSec2Step1">Gå till Scanna-fliken</li>
+        <li data-i18n="guideSec2Step2">Tryck på uppladdningsrutan och välj alla bilder du tog</li>
+        <li data-i18n="guideSec2Step3">Tryck "Läs in bilder" – appen läser av alla KOF-nummer automatiskt</li>
+        <li data-i18n="guideSec2Step4">Vänta tills loggboxen visar att alla bilder är klara – stäng inte appen under inläsning</li>
+        <li data-i18n="guideSec2Step5">Tryck "Synka till molnet" så att kollegorna också får tillgång till datan</li>
       </ol>
       <div class="guide-illustration">
         <svg width="260" height="80" viewBox="0 0 260 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Node 1: Bilder -->
           <rect x="5" y="20" width="64" height="40" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
           <text x="37" y="36" text-anchor="middle" font-size="16">📷</text>
-          <text x="37" y="52" text-anchor="middle" font-size="10" fill="#1d4ed8" font-family="system-ui, sans-serif" font-weight="600">Bilder</text>
+          <text x="37" y="52" text-anchor="middle" font-size="10" fill="#1d4ed8" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusBilder">Bilder</text>
           <!-- Arrow 1 -->
           <path d="M72 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
           <path d="M96 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <!-- Node 2: App -->
           <rect x="103" y="20" width="54" height="40" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
           <text x="130" y="36" text-anchor="middle" font-size="16">📱</text>
-          <text x="130" y="52" text-anchor="middle" font-size="10" fill="#15803d" font-family="system-ui, sans-serif" font-weight="600">App</text>
+          <text x="130" y="52" text-anchor="middle" font-size="10" fill="#15803d" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusApp">App</text>
           <!-- Arrow 2 -->
           <path d="M160 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
           <path d="M184 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <!-- Node 3: Moln -->
           <rect x="191" y="20" width="64" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
           <text x="223" y="36" text-anchor="middle" font-size="16">☁️</text>
-          <text x="223" y="52" text-anchor="middle" font-size="10" fill="#6d28d9" font-family="system-ui, sans-serif" font-weight="600">Moln</text>
+          <text x="223" y="52" text-anchor="middle" font-size="10" fill="#6d28d9" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusMoln">Moln</text>
         </svg>
       </div>
     </div>
@@ -897,26 +921,26 @@
             <path d="m21 21-4.35-4.35"/>
           </svg>
         </div>
-        <div class="guide-section-title">3. Söka upp en bur</div>
+        <div class="guide-section-title" data-i18n="guideSec3Title">3. Söka upp en bur</div>
       </div>
       <ol class="guide-steps">
-        <li>Gå till Sök KOF-fliken</li>
-        <li>Skriv in KOF-numret från buretiketten</li>
-        <li>Rutten visas direkt – ingen knapp att trycka på</li>
+        <li data-i18n="guideSec3Step1">Gå till Sök KOF-fliken</li>
+        <li data-i18n="guideSec3Step2">Skriv in KOF-numret från buretiketten</li>
+        <li data-i18n="guideSec3Step3">Rutten visas direkt – ingen knapp att trycka på</li>
       </ol>
       <div class="guide-illustration">
         <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Node 1: Etikett -->
           <rect x="5" y="15" width="74" height="50" rx="6" fill="#fefce8" stroke="#eab308" stroke-width="1.5"/>
           <text x="42" y="35" text-anchor="middle" font-size="10" fill="#713f12" font-family="'SF Mono','Fira Code',monospace" font-weight="700">369321</text>
-          <text x="42" y="52" text-anchor="middle" font-size="9" fill="#92400e" font-family="system-ui, sans-serif">Etikett</text>
+          <text x="42" y="52" text-anchor="middle" font-size="9" fill="#92400e" font-family="system-ui, sans-serif" data-i18n="guideIllusEtikett">Etikett</text>
           <!-- Arrow -->
           <path d="M82 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
           <path d="M106 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <!-- Node 2: Sök -->
           <rect x="113" y="15" width="54" height="50" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
           <text x="140" y="38" text-anchor="middle" font-size="18">🔍</text>
-          <text x="140" y="55" text-anchor="middle" font-size="9" fill="#1d4ed8" font-family="system-ui, sans-serif">Sök KOF</text>
+          <text x="140" y="55" text-anchor="middle" font-size="9" fill="#1d4ed8" font-family="system-ui, sans-serif" data-i18n="guideIllusSok">Sök KOF</text>
           <!-- Arrow -->
           <path d="M170 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
           <path d="M194 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -938,16 +962,16 @@
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </div>
-        <div class="guide-section-title">4. Ändra eller rätta fel</div>
+        <div class="guide-section-title" data-i18n="guideSec4Title">4. Ändra eller rätta fel</div>
       </div>
       <ol class="guide-steps">
-        <li>Gå till Rutter-fliken</li>
-        <li>Tryck på pennikonen på en rad för att redigera KOF-nummer, butiksnamn eller rutt</li>
-        <li>Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten – alla ändringar sparas direkt till molnet</li>
+        <li data-i18n="guideSec4Step1">Gå till Rutter-fliken</li>
+        <li data-i18n="guideSec4Step2">Tryck på pennikonen på en rad för att redigera KOF-nummer, butiksnamn eller rutt</li>
+        <li data-i18n="guideSec4Step3">Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten – alla ändringar sparas direkt till molnet</li>
       </ol>
     </div>
 
-    <div class="guide-footer">Fortfarande osäker? Fråga din arbetsledare.</div>
+    <div class="guide-footer" data-i18n="guideFooter">Fortfarande osäker? Fråga din arbetsledare.</div>
 
   </div>
 
@@ -991,6 +1015,10 @@
 
   <!-- ════ ROUTES TAB ════ -->
   <div id="pane-routes" class="content">
+    <div class="route-summary-card hidden" id="routeSummaryCard">
+      <div class="route-summary-total">Ca <span id="summaryUnitsTotal">0</span> enheter inkommande</div>
+      <div class="route-summary-breakdown" id="summaryBreakdown"></div>
+    </div>
     <div class="empty-state" id="routesEmpty">
       <div class="empty-icon">🗺️</div>
       <div class="empty-title" data-i18n="routesEmptyTitle">Inga ruttdata inlästa</div>
@@ -1018,6 +1046,10 @@
     <div class="modal-field">
       <div class="modal-label" data-i18n="modalStoreLabel">Butik / adress</div>
       <input type="text" class="modal-input" id="editStoreInput">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label" data-i18n="modalUnitsLabel">Antal enheter</div>
+      <input type="number" class="modal-input" id="editUnitsInput" min="0" step="1" inputmode="numeric">
     </div>
     <div class="modal-field">
       <div class="modal-label" data-i18n="modalDriverLabel">Förare</div>
@@ -1096,6 +1128,7 @@
           pall:   row.pall ?? '',
           bur:    row.bur ?? '',
           hlv:    row.hlv ?? '',
+          units:  parseInt(row.units ?? 0) || 0,
         };
       }
       if ((data ?? []).length > 0) {
@@ -1116,6 +1149,7 @@
       route:      d.route,
       store_name: d.store,
       driver:     d.driver,
+      units:      d.units ?? 0,
     }));
     if (!rows.length) return false;
     const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
@@ -1186,7 +1220,8 @@
       estimate: 'Ca {n} enheter',
       modalTitle: 'Redigera stopp', modalTitleNew: 'Nytt KOF-nummer',
       modalKofLabel: 'KOF-nummer',
-      modalStoreLabel: 'Butik / adress', modalDriverLabel: 'Förare', modalRouteLabel: 'Rutt',
+      modalStoreLabel: 'Butik / adress', modalUnitsLabel: 'Antal enheter',
+      modalDriverLabel: 'Förare', modalRouteLabel: 'Rutt',
       modalCancel: 'Avbryt', modalSave: 'Spara',
       editTooltip: 'Redigera',
       editKofInvalid: 'KOF-numret måste vara exakt 6 siffror.',
@@ -1219,6 +1254,30 @@
       errImageFormat: 'Ogiltigt bildformat — prova ett annat foto',
       errImageInvalid: 'Ogiltig bildfil',
       errParseAI: 'Kunde inte tolka AI-svaret: {raw}',
+      guideSec1Title: '1. Ta bilden rätt',
+      guideSec1Step1: 'Ta bilderna med din vanliga kameraapp först, välj sedan alla bilder samtidigt i appen',
+      guideSec1Step2: 'Lägg pappret på en plan yta med bra belysning',
+      guideSec1Step3: 'Hela pappret ska vara med i bilden – inga avklippta kanter',
+      guideSec1Step4: 'Undvik skuggor och reflexer',
+      guideSec1Step5: 'Håll kameran rakt ovanifrån, inte i vinkel',
+      guideSec2Title: '2. Scanna in dokument',
+      guideSec2Step1: 'Gå till Scanna-fliken',
+      guideSec2Step2: 'Tryck på uppladdningsrutan och välj alla bilder du tog',
+      guideSec2Step3: 'Tryck "Läs in bilder" – appen läser av alla KOF-nummer automatiskt',
+      guideSec2Step4: 'Vänta tills loggboxen visar att alla bilder är klara – stäng inte appen under inläsning',
+      guideSec2Step5: 'Tryck "Synka till molnet" så att kollegorna också får tillgång till datan',
+      guideSec3Title: '3. Söka upp en bur',
+      guideSec3Step1: 'Gå till Sök KOF-fliken',
+      guideSec3Step2: 'Skriv in KOF-numret från buretiketten',
+      guideSec3Step3: 'Rutten visas direkt – ingen knapp att trycka på',
+      guideSec4Title: '4. Ändra eller rätta fel',
+      guideSec4Step1: 'Gå till Rutter-fliken',
+      guideSec4Step2: 'Tryck på pennikonen på en rad för att redigera KOF-nummer, butiksnamn eller rutt',
+      guideSec4Step3: 'Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten – alla ändringar sparas direkt till molnet',
+      guideFooter: 'Fortfarande osäker? Fråga din arbetsledare.',
+      guideIllusRight: 'Rätt ✓', guideIllusWrong: 'Fel ✗',
+      guideIllusBilder: 'Bilder', guideIllusApp: 'App', guideIllusMoln: 'Moln',
+      guideIllusEtikett: 'Etikett', guideIllusSok: 'Sök KOF',
     },
     en: {
       tabRoutes: 'Routes', tabSearch: 'Search KOF', tabScan: 'Scan', tabGuide: 'Guide',
@@ -1248,7 +1307,8 @@
       estimate: 'Approx. {n} units',
       modalTitle: 'Edit stop', modalTitleNew: 'New KOF number',
       modalKofLabel: 'KOF number',
-      modalStoreLabel: 'Store / address', modalDriverLabel: 'Driver', modalRouteLabel: 'Route',
+      modalStoreLabel: 'Store / address', modalUnitsLabel: 'Number of units',
+      modalDriverLabel: 'Driver', modalRouteLabel: 'Route',
       modalCancel: 'Cancel', modalSave: 'Save',
       editTooltip: 'Edit',
       editKofInvalid: 'KOF number must be exactly 6 digits.',
@@ -1281,6 +1341,116 @@
       errImageFormat: 'Invalid image format — try another photo',
       errImageInvalid: 'Invalid image file',
       errParseAI: 'Could not parse AI response: {raw}',
+      guideSec1Title: '1. Take the photo correctly',
+      guideSec1Step1: 'Take photos with your regular camera app first, then select all images in the app',
+      guideSec1Step2: 'Place the paper on a flat surface with good lighting',
+      guideSec1Step3: 'The entire paper must be in the image – no cropped edges',
+      guideSec1Step4: 'Avoid shadows and reflections',
+      guideSec1Step5: 'Hold the camera straight overhead, not at an angle',
+      guideSec2Title: '2. Scan documents',
+      guideSec2Step1: 'Go to the Scan tab',
+      guideSec2Step2: 'Tap the upload area and select all the photos you took',
+      guideSec2Step3: 'Tap "Load images" – the app reads all KOF numbers automatically',
+      guideSec2Step4: 'Wait until the log box shows all images are done – do not close the app during loading',
+      guideSec2Step5: 'Tap "Sync to cloud" so colleagues also get access to the data',
+      guideSec3Title: '3. Find a cage',
+      guideSec3Step1: 'Go to the Search KOF tab',
+      guideSec3Step2: 'Enter the KOF number from the cage label',
+      guideSec3Step3: 'The route appears immediately – no button to press',
+      guideSec4Title: '4. Edit or correct errors',
+      guideSec4Step1: 'Go to the Routes tab',
+      guideSec4Step2: 'Tap the pencil icon on a row to edit the KOF number, store name or route',
+      guideSec4Step3: 'Tap the pencil icon on a route header to rename or delete it – all changes are saved directly to the cloud',
+      guideFooter: 'Still unsure? Ask your supervisor.',
+      guideIllusRight: 'Correct ✓', guideIllusWrong: 'Wrong ✗',
+      guideIllusBilder: 'Photos', guideIllusApp: 'App', guideIllusMoln: 'Cloud',
+      guideIllusEtikett: 'Label', guideIllusSok: 'Search KOF',
+    },
+    ru: {
+      tabRoutes: 'Маршруты', tabSearch: 'Поиск КОФ', tabScan: 'Сканер', tabGuide: 'Гид',
+      apiSetupTitle: 'Введите API-ключ',
+      apiSetupSub: 'Вставьте один раз — сохраняется на телефоне, не виден в коде.',
+      apiSave: 'Сохранить', apiSavedText: '🔑 API-ключ сохранён', apiChange: 'Изменить ключ',
+      apiKeyInvalid: 'Введите действительный API-ключ (sk-ant-…)',
+      uploadTitle: 'Выбрать или сфотографировать бумагу',
+      uploadSub: 'Галерея, камера или файлы — поддерживает несколько',
+      processBtnStem: 'Загрузить {n} изображени', processBtnPlural: 'е',
+      logPlaceholder: 'Журналы появятся здесь во время обработки…',
+      summarySub: 'Готово к использованию', summaryLink: 'Открыть Поиск КОФ →',
+      summaryTitle: '{total} КОФ-номеров готово',
+      syncBtn: 'Синхронизировать с облаком', clearDataBtn: 'Очистить все данные',
+      confirmClear: 'Очистить все данные? Это нельзя отменить.',
+      badgeSaved: '💾 {total} КОФ сохранено с {saved} — автоудаление {expires}',
+      badgeCloud: '☁️ {total} КОФ синхронизировано из облака',
+      searchHint: 'Введите КОФ-номер для поиска маршрута',
+      searchEmptyTitle: 'Данные маршрутов не загружены',
+      searchEmptySub: 'Сначала отсканируйте маршрутные листы',
+      routesEmptyTitle: 'Данные маршрутов не загружены',
+      routesEmptySub: 'Отсканируйте маршрутные листы — все остановки появятся здесь',
+      kofCount: '{total} КОФ-номеров загружено',
+      resultFound: 'Найдено — КОФ {kof}', resultNotFound: 'Не найдено — КОФ {kof}',
+      notFoundTitle: 'КОФ {kof} не существует',
+      notFoundSub: 'Проверьте номер или отсканируйте бумаги заново',
+      estimate: 'Прибл. {n} единиц',
+      modalTitle: 'Редактировать остановку', modalTitleNew: 'Новый КОФ-номер',
+      modalKofLabel: 'КОФ-номер', modalStoreLabel: 'Магазин / адрес',
+      modalUnitsLabel: 'Количество единиц',
+      modalDriverLabel: 'Водитель', modalRouteLabel: 'Маршрут',
+      modalCancel: 'Отмена', modalSave: 'Сохранить',
+      editTooltip: 'Редактировать',
+      editKofInvalid: 'КОФ-номер должен быть ровно 6 цифр.',
+      editStoreEmpty: 'Название магазина не может быть пустым.',
+      addRoute: '+ Новый маршрут', addKof: '+ Новый КОФ',
+      newRouteTitle: 'Новый маршрут', editRouteTitle: 'Редактировать маршрут',
+      routeNameLabel: 'Название маршрута', routeDriverLabel: 'Водитель',
+      routeNameEmpty: 'Введите название маршрута.',
+      confirmDeleteRoute: 'Вы уверены? Это удалит все КОФ-номера маршрута.',
+      confirmDeleteKof: 'Удалить КОФ {kof}? Это нельзя отменить.',
+      toastSaved: 'Сохранено!', toastDeleted: 'Удалено!',
+      deleteRouteBtn: 'Удалить маршрут', deleteKofBtn: 'Удалить КОФ-номер',
+      stopCount: '{n} остановок', imageN: 'Изображение {n}',
+      statusPending: 'Ожидание…', statusAnalyzing: 'Анализ…',
+      logStarting: 'Начало обработки {n} изображен(ий)…',
+      logPrep: '[Изображение {n}] Подготовка…',
+      logSending: '[Изображение {n}] Отправка в ИИ…',
+      logResult: 'Маршрут {route} — {count} записей загружено',
+      logDone: '[Изображение {n}] ✓ {msg}', logError: '[Изображение {n}] ✗ {msg}',
+      logFinished: 'Готово! Всего {total} КОФ-номеров в базе данных.',
+      logSyncing: 'Синхронизация с облаком…',
+      logSynced: '☁ Сохранено в Supabase.', logSyncFailed: '⚠ Синхронизация с Supabase не удалась.',
+      logCleared: 'Все данные очищены.',
+      logCancelled: 'Загрузка отменена',
+      scanGuideLink: 'Не знаете как? Смотрите руководство →',
+      scanWarning: 'Не закрывайте приложение во время загрузки — это может прервать процесс',
+      scanCancel: 'Отмена',
+      errImageSize: 'Не удалось получить размер изображения',
+      errImageFormat: 'Неверный формат изображения — попробуйте другое фото',
+      errImageInvalid: 'Неверный файл изображения',
+      errParseAI: 'Не удалось разобрать ответ ИИ: {raw}',
+      guideSec1Title: '1. Сделайте фото правильно',
+      guideSec1Step1: 'Сначала сделайте фото обычной камерой, затем выберите все снимки в приложении',
+      guideSec1Step2: 'Положите бумагу на ровную поверхность при хорошем освещении',
+      guideSec1Step3: 'Весь лист должен быть в кадре — без обрезанных краёв',
+      guideSec1Step4: 'Избегайте теней и бликов',
+      guideSec1Step5: 'Держите камеру прямо над бумагой, не под углом',
+      guideSec2Title: '2. Сканировать документы',
+      guideSec2Step1: 'Перейдите на вкладку Сканер',
+      guideSec2Step2: 'Нажмите на область загрузки и выберите все сделанные фото',
+      guideSec2Step3: 'Нажмите «Загрузить изображения» — приложение считает все КОФ-номера автоматически',
+      guideSec2Step4: 'Дождитесь, пока в журнале появится сообщение о завершении — не закрывайте приложение',
+      guideSec2Step5: 'Нажмите «Синхронизировать с облаком», чтобы коллеги тоже получили доступ',
+      guideSec3Title: '3. Найти клетку',
+      guideSec3Step1: 'Перейдите на вкладку Поиск КОФ',
+      guideSec3Step2: 'Введите КОФ-номер с этикетки клетки',
+      guideSec3Step3: 'Маршрут отображается сразу — нажимать кнопку не нужно',
+      guideSec4Title: '4. Изменить или исправить ошибки',
+      guideSec4Step1: 'Перейдите на вкладку Маршруты',
+      guideSec4Step2: 'Нажмите на иконку карандаша в строке, чтобы изменить КОФ-номер, магазин или маршрут',
+      guideSec4Step3: 'Нажмите на иконку карандаша в заголовке маршрута для переименования или удаления — все изменения сохраняются в облаке',
+      guideFooter: 'Остались вопросы? Спросите своего руководителя.',
+      guideIllusRight: 'Верно ✓', guideIllusWrong: 'Ошибка ✗',
+      guideIllusBilder: 'Фото', guideIllusApp: 'Апп', guideIllusMoln: 'Облако',
+      guideIllusEtikett: 'Этикетка', guideIllusSok: 'Поиск КОФ',
     },
   };
 
@@ -1308,6 +1478,8 @@
     });
     document.getElementById('logBox').dataset.placeholder = t('logPlaceholder');
     document.getElementById('lang-select').value = state.lang;
+    const egg = document.getElementById('easterEggRu');
+    if (egg) egg.classList.toggle('hidden', state.lang !== 'ru');
     updateProcessButton();
     renderSearchUI();
     if (Object.keys(state.routeData).length > 0) renderRoutesTab();
@@ -1315,7 +1487,12 @@
 
   function loadLang() {
     const saved = localStorage.getItem(LANG_STORAGE);
-    if (saved && LANGS[saved]) state.lang = saved;
+    if (saved && LANGS[saved]) {
+      state.lang = saved;
+    } else {
+      const nav = (navigator.language || '').toLowerCase();
+      state.lang = nav.startsWith('ru') ? 'ru' : 'sv';
+    }
     applyLang();
   }
 
@@ -1621,7 +1798,7 @@
     if (!match) throw new Error(t('errImageInvalid'));
 
     const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"","hlv":"","route":"S4"}]}
+{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
 
 Rules:
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
@@ -1629,6 +1806,7 @@ Rules:
 - kof: the 6-digit number in the leftmost data column (skip header rows).
 - store: store name and address from the Startplats column.
 - pall/bur/hlv: value in that column, empty string if blank.
+- units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
 - route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
   Step 1: Scan the table top-to-bottom and find the ONE completely blank row — a row with no KOF number and no store name. This blank row is the separator between the two sections.
   Step 2: Every KOF row ABOVE the blank separator row → route: "Rutt N" (example: "Rutt 4").
@@ -1691,10 +1869,11 @@ Return only the JSON object, no markdown fences, no explanation.`;
       state.routeData[kof] = {
         route,
         driver: String(parsed.driver ?? '').trim(),
-        store: entry.store ?? '',
-        pall:  entry.pall  ?? '',
-        bur:   entry.bur   ?? '',
-        hlv:   entry.hlv   ?? '',
+        store:  entry.store ?? '',
+        pall:   entry.pall  ?? '',
+        bur:    entry.bur   ?? '',
+        hlv:    entry.hlv   ?? '',
+        units:  parseInt(entry.units ?? 0) || 0,
       };
       count++;
     }
@@ -1818,6 +1997,21 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const list       = document.getElementById('routesList');
     const addRouteBtn = document.getElementById('addRouteBtn');
 
+    // Update summary card
+    const entries = Object.values(state.routeData);
+    const totalUnits = entries.reduce((s, d) => s + (parseInt(d.units) || 0), 0);
+    const totalPall  = entries.reduce((s, d) => s + (parseInt(d.pall)  || 0), 0);
+    const totalBur   = entries.reduce((s, d) => s + (parseInt(d.bur)   || 0), 0);
+    const totalHlv   = entries.reduce((s, d) => s + (parseInt(d.hlv)   || 0), 0);
+    const summaryCard = document.getElementById('routeSummaryCard');
+    summaryCard.classList.toggle('hidden', entries.length === 0);
+    document.getElementById('summaryUnitsTotal').textContent = totalUnits;
+    const parts = [];
+    if (totalPall) parts.push(`${totalPall} pall`);
+    if (totalBur)  parts.push(`${totalBur} bur`);
+    if (totalHlv)  parts.push(`${totalHlv} hlv`);
+    document.getElementById('summaryBreakdown').textContent = parts.join(' · ');
+
     const groups = {};
     for (const [kof, data] of Object.entries(state.routeData)) {
       if (!groups[data.route]) groups[data.route] = [];
@@ -1853,7 +2047,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         <div class="route-stop">
           <div class="route-stop-kof">${escHtml(s.kof)}</div>
           <div class="route-stop-store">${escHtml(s.store)}</div>
-          ${s.pall ? `<div class="route-stop-pall">~${escHtml(s.pall)}</div>` : ''}
+          ${s.units ? `<div class="route-stop-units">${s.units}</div>` : ''}
           <button class="edit-stop-btn" onclick="openEditModal('${escHtml(s.kof)}')" title="${escHtml(t('editTooltip'))}">
             ${editSvg}
           </button>
@@ -1906,8 +2100,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
       isNew ? t('modalTitleNew') : t('modalTitle');
     document.getElementById('editModalTitle').removeAttribute('data-i18n');
 
-    document.getElementById('editKofInput').value  = kof ?? '';
-    document.getElementById('editStoreInput').value = data.store ?? '';
+    document.getElementById('editKofInput').value    = kof ?? '';
+    document.getElementById('editStoreInput').value  = data.store ?? '';
+    document.getElementById('editUnitsInput').value  = data.units ?? 0;
     document.getElementById('editDriverInput').value = data.driver ?? (presetRoute ? (state.routes[presetRoute] ?? '') : '');
 
     const allRoutes = Object.keys(state.routes).sort((a, b) => {
@@ -1937,6 +2132,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
   async function saveEdit() {
     const newKof    = document.getElementById('editKofInput').value.trim();
     const newStore  = document.getElementById('editStoreInput').value.trim();
+    const newUnits  = parseInt(document.getElementById('editUnitsInput').value) || 0;
     const newDriver = document.getElementById('editDriverInput').value.trim();
     const newRoute  = document.getElementById('editRouteSelect').value;
 
@@ -1946,7 +2142,8 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const isNew   = !editingKof;
     const oldData = isNew ? {} : (state.routeData[editingKof] ?? {});
     const updated = { ...oldData, store: newStore, route: newRoute, driver: newDriver,
-                      pall: oldData.pall ?? '', bur: oldData.bur ?? '', hlv: oldData.hlv ?? '' };
+                      pall: oldData.pall ?? '', bur: oldData.bur ?? '', hlv: oldData.hlv ?? '',
+                      units: newUnits };
 
     if (!isNew && newKof !== editingKof) delete state.routeData[editingKof];
     state.routeData[newKof] = updated;
@@ -1957,7 +2154,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         await sb.from('route_entries').delete().eq('kof', editingKof);
       }
       const { error } = await sb.from('route_entries').upsert(
-        { kof: newKof, route: newRoute, store_name: newStore, driver: newDriver },
+        { kof: newKof, route: newRoute, store_name: newStore, driver: newDriver, units: newUnits },
         { onConflict: 'kof' }
       );
       if (error) console.warn('Supabase redigerings-fel:', error);
