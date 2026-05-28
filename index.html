@@ -253,6 +253,12 @@
 
     .kof-count { font-size: 12px; color: var(--color-text-secondary); text-align: right; padding-bottom: 2px; }
 
+    .search-hint {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 13px; color: var(--color-text-tertiary);
+      padding: 6px 0;
+    }
+
     .search-row { display: flex; gap: 8px; position: relative; }
 
     .kof-input {
@@ -691,6 +697,13 @@
         <button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
       </div>
 
+      <div class="search-hint" id="searchHint">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10" cy="10" r="7"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <span data-i18n="searchHint">Skriv ett KOF-nummer för att hitta rutten</span>
+      </div>
+
       <div class="suggestions hidden" id="suggestions"></div>
 
       <div id="resultArea"></div>
@@ -848,6 +861,7 @@
       confirmClear: 'Rensa all inläst data? Detta kan inte ångras.',
       badgeSaved: '💾 {total} KOF sparade sedan {saved} — raderas automatiskt {expires}',
       badgeCloud: '☁️ {total} KOF synkade från molnet',
+      searchHint: 'Skriv ett KOF-nummer för att hitta rutten',
       searchEmptyTitle: 'Inga ruttdata inlästa',
       searchEmptySub: 'Scanna ruttlistorna först och kom sedan tillbaka hit',
       routesEmptyTitle: 'Inga ruttdata inlästa',
@@ -895,6 +909,7 @@
       confirmClear: 'Clear all loaded data? This cannot be undone.',
       badgeSaved: '💾 {total} KOF saved since {saved} — auto-deleted at {expires}',
       badgeCloud: '☁️ {total} KOF synced from cloud',
+      searchHint: 'Type a KOF number to find the route',
       searchEmptyTitle: 'No route data loaded',
       searchEmptySub: 'Scan the route lists first and come back here',
       routesEmptyTitle: 'No route data loaded',
@@ -1342,6 +1357,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     const clearBtn = document.getElementById('clearBtn');
     clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
     input.style.paddingLeft = val.length > 0 ? '54px' : '15px';
+    document.getElementById('searchHint').classList.toggle('hidden', val.length > 0);
     if (val.length === 0) { searchStartTime = 0; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
     if (val.length === 1 && searchStartTime === 0) searchStartTime = Date.now();
     if (val.length === 6) { hideSuggestions(); searchKof(); return; }
@@ -1383,6 +1399,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
     input.value = '';
     input.style.paddingLeft = '15px';
     document.getElementById('clearBtn').style.display = 'none';
+    document.getElementById('searchHint').classList.remove('hidden');
     document.getElementById('resultArea').innerHTML = '';
     hideSuggestions();
     input.focus();
