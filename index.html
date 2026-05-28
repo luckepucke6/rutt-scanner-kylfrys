@@ -89,20 +89,20 @@
     .header-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
 
     .tabs {
-      display: flex; gap: 6px;
+      display: flex; gap: 4px;
       padding: 14px 16px 0;
     }
 
     .tab-btn {
       flex: 1;
-      padding: 10px 8px;
+      padding: 7px 4px;
       border: 0.5px solid var(--color-border-strong);
       border-radius: var(--radius-sm);
       background: var(--color-surface);
       color: var(--color-text-secondary);
-      font-size: 14px; font-weight: 500; font-family: var(--font);
+      font-size: 11px; font-weight: 500; font-family: var(--font);
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
       transition: background 0.12s, color 0.12s, border-color 0.12s;
       -webkit-tap-highlight-color: transparent;
     }
@@ -705,27 +705,27 @@
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" id="tab-routes" onclick="switchTab('routes')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 7h18M3 12h18M3 17h18"/>
       </svg>
       <span data-i18n="tabRoutes">Rutter</span>
     </button>
     <button class="tab-btn" id="tab-search" onclick="switchTab('search')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="10" cy="10" r="7"/>
         <path d="m21 21-4.35-4.35"/>
       </svg>
       <span data-i18n="tabSearch">Sök KOF</span>
     </button>
     <button class="tab-btn" id="tab-scan" onclick="switchTab('scan')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/>
         <circle cx="12" cy="13" r="3"/>
       </svg>
       <span data-i18n="tabScan">Scanna</span>
     </button>
     <button class="tab-btn" id="tab-guide" onclick="switchTab('guide')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
       </svg>
@@ -844,27 +844,30 @@
         <li data-i18n="guideSec1Step5">Håll kameran rakt ovanifrån, inte i vinkel</li>
       </ol>
       <div class="guide-illustration">
-        <svg width="240" height="110" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Left panel: correct (flat paper + green checkmark) -->
-          <rect x="10" y="15" width="90" height="70" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
-          <line x1="22" y1="32" x2="88" y2="32" stroke="#94a3b8" stroke-width="1.5"/>
-          <line x1="22" y1="42" x2="88" y2="42" stroke="#94a3b8" stroke-width="1.5"/>
-          <line x1="22" y1="52" x2="72" y2="52" stroke="#94a3b8" stroke-width="1.5"/>
-          <line x1="22" y1="62" x2="80" y2="62" stroke="#94a3b8" stroke-width="1.5"/>
-          <circle cx="83" cy="22" r="10" fill="#22c55e"/>
-          <path d="M78 22l3.5 3.5L88 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="55" y="98" text-anchor="middle" font-size="11" fill="#22c55e" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusRight">Rätt ✓</text>
-          <!-- Right panel: wrong (tilted paper + red X) -->
-          <g transform="translate(140,55) rotate(-18) translate(-45,-35)">
-            <rect x="0" y="0" width="90" height="70" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
-            <line x1="12" y1="17" x2="78" y2="17" stroke="#94a3b8" stroke-width="1.5"/>
-            <line x1="12" y1="27" x2="78" y2="27" stroke="#94a3b8" stroke-width="1.5"/>
-            <line x1="12" y1="37" x2="62" y2="37" stroke="#94a3b8" stroke-width="1.5"/>
-            <line x1="12" y1="47" x2="70" y2="47" stroke="#94a3b8" stroke-width="1.5"/>
-          </g>
-          <circle cx="218" cy="22" r="10" fill="#ef4444"/>
-          <path d="M213 17l10 10M223 17l-10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <text x="185" y="98" text-anchor="middle" font-size="11" fill="#ef4444" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusWrong">Fel ✗</text>
+        <svg width="280" height="120" viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- LEFT: Correct — full paper visible, good light -->
+          <rect x="5" y="10" width="115" height="85" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <rect x="18" y="20" width="89" height="65" rx="3" fill="#fff" stroke="#cbd5e1" stroke-width="1.2"/>
+          <line x1="28" y1="33" x2="98" y2="33" stroke="#94a3b8" stroke-width="1.2"/>
+          <line x1="28" y1="42" x2="98" y2="42" stroke="#94a3b8" stroke-width="1.2"/>
+          <line x1="28" y1="51" x2="85" y2="51" stroke="#94a3b8" stroke-width="1.2"/>
+          <line x1="28" y1="60" x2="90" y2="60" stroke="#94a3b8" stroke-width="1.2"/>
+          <line x1="28" y1="69" x2="80" y2="69" stroke="#94a3b8" stroke-width="1.2"/>
+          <circle cx="104" cy="19" r="11" fill="#22c55e"/>
+          <path d="M99 19l3.5 3.5L109 14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="62" y="112" text-anchor="middle" font-size="11" fill="#22c55e" font-family="system-ui,sans-serif" font-weight="600" data-i18n="guideIllusRight">Rätt ✓</text>
+          <!-- RIGHT: Wrong — paper cut off + bad lighting -->
+          <rect x="160" y="10" width="115" height="85" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <clipPath id="vf"><rect x="160" y="10" width="115" height="85" rx="6"/></clipPath>
+          <rect x="175" y="5" width="115" height="100" rx="3" fill="#fff" stroke="#cbd5e1" stroke-width="1.2" clip-path="url(#vf)"/>
+          <line x1="185" y1="28" x2="270" y2="28" stroke="#94a3b8" stroke-width="1.2" clip-path="url(#vf)"/>
+          <line x1="185" y1="40" x2="270" y2="40" stroke="#94a3b8" stroke-width="1.2" clip-path="url(#vf)"/>
+          <line x1="185" y1="52" x2="270" y2="52" stroke="#94a3b8" stroke-width="1.2" clip-path="url(#vf)"/>
+          <line x1="185" y1="64" x2="270" y2="64" stroke="#94a3b8" stroke-width="1.2" clip-path="url(#vf)"/>
+          <rect x="160" y="10" width="58" height="85" rx="6" fill="rgba(0,0,0,0.32)" clip-path="url(#vf)"/>
+          <circle cx="259" cy="19" r="11" fill="#ef4444"/>
+          <path d="M254 14l10 10M264 14l-10 10" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+          <text x="217" y="112" text-anchor="middle" font-size="11" fill="#ef4444" font-family="system-ui,sans-serif" font-weight="600" data-i18n="guideIllusWrong">Fel ✗</text>
         </svg>
       </div>
     </div>
@@ -1017,7 +1020,6 @@
   <div id="pane-routes" class="content">
     <div class="route-summary-card hidden" id="routeSummaryCard">
       <div class="route-summary-total">Ca <span id="summaryUnitsTotal">0</span> enheter inkommande</div>
-      <div class="route-summary-breakdown" id="summaryBreakdown"></div>
     </div>
     <div class="empty-state" id="routesEmpty">
       <div class="empty-icon">🗺️</div>
@@ -2000,17 +2002,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
     // Update summary card
     const entries = Object.values(state.routeData);
     const totalUnits = entries.reduce((s, d) => s + (parseInt(d.units) || 0), 0);
-    const totalPall  = entries.reduce((s, d) => s + (parseInt(d.pall)  || 0), 0);
-    const totalBur   = entries.reduce((s, d) => s + (parseInt(d.bur)   || 0), 0);
-    const totalHlv   = entries.reduce((s, d) => s + (parseInt(d.hlv)   || 0), 0);
     const summaryCard = document.getElementById('routeSummaryCard');
     summaryCard.classList.toggle('hidden', entries.length === 0);
     document.getElementById('summaryUnitsTotal').textContent = totalUnits;
-    const parts = [];
-    if (totalPall) parts.push(`${totalPall} pall`);
-    if (totalBur)  parts.push(`${totalBur} bur`);
-    if (totalHlv)  parts.push(`${totalHlv} hlv`);
-    document.getElementById('summaryBreakdown').textContent = parts.join(' · ');
 
     const groups = {};
     for (const [kof, data] of Object.entries(state.routeData)) {
@@ -2031,12 +2025,27 @@ Return only the JSON object, no markdown fences, no explanation.`;
     addRouteBtn.classList.remove('hidden');
     list.classList.remove('hidden');
 
-    const nums = new Set();
-    for (const name of allRouteNames) {
-      const n = name.match(/\d+/)?.[0];
-      if (n) nums.add(parseInt(n));
+    const processed = new Set();
+    const orderedGroups = [];
+    for (const name of [...Object.keys(state.routes), ...Object.keys(groups)]) {
+      if (processed.has(name) || !allRouteNames.has(name)) continue;
+      processed.add(name);
+      const num = name.match(/\d+/)?.[0];
+      const isS = /^S\d/.test(name);
+      if (!isS && num) {
+        const sKey = `S${num}`;
+        if (allRouteNames.has(sKey) && !processed.has(sKey)) {
+          processed.add(sKey);
+          orderedGroups.push({ main: name, s: sKey });
+        } else {
+          orderedGroups.push({ main: name, s: null });
+        }
+      } else if (isS) {
+        orderedGroups.push({ main: null, s: name });
+      } else {
+        orderedGroups.push({ main: name, s: null });
+      }
     }
-    const sortedNums = [...nums].sort((a, b) => a - b);
 
     const editSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     const trashSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
@@ -2075,13 +2084,9 @@ Return only the JSON object, no markdown fences, no explanation.`;
         </div>`;
     }
 
-    list.innerHTML = sortedNums.map(n => {
-      const mainKey = `Rutt ${n}`;
-      const sKey    = `S${n}`;
-      const hasMain = allRouteNames.has(mainKey);
-      const hasS    = allRouteNames.has(sKey);
-      const mainSection = hasMain ? routeSection(mainKey, false) : '';
-      const sSection    = hasS    ? routeSection(sKey,    true)  : '';
+    list.innerHTML = orderedGroups.map(({ main, s }) => {
+      const mainSection = main ? routeSection(main, false) : '';
+      const sSection    = s    ? routeSection(s,    true)  : '';
       return `<div class="route-group">${mainSection}${sSection}</div>`;
     }).join('');
   }
