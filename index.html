@@ -167,6 +167,41 @@
       font-family: var(--font); cursor: pointer;
     }
     .image-save-anyway-btn:active { background: #fef3c7; }
+    .image-thumb-btn { cursor: zoom-in; }
+
+    .image-preview-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.88);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .image-preview-content {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      max-width: 100%; max-height: 100%;
+    }
+    .image-preview-close {
+      position: absolute; top: -14px; right: -14px;
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.92); border: none; border-radius: 50%;
+      font-size: 20px; line-height: 1; cursor: pointer; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .image-preview-close:active { background: #e5e5e5; }
+    .image-preview-img {
+      max-width: calc(100vw - 40px);
+      max-height: calc(100dvh - 40px);
+      border-radius: 8px;
+      object-fit: contain;
+      display: block;
+    }
+    .image-preview-pdf {
+      text-align: center; color: rgba(255,255,255,0.7);
+    }
+    .image-preview-pdf-icon { font-size: 72px; line-height: 1; }
+    .image-preview-pdf-label { font-size: 14px; margin-top: 10px; }
 
     @keyframes pulse-bg {
       0%, 100% { opacity: 1; } 50% { opacity: 0.55; }
@@ -1141,6 +1176,18 @@
   </div>
 </div>
 
+<!-- Bildförhandsvisning -->
+<div class="image-preview-overlay hidden" id="imagePreviewModal" onclick="if(event.target===this)closeImagePreview()">
+  <div class="image-preview-content">
+    <button class="image-preview-close" onclick="closeImagePreview()">×</button>
+    <img class="image-preview-img hidden" id="imagePreviewImg" alt="">
+    <div class="image-preview-pdf hidden" id="imagePreviewPdf">
+      <div class="image-preview-pdf-icon">📄</div>
+      <div class="image-preview-pdf-label">PDF-förhandsvisning ej tillgänglig</div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="toast hidden"></div>
 
@@ -1809,7 +1856,7 @@
     card.classList.remove('hidden');
     list.innerHTML = state.images.map(img => `
       <div class="image-item ${img.status}" id="img-row-${img.id}">
-        ${img.dataUrl.startsWith('data:application/pdf') ? '<div class="image-thumb pdf-thumb">📄</div>' : `<img class="image-thumb" src="${img.dataUrl}" alt="">`}
+        ${img.dataUrl.startsWith('data:application/pdf') ? `<div class="image-thumb pdf-thumb image-thumb-btn" data-preview-id="${img.id}">📄</div>` : `<img class="image-thumb image-thumb-btn" data-preview-id="${img.id}" src="${img.dataUrl}" alt="">`}
         <div class="image-info">
           <div class="image-name">${escHtml(tf('imageN', {n: img.id}))}</div>
           <div class="image-status">${escHtml(img.statusMsg)}</div>
@@ -2712,6 +2759,27 @@ Rules:
     updateProcessButton();
   }
 
+  function openImagePreview(id) {
+    const img = state.images.find(i => i.id === id);
+    if (!img) return;
+    const previewImg = document.getElementById('imagePreviewImg');
+    const previewPdf = document.getElementById('imagePreviewPdf');
+    if (img.dataUrl.startsWith('data:application/pdf')) {
+      previewImg.classList.add('hidden');
+      previewPdf.classList.remove('hidden');
+    } else {
+      previewImg.src = img.dataUrl;
+      previewImg.classList.remove('hidden');
+      previewPdf.classList.add('hidden');
+    }
+    document.getElementById('imagePreviewModal').classList.remove('hidden');
+  }
+
+  function closeImagePreview() {
+    document.getElementById('imagePreviewModal').classList.add('hidden');
+    document.getElementById('imagePreviewImg').src = '';
+  }
+
   let pdfPrepCount = 0;
 
   function updateUploadZoneStatus() {
@@ -2733,6 +2801,8 @@ Rules:
 
   // Event delegation — image list
   document.getElementById('imageList').addEventListener('click', e => {
+    const thumbBtn = e.target.closest('.image-thumb-btn');
+    if (thumbBtn) { openImagePreview(parseInt(thumbBtn.dataset.previewId)); return; }
     const saveAnywayBtn = e.target.closest('.image-save-anyway-btn');
     if (saveAnywayBtn) { saveJudgedResult(parseInt(saveAnywayBtn.dataset.id)); return; }
     const retryBtn = e.target.closest('.image-retry-btn');
