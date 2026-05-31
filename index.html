@@ -2117,12 +2117,8 @@
 
 Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else.
 
-Dokumentet är en tabell med leveransrutter. Strukturen är:
-- En rubrikrad med ruttnamnet, t.ex. "Rutt 2" eller "S2"
-- Därunder rader med: KOF-nummer (6 siffror) i kolumn 1, butiksnamn och adress i kolumn 2, antal enheter (en siffra) i kolumn 3
-- Ett tomt utrymme separerar huvudrutten från S-rutten
-- S-rutten har samma struktur men med eget rubrikhuvud, t.ex. "S2"
-Returnera ENDAST rader som faktiskt syns i bilden. Hitta inte på nummer, fyll inte i luckor, gissa inte. Returnera raderna i exakt den ordning de förekommer uppifrån och ned.
+Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
+Return ONLY rows that are actually visible in the image. Do not invent numbers, fill gaps, or guess. Return rows in the exact order they appear top-to-bottom.
 
 {"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
@@ -2133,12 +2129,8 @@ Rules:
 - store: store name and address from the middle column.
 - pall/bur/hlv: value in that column, empty string if blank.
 - units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
-- route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
-  Step 1: Scan the table top-to-bottom and find the FIRST completely blank row — a row with no KOF number and no store name.
-  Step 2: Every KOF row ABOVE the first blank row → route: "Rutt N" (example: "Rutt 4").
-  Step 3: Every KOF row AFTER the first blank row → route: "SN" (example: "S4"). This applies to ALL remaining entries regardless of any additional gaps further down.
-  Step 4: If there is NO blank row anywhere → all entries get route: "Rutt N".
-  Each page has a main section (Rutt X) followed by a secondary section (SX) that starts after the first visible gap in the table. ALL entries after the first gap belong to SX — even if there are additional gaps within that section. Never assign entries after the first gap to Rutt X.
+- route: CRITICAL — assign "Rutt N" or "SN" (where N = routeNumber) based solely on position relative to the first empty row.
+  Above the first empty row → "Rutt N". Below the first empty row → "SN". No empty row → all "Rutt N".
   Double-check every entry's route value before returning. This is the most important field.
 - confidence: "high" = all 6 KOF digits clearly readable; "medium" = partially obscured or uncertain; "low" = blurry, cut-off, or hard to read.
 - Include ALL rows with a 6-digit KOF number. Do NOT invent KOF numbers or fill gaps.`;
@@ -2147,8 +2139,8 @@ Rules:
 You are a quality checker for logistics data extraction. You have been given an image of a Swedish route document and the data extracted from it.
 Check if the KOF numbers, route assignments (Rutt N / SN), and unit counts match what is visible in the document.
 {"approved":true,"confidence":85,"issues":[]}
-Documents contain two sections per page: first entries assigned to 'Rutt X', then after a gap, entries assigned to 'SX'. Both are valid route designations. Do NOT flag SX entries as incorrect — they are expected and correct.
-Each page has a main section (Rutt X) followed by a secondary section (SX) that starts after the first visible gap in the table. ALL entries after the first gap belong to SX — even if there are additional gaps within that section. Never assign entries after the first gap to Rutt X.
+Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
+Do NOT flag SX entries as incorrect. The Rutt X / SX split is determined by the first empty row gap in the table and is always correct. Only verify that KOF numbers and addresses match what is visible in the document.
 Rules:
 - approved: true if the extraction looks correct, false if there are clear errors.
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
