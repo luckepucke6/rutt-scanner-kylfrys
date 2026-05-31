@@ -2146,6 +2146,7 @@ Rules:
 You are a quality checker for logistics data extraction. You have been given an image of a Swedish route document and the data extracted from it.
 Check if the KOF numbers, route assignments (Rutt N / SN), and unit counts match what is visible in the document.
 {"approved":true,"confidence":85,"issues":[]}
+Documents contain two sections per page: first entries assigned to 'Rutt X', then after a gap, entries assigned to 'SX'. Both are valid route designations. Do NOT flag SX entries as incorrect — they are expected and correct.
 Rules:
 - approved: true if the extraction looks correct, false if there are clear errors.
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
