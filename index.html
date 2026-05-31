@@ -2134,10 +2134,11 @@ Rules:
 - pall/bur/hlv: value in that column, empty string if blank.
 - units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
 - route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
-  Step 1: Scan the table top-to-bottom and find the ONE completely blank row — a row with no KOF number and no store name. This blank row is the separator between the two sections.
-  Step 2: Every KOF row ABOVE the blank separator row → route: "Rutt N" (example: "Rutt 4").
-  Step 3: Every KOF row BELOW the blank separator row → route: "SN" (example: "S4").
-  Step 4: If there is NO blank separator row anywhere in the table → all entries get route: "Rutt N".
+  Step 1: Scan the table top-to-bottom and find the FIRST completely blank row — a row with no KOF number and no store name.
+  Step 2: Every KOF row ABOVE the first blank row → route: "Rutt N" (example: "Rutt 4").
+  Step 3: Every KOF row AFTER the first blank row → route: "SN" (example: "S4"). This applies to ALL remaining entries regardless of any additional gaps further down.
+  Step 4: If there is NO blank row anywhere → all entries get route: "Rutt N".
+  Each page has a main section (Rutt X) followed by a secondary section (SX) that starts after the first visible gap in the table. ALL entries after the first gap belong to SX — even if there are additional gaps within that section. Never assign entries after the first gap to Rutt X.
   Double-check every entry's route value before returning. This is the most important field.
 - confidence: "high" = all 6 KOF digits clearly readable; "medium" = partially obscured or uncertain; "low" = blurry, cut-off, or hard to read.
 - Include ALL rows with a 6-digit KOF number. Do NOT invent KOF numbers or fill gaps.`;
@@ -2147,6 +2148,7 @@ You are a quality checker for logistics data extraction. You have been given an 
 Check if the KOF numbers, route assignments (Rutt N / SN), and unit counts match what is visible in the document.
 {"approved":true,"confidence":85,"issues":[]}
 Documents contain two sections per page: first entries assigned to 'Rutt X', then after a gap, entries assigned to 'SX'. Both are valid route designations. Do NOT flag SX entries as incorrect — they are expected and correct.
+Each page has a main section (Rutt X) followed by a secondary section (SX) that starts after the first visible gap in the table. ALL entries after the first gap belong to SX — even if there are additional gaps within that section. Never assign entries after the first gap to Rutt X.
 Rules:
 - approved: true if the extraction looks correct, false if there are clear errors.
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
