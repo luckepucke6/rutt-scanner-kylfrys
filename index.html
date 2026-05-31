@@ -227,6 +227,15 @@
       font-size: 13px;
     }
     .review-entry-row:last-child { border-bottom: none; }
+    .review-section-separator {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 10px;
+      background: var(--color-surface-2);
+      border-bottom: 0.5px solid var(--color-border);
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--color-text-secondary);
+    }
     .review-entry-checkbox {
       width: 16px; height: 16px; flex-shrink: 0; cursor: pointer;
       accent-color: var(--color-accent);
@@ -2987,28 +2996,37 @@ Rules:
   }
 
   function openRouteReview(routeName) {
-    const stops = state.routeOrder
-      .filter(kof => state.routeData[kof]?.route === routeName)
+    // Normalize to route number so both "Rutt 4" and "S4" open the same combined view
+    const routeNum = routeName.match(/\d+/)?.[0] ?? routeName;
+    const mainKey  = `Rutt ${routeNum}`;
+    const sKey     = `S${routeNum}`;
+
+    const makeStops = key => state.routeOrder
+      .filter(kof => state.routeData[kof]?.route === key)
       .map(kof => ({ kof, ...state.routeData[kof] }));
-    const imgIds = [...new Set(stops.map(s => s.sourceImgId).filter(Boolean))];
+    const mainStops = makeStops(mainKey);
+    const sStops    = makeStops(sKey);
+    const allStops  = [...mainStops, ...sStops];
+
+    const imgIds    = [...new Set(allStops.map(s => s.sourceImgId).filter(Boolean))];
     const sourceImgs = imgIds.map(id => state.images.find(i => i.id === id)).filter(Boolean);
 
-    document.getElementById('reviewModalTitle').textContent = tf('reviewTitle', {route: routeName});
+    document.getElementById('reviewModalTitle').textContent = tf('reviewTitle', {route: mainKey});
     const approveBtn = document.getElementById('reviewApproveBtn');
     const flagBtn    = document.getElementById('reviewFlagBtn');
     approveBtn.textContent = t('reviewApprove');
-    approveBtn.dataset.route = routeName;
+    approveBtn.dataset.route = mainKey;
     flagBtn.textContent = t('reviewFlag');
-    flagBtn.dataset.route = routeName;
+    flagBtn.dataset.route = mainKey;
 
-    const status = state.routeReview[routeName];
+    const status = state.routeReview[mainKey];
     const bannerHtml = status === 'uncertain'
       ? `<div class="review-status-banner uncertain">${escHtml(t('reviewFlaggedBanner'))}</div>`
       : status === 'ok'
       ? `<div class="review-status-banner ok">${escHtml(t('reviewApprovedBanner'))}</div>`
       : '';
 
-    const entryRows = stops.map(s => `
+    const buildRows = stops => stops.map(s => `
       <div class="review-entry-row">
         <input type="checkbox" class="review-entry-checkbox">
         <span class="review-entry-kof">${escHtml(s.kof)}</span>
@@ -3016,10 +3034,14 @@ Rules:
         ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
       </div>`).join('');
 
+    const separator = (mainStops.length > 0 && sStops.length > 0)
+      ? `<div class="review-section-separator">${escHtml(sKey)}</div>` : '';
+    const entriesHtml = buildRows(mainStops) + separator + buildRows(sStops);
+
     document.getElementById('reviewBody').innerHTML = `
       ${bannerHtml}
-      <div class="review-section-label">${escHtml(t('reviewEntriesLabel'))} (${stops.length})</div>
-      <div class="review-entries">${entryRows}</div>`;
+      <div class="review-section-label">${escHtml(t('reviewEntriesLabel'))} (${allStops.length})</div>
+      <div class="review-entries">${entriesHtml}</div>`;
 
     const imgSection = document.getElementById('reviewImageSection');
     const noImageMsg = document.getElementById('reviewNoImageMsg');
