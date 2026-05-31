@@ -1951,7 +1951,9 @@
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (!match) throw new Error(t('errImageInvalid'));
 
-    const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else.
+    const PROMPT = `CRITICAL: Respond with ONLY a raw JSON object. Do NOT use markdown code blocks. Do NOT write backticks. Do NOT write the word "json". Start your response with { and end with }.
+
+Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else.
 
 Dokumentet är en tabell med leveransrutter. Strukturen är:
 - En rubrikrad med ruttnamnet, t.ex. "Rutt 2" eller "S2"
