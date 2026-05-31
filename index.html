@@ -2141,6 +2141,7 @@ Check if the KOF numbers, route assignments (Rutt N / SN), and unit counts match
 {"approved":true,"confidence":85,"issues":[]}
 Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
 Do NOT flag SX entries as incorrect. The Rutt X / SX split is determined by the first empty row gap in the table and is always correct. Only verify that KOF numbers and addresses match what is visible in the document.
+When evaluating route assignments, trust the extraction model's Rutt X vs SX split. If the extracted data assigns an entry to SX, assume there was a visible empty row gap in the original document even if you cannot clearly see it. Do NOT flag SX assignments as incorrect. Only flag if a Rutt X entry and an SX entry have swapped KOF numbers or addresses that clearly don't match the document.
 Rules:
 - approved: true if the extraction looks correct, false if there are clear errors.
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
