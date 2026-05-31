@@ -1,26 +1,5 @@
-
-
-Se exempelbilderna i docs/-mappen för att förstå exakt hur dokumentformatet ser ut innan du gör några ändringar.
-I index.html, uppdatera processImages() med följande fyra förbättringar:
-1 — Sortering:
-Ta bort all .sort() eller Object.keys().sort() på KOF-listan. Bevara exakt den ordning API-svaret returnerar.
-2 — Dokumentformat och påhittade nummer:
-Uppdatera prompten som skickas till Claude API med denna exakta beskrivning av dokumentformatet:
-"Dokumentet är en tabell med leveransrutter. Strukturen är:
-
-- En rubrikrad med ruttnamnet, t.ex. 'Rutt 2' eller 'S2'
-- Därunder rader med: KOF-nummer (6 siffror) i kolumn 1, butiksnamn och adress i kolumn 2, antal enheter (en siffra) i kolumn 3
-- Ett tomt utrymme separerar huvudrutten från S-rutten
-- S-rutten har samma struktur men med eget rubrikhuvud, t.ex. 'S2'
-
-Returnera ENDAST rader som faktiskt syns i bilden. Hitta inte på nummer, fyll inte i luckor, gissa inte. Returnera raderna i exakt den ordning de förekommer uppifrån och ned."
-3 — Osäkerhetsflagg:
-Låt Claude returnera ett confidence-fält per rad: "high", "medium" eller "low". Sätt "low" om KOF-numret är suddigt, avklippt eller svårläst. Visa ⚠️ bredvid poster med "low" eller "medium" i både sökresultat och ruttöversikt med texten "Osäker avläsning — kontrollera mot dokumentet".
-4 — Validering av ruttkoppling:
-Lägg till en valideringscheck efter API-svaret:
-
-- Varje post måste ha ett 6-siffrigt KOF-nummer
-- Varje post måste ha ett ruttnummer som matchar "Rutt X" eller "SX" där X är en siffra
-- Poster som inte klarar valideringen ska visas som "❌ Kunde inte tolka — kontrollera manuellt" och inte läggas in i state.routeData
-
-Gör inga andra ändringar. Committa och pusha när klart.
+Lägg till en LLM judge som verifierar att Claude API:ts tolkningsresultat stämmer mot originaldokumentet. Så här ska det fungera:
+Efter att det första API-anropet returnerat JSON med KOF-nummer och rutter, gör ett andra API-anrop med samma bild/dokument plus det tolkade resultatet. Judge-prompten ska vara ungefär:
+"You are a quality checker. You have been given an image of a route document and the data that was extracted from it. Check if the extracted data matches what is visible in the document. Respond with only a JSON object: { "approved": true/false, "confidence": 0-100, "issues": ["list any discrepancies"] }"
+Om judge returnerar approved: false eller confidence under 70 — markera bilden med en varningsikon och texten "Osäker avläsning — kontrollera manuellt" istället för att spara datan automatiskt. Låt användaren välja att spara ändå eller försöka igen.
+Judge-anropet ska inte blockera flödet — kör det parallellt med att resultatet visas, och uppdatera statusen när judge-svaret kommer in.
