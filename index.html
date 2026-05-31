@@ -137,6 +137,8 @@
     }
 
     .upload-zone:active { background: var(--color-surface-2); }
+    .upload-zone.drag-over { background: var(--color-surface-2); border-color: var(--color-accent); }
+    .pdf-thumb { display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--color-surface-2); border-radius: var(--radius-xs); }
     .upload-zone-icon { font-size: 34px; line-height: 1; }
     .upload-zone-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
     .upload-zone-sub { font-size: 12px; color: var(--color-text-secondary); }
@@ -761,12 +763,12 @@
       <button class="api-change-btn" onclick="changeApiKey()" data-i18n="apiChange">Byt nyckel</button>
     </div>
 
-    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
       <div class="upload-zone-icon">📷</div>
       <div class="upload-zone-title" data-i18n="uploadTitle">Välj eller fotografera papper</div>
       <div class="upload-zone-sub" data-i18n="uploadSub">Kamerarulle, kamera eller filer — stöder flera</div>
     </div>
-    <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this)">
+    <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf" multiple style="display:none" onchange="handleFileSelect(this)">
     <div class="scan-guide-link">
       <button class="scan-guide-link-btn" onclick="switchTab('guide')" data-i18n="scanGuideLink">Osäker på hur man gör? Se användningsguiden →</button>
     </div>
@@ -1223,7 +1225,7 @@
       apiSave: 'Spara', apiSavedText: '🔑 API-nyckel sparad', apiChange: 'Byt nyckel',
       apiKeyInvalid: 'Ange en giltig API-nyckel (sk-ant-…)',
       uploadTitle: 'Välj eller fotografera papper',
-      uploadSub: 'Kamerarulle, kamera eller filer — stöder flera',
+      uploadSub: 'Dra och släpp filer här, eller klicka för att välja — JPG, PNG, PDF',
       processBtnStem: 'Läs in {n} bild', processBtnPlural: 'er',
       logPlaceholder: 'Loggar visas här under bearbetning…',
       summarySub: 'Klart att använda', summaryLink: 'Öppna Sök KOF →',
@@ -1314,7 +1316,7 @@
       apiSave: 'Save', apiSavedText: '🔑 API key saved', apiChange: 'Change key',
       apiKeyInvalid: 'Enter a valid API key (sk-ant-…)',
       uploadTitle: 'Choose or photograph paper',
-      uploadSub: 'Camera roll, camera or files — supports multiple',
+      uploadSub: 'Drag and drop files here, or click to select — JPG, PNG, PDF',
       processBtnStem: 'Load {n} image', processBtnPlural: 's',
       logPlaceholder: 'Logs will appear here during processing…',
       summarySub: 'Ready to use', summaryLink: 'Open Search KOF →',
@@ -1405,7 +1407,7 @@
       apiSave: 'Сохранить', apiSavedText: '🔑 API-ключ сохранён', apiChange: 'Изменить ключ',
       apiKeyInvalid: 'Введите действительный API-ключ (sk-ant-…)',
       uploadTitle: 'Выбрать или сфотографировать бумагу',
-      uploadSub: 'Галерея, камера или файлы — поддерживает несколько',
+      uploadSub: 'Перетащите файлы сюда или нажмите для выбора — JPG, PNG, PDF',
       processBtnStem: 'Загрузить {n} изображени', processBtnPlural: 'е',
       logPlaceholder: 'Журналы появятся здесь во время обработки…',
       summarySub: 'Готово к использованию', summaryLink: 'Открыть Поиск КОФ →',
@@ -1675,20 +1677,41 @@
   /* ═══════════════════════════════════════════════
      FILE HANDLING
   ═══════════════════════════════════════════════ */
+  const ACCEPTED_TYPES = ['image/jpeg','image/png','image/gif','image/webp','image/heic','image/heif','application/pdf'];
+
+  function addFilesToQueue(files) {
+    files
+      .filter(f => ACCEPTED_TYPES.includes(f.type) || f.type.startsWith('image/'))
+      .forEach(file => {
+        const id = state.nextId++;
+        const reader = new FileReader();
+        reader.onload = e => {
+          state.images.push({ id, file, dataUrl: e.target.result, name: file.name, status: 'pending', statusMsg: t('statusPending') });
+          renderImageList();
+          updateProcessButton();
+        };
+        reader.readAsDataURL(file);
+      });
+  }
+
   function handleFileSelect(input) {
-    const files = Array.from(input.files);
-    if (!files.length) return;
-    files.forEach(file => {
-      const id = state.nextId++;
-      const reader = new FileReader();
-      reader.onload = e => {
-        state.images.push({ id, file, dataUrl: e.target.result, name: file.name, status: 'pending', statusMsg: t('statusPending') });
-        renderImageList();
-        updateProcessButton();
-      };
-      reader.readAsDataURL(file);
-    });
+    addFilesToQueue(Array.from(input.files));
     input.value = '';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    addFilesToQueue(Array.from(e.dataTransfer.files));
   }
 
   function renderImageList() {
@@ -1698,7 +1721,7 @@
     card.classList.remove('hidden');
     list.innerHTML = state.images.map((img, i) => `
       <div class="image-item ${img.status}" id="img-row-${img.id}">
-        <img class="image-thumb" src="${img.dataUrl}" alt="">
+        ${img.dataUrl.startsWith('data:application/pdf') ? '<div class="image-thumb pdf-thumb">📄</div>' : `<img class="image-thumb" src="${img.dataUrl}" alt="">`}
         <div class="image-info">
           <div class="image-name">${escHtml(tf('imageN', {n: i + 1}))}</div>
           <div class="image-status">${escHtml(img.statusMsg)}</div>
@@ -1747,9 +1770,9 @@
     img.retrying = true;
     updateImageItem(id, 'loading', t('statusAnalyzing'));
     try {
-      const jpegUrl = await toJpeg(img.dataUrl);
+      const apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
       state.abortController = new AbortController();
-      const result = await callClaudeApi(jpegUrl);
+      const result = await callClaudeApi(apiUrl);
       state.abortController = null;
       const { count, invalid } = storeEntries(result);
       for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
@@ -1820,9 +1843,9 @@
       addLog(tf('logPrep', {n: idx}));
       updateImageItem(img.id, 'loading', t('statusAnalyzing'));
       try {
-        const jpegUrl = await toJpeg(img.dataUrl);
+        const apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
         addLog(tf('logSending', {n: idx}));
-        const result = await callClaudeApi(jpegUrl);
+        const result = await callClaudeApi(apiUrl);
         console.log('[processImages] Claude API svar bild', idx, result);
         const { count, invalid } = storeEntries(result);
         console.log('[processImages] state.routeData efter uppdatering:', JSON.parse(JSON.stringify(state.routeData)));
@@ -1954,7 +1977,7 @@ Return only the JSON object, no markdown fences, no explanation.`;
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } },
+            { type: match[1] === 'application/pdf' ? 'document' : 'image', source: { type: 'base64', media_type: match[1], data: match[2] } },
             { type: 'text', text: PROMPT },
           ],
         }],
