@@ -1470,6 +1470,18 @@
     }).then(({ error }) => { if (error) console.warn('Supabase scan-logg fel:', error); });
   }
 
+  function logJudge(route, approved, confidence, issues, kofCount) {
+    if (!sb) return;
+    sb.from('judge_logs').insert({
+      scanned_at: new Date().toISOString(),
+      route:      route ?? null,
+      approved:   approved,
+      confidence: confidence,
+      issues:     issues ?? [],
+      kof_count:  kofCount ?? 0,
+    }).then(({ error }) => { if (error) console.warn('Supabase judge-logg fel:', error); });
+  }
+
   function logSearch(kof, data, responseTimeMs = null) {
     if (!sb) return;
     sb.from('search_logs').insert({
@@ -2492,6 +2504,13 @@ Rules:
       const j = await callClaudeJudge(dataUrl, result);
       const img = state.images.find(i => i.id === imgId);
       if (!img) return;
+      logJudge(
+        result.routeNumber ?? null,
+        j.approved,
+        j.confidence,
+        j.issues ?? [],
+        result.entries?.length ?? 0,
+      );
       if (!j.approved || j.confidence < 70) {
         revertEntries(result);
         img.pendingResult = result;
