@@ -1189,6 +1189,15 @@
 
   let searchStartTime = 0;
 
+  function logScan(routeCount, unitCount) {
+    if (!sb) return;
+    sb.from('scan_logs').insert({
+      scanned_at:  new Date().toISOString(),
+      route_count: routeCount,
+      unit_count:  unitCount,
+    }).then(({ error }) => { if (error) console.warn('Supabase scan-logg fel:', error); });
+  }
+
   function logSearch(kof, data, responseTimeMs = null) {
     if (!sb) return;
     sb.from('search_logs').insert({
@@ -1754,6 +1763,8 @@
       const msg = tf('logResult', {route: result.routeNumber, count}) + invalidNote;
       updateImageItem(id, 'done', msg);
       addLog(tf('logDone', {n: idx, msg}), 'ok');
+      const _ve2 = (result.entries ?? []).filter(e => /^\d{6}$/.test(String(e.kof ?? '')) && /^(Rutt \d{1,2}|S\d{1,2})$/.test(String(e.route ?? '')));
+      logScan(new Set(_ve2.map(e => e.route)).size, _ve2.reduce((s, e) => s + (parseInt(e.units) || 0), 0));
       state.savedAt = Date.now();
       saveToStorage();
       saveToSupabase();
@@ -1827,6 +1838,8 @@
           updateImageItem(img.id, 'done', msg);
           addLog(tf('logDone', {n: idx, msg}), 'ok');
           okCount++;
+          const _ve = (result.entries ?? []).filter(e => /^\d{6}$/.test(String(e.kof ?? '')) && /^(Rutt \d{1,2}|S\d{1,2})$/.test(String(e.route ?? '')));
+          logScan(new Set(_ve.map(e => e.route)).size, _ve.reduce((s, e) => s + (parseInt(e.units) || 0), 0));
         }
       } catch (err) {
         if (err.name === 'AbortError') {
