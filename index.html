@@ -202,9 +202,12 @@
       border-bottom: 0.5px solid var(--color-border);
       flex-shrink: 0; gap: 10px;
     }
-    .review-body {
+    .review-scroll-area {
       flex: 1; overflow-y: auto;
-      padding: 14px 16px;
+      display: flex; flex-direction: column;
+    }
+    .review-body {
+      padding: 14px 16px 0;
       display: flex; flex-direction: column; gap: 10px;
     }
     .review-section-label {
@@ -214,7 +217,8 @@
     }
     .review-entries {
       border: 0.5px solid var(--color-border);
-      border-radius: var(--radius-xs); overflow: hidden;
+      border-radius: var(--radius-xs);
+      max-height: 220px; overflow: hidden auto;
     }
     .review-entry-row {
       display: flex; align-items: center; gap: 8px;
@@ -223,17 +227,47 @@
       font-size: 13px;
     }
     .review-entry-row:last-child { border-bottom: none; }
+    .review-entry-checkbox {
+      width: 16px; height: 16px; flex-shrink: 0; cursor: pointer;
+      accent-color: var(--color-accent);
+    }
     .review-entry-kof { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 68px; flex-shrink: 0; }
     .review-entry-store { flex: 1; color: var(--color-text-secondary); font-size: 12px; }
     .review-entry-units { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
-    .review-source-img {
-      width: 100%; border-radius: var(--radius-xs); display: block;
-      max-height: 300px; object-fit: contain;
+    .review-image-section {
+      padding: 10px 16px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .review-img-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .review-rotate-btn {
+      display: flex; align-items: center; gap: 4px;
+      background: none; border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs); padding: 4px 10px;
+      font-size: 12px; font-family: var(--font);
+      color: var(--color-text-secondary); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .review-rotate-btn:active { background: var(--color-surface-2); }
+    .review-img-viewport {
+      overflow: hidden; border-radius: var(--radius-xs);
       border: 0.5px solid var(--color-border);
+      height: 260px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab; touch-action: none;
+      background: var(--color-bg);
+    }
+    .review-img-viewport:active { cursor: grabbing; }
+    .review-source-img {
+      max-width: 100%; max-height: 100%; display: block;
+      transform-origin: center center;
+      user-select: none; -webkit-user-drag: none;
+      pointer-events: none;
     }
     .review-no-image {
       text-align: center; color: var(--color-text-secondary);
-      font-size: 13px; padding: 16px;
+      font-size: 13px; padding: 16px; margin: 0 16px 14px;
       border: 0.5px solid var(--color-border);
       border-radius: var(--radius-xs);
     }
@@ -1298,7 +1332,22 @@
       <div class="modal-title" id="reviewModalTitle"></div>
       <button class="modal-cancel-btn" onclick="closeRouteReview()" data-i18n="modalCancel" style="padding:8px 14px;font-size:13px">Avbryt</button>
     </div>
-    <div class="review-body" id="reviewBody"></div>
+    <div class="review-scroll-area">
+      <div class="review-body" id="reviewBody"></div>
+      <div class="review-image-section hidden" id="reviewImageSection">
+        <div class="review-img-toolbar">
+          <span class="review-section-label" id="reviewImageSectionLabel"></span>
+          <button class="review-rotate-btn" id="reviewRotateBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+            Rotera
+          </button>
+        </div>
+        <div class="review-img-viewport" id="reviewImgViewport">
+          <img class="review-source-img" id="reviewSourceImg" alt="">
+        </div>
+      </div>
+      <div class="review-no-image hidden" id="reviewNoImageMsg"></div>
+    </div>
     <div class="review-actions">
       <button class="review-flag-btn" id="reviewFlagBtn"></button>
       <button class="review-approve-btn" id="reviewApproveBtn"></button>
@@ -1830,6 +1879,17 @@
     nextId: 1,
     savedAt: null,
   };
+
+  const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
+  let _reviewDrag = null;
+  let _reviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
+
+  function applyReviewImgTransform() {
+    const img = document.getElementById('reviewSourceImg');
+    if (!img) return;
+    const { scale, rotation, panX, panY } = reviewImgState;
+    img.style.transform = `translate(${panX}px,${panY}px) rotate(${rotation}deg) scale(${scale})`;
+  }
 
   /* ═══════════════════════════════════════════════
      API-NYCKEL — sparas i localStorage
@@ -2950,24 +3010,34 @@ Rules:
 
     const entryRows = stops.map(s => `
       <div class="review-entry-row">
+        <input type="checkbox" class="review-entry-checkbox">
         <span class="review-entry-kof">${escHtml(s.kof)}</span>
         <span class="review-entry-store">${escHtml(s.store)}</span>
         ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
       </div>`).join('');
 
-    const imgsHtml = sourceImgs.length > 0
-      ? sourceImgs.map(img => img.dataUrl.startsWith('data:application/pdf')
-          ? `<div class="review-no-image">${escHtml(t('reviewNoImages'))}</div>`
-          : `<img class="review-source-img" src="${img.dataUrl}" alt="">`
-        ).join('')
-      : `<div class="review-no-image">${escHtml(t('reviewNoImages'))}</div>`;
-
     document.getElementById('reviewBody').innerHTML = `
       ${bannerHtml}
       <div class="review-section-label">${escHtml(t('reviewEntriesLabel'))} (${stops.length})</div>
-      <div class="review-entries">${entryRows}</div>
-      <div class="review-section-label">${escHtml(t('reviewImageLabel'))}</div>
-      ${imgsHtml}`;
+      <div class="review-entries">${entryRows}</div>`;
+
+    const imgSection = document.getElementById('reviewImageSection');
+    const noImageMsg = document.getElementById('reviewNoImageMsg');
+    const validImg   = sourceImgs.find(i => !i.dataUrl.startsWith('data:application/pdf'));
+    if (validImg) {
+      document.getElementById('reviewSourceImg').src = validImg.dataUrl;
+      document.getElementById('reviewImageSectionLabel').textContent = t('reviewImageLabel');
+      imgSection.classList.remove('hidden');
+      noImageMsg.classList.add('hidden');
+    } else {
+      imgSection.classList.add('hidden');
+      noImageMsg.textContent = t('reviewNoImages');
+      noImageMsg.classList.remove('hidden');
+    }
+
+    reviewImgState.scale = 1; reviewImgState.rotation = 0;
+    reviewImgState.panX  = 0; reviewImgState.panY     = 0;
+    applyReviewImgTransform();
 
     document.getElementById('routeReviewModal').classList.remove('hidden');
   }
@@ -2975,6 +3045,10 @@ Rules:
   function closeRouteReview() {
     document.getElementById('routeReviewModal').classList.add('hidden');
     document.getElementById('reviewBody').innerHTML = '';
+    document.getElementById('reviewSourceImg').src = '';
+    reviewImgState.scale = 1; reviewImgState.rotation = 0;
+    reviewImgState.panX  = 0; reviewImgState.panY     = 0;
+    applyReviewImgTransform();
   }
 
   function approveRoute(routeName) {
@@ -3065,6 +3139,72 @@ Rules:
   });
   document.getElementById('reviewFlagBtn').addEventListener('click', e => {
     if (e.currentTarget.dataset.route) flagRouteUncertain(e.currentTarget.dataset.route);
+  });
+
+  // Review image — rotate button
+  document.getElementById('reviewRotateBtn').addEventListener('click', () => {
+    reviewImgState.rotation = (reviewImgState.rotation + 90) % 360;
+    reviewImgState.panX = 0; reviewImgState.panY = 0;
+    applyReviewImgTransform();
+  });
+
+  // Review image — desktop: scroll to zoom
+  document.getElementById('reviewImgViewport').addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 0.9;
+    reviewImgState.scale = Math.max(1, Math.min(6, reviewImgState.scale * factor));
+    if (reviewImgState.scale === 1) { reviewImgState.panX = 0; reviewImgState.panY = 0; }
+    applyReviewImgTransform();
+  }, { passive: false });
+
+  // Review image — desktop: click+drag to pan
+  document.getElementById('reviewImgViewport').addEventListener('mousedown', e => {
+    if (reviewImgState.scale <= 1) return;
+    e.preventDefault();
+    _reviewDrag = { sx: e.clientX - reviewImgState.panX, sy: e.clientY - reviewImgState.panY };
+  });
+  document.addEventListener('mousemove', e => {
+    if (!_reviewDrag) return;
+    reviewImgState.panX = e.clientX - _reviewDrag.sx;
+    reviewImgState.panY = e.clientY - _reviewDrag.sy;
+    applyReviewImgTransform();
+  });
+  document.addEventListener('mouseup', () => { _reviewDrag = null; });
+
+  // Review image — mobile: pinch to zoom + single-finger pan
+  const _rvp = document.getElementById('reviewImgViewport');
+  _rvp.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      _reviewTouch.lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+    } else if (e.touches.length === 1) {
+      _reviewTouch.lastX = e.touches[0].clientX;
+      _reviewTouch.lastY = e.touches[0].clientY;
+    }
+  }, { passive: false });
+  _rvp.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+      reviewImgState.scale = Math.max(1, Math.min(6, reviewImgState.scale * (dist / _reviewTouch.lastDist)));
+      _reviewTouch.lastDist = dist;
+    } else if (e.touches.length === 1 && reviewImgState.scale > 1) {
+      reviewImgState.panX += e.touches[0].clientX - _reviewTouch.lastX;
+      reviewImgState.panY += e.touches[0].clientY - _reviewTouch.lastY;
+      _reviewTouch.lastX = e.touches[0].clientX;
+      _reviewTouch.lastY = e.touches[0].clientY;
+    }
+    applyReviewImgTransform();
+  }, { passive: false });
+  _rvp.addEventListener('touchend', () => {
+    if (reviewImgState.scale <= 1) {
+      reviewImgState.panX = 0; reviewImgState.panY = 0;
+      applyReviewImgTransform();
+    }
   });
   // Modal delete buttons
   document.getElementById('kofDeleteBtn').addEventListener('click', () => {
