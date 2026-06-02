@@ -1613,10 +1613,11 @@
   }
 
   let realtimeReloadTimer = null;
+  let realtimeChannel = null;
 
   function initRealtimeSync() {
     if (!sb) return;
-    sb.channel('route-realtime')
+    realtimeChannel = sb.channel('route-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'route_entries' }, () => {
         if (state.isSyncing) return;
         clearTimeout(realtimeReloadTimer);
@@ -1624,6 +1625,21 @@
           await loadFromSupabase();
           showDataUpdatedToast();
         }, 1500);
+      })
+      .on('broadcast', { event: 'data_cleared' }, () => {
+        if (state.isSyncing) return;
+        state.routeData   = {};
+        state.routeOrder  = [];
+        state.routes      = {};
+        state.routeReview = {};
+        state.savedAt     = null;
+        state.scanImages  = {};
+        localStorage.removeItem(STORAGE_KEY);
+        syncRoutesMeta();
+        renderRoutesTab();
+        renderSearchUI();
+        updateStorageUI();
+        showDataUpdatedToast();
       })
       .subscribe();
   }
@@ -2438,6 +2454,7 @@
       const { error } = await sb.from('route_entries').delete().not('kof', 'is', null);
       if (error) console.warn('Supabase clearAllData-fel:', error);
       state.isSyncing = false;
+      realtimeChannel?.send({ type: 'broadcast', event: 'data_cleared', payload: {} });
     }
   }
 
