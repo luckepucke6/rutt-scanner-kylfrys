@@ -1764,16 +1764,13 @@
 
   async function uploadScanImage(dataUrl, localImgId) {
     if (!sb || dataUrl.startsWith('data:application/pdf')) return null;
-    let data = dataUrl;
-    const b64 = dataUrl.split(',')[1] || '';
-    if (Math.ceil(b64.length * 0.75) > 1_000_000) {
-      data = await toJpeg(dataUrl, 800, 0.7);
-    }
+    let data;
+    try { data = await toJpeg(dataUrl, 900, 0.72); } catch (_) { data = dataUrl; }
     const { data: row, error } = await sb.from('scan_images')
       .insert({ image_data: data })
       .select('id')
       .single();
-    if (error) { console.warn('scan_images insert-fel:', error); return null; }
+    if (error) { console.error('scan_images insert-fel:', error.message, error.code); return null; }
     const uuid = row.id;
     for (const kof of Object.keys(state.routeData)) {
       if (state.routeData[kof].sourceImgId === localImgId) {
