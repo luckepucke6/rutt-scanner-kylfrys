@@ -1614,18 +1614,21 @@
 
   let realtimeReloadTimer = null;
   let realtimeChannel = null;
+  let pollInterval = null;
+
+  function onRemoteChange() {
+    if (state.isSyncing) return;
+    clearTimeout(realtimeReloadTimer);
+    realtimeReloadTimer = setTimeout(async () => {
+      await loadFromSupabase();
+      showDataUpdatedToast();
+    }, 1500);
+  }
 
   function initRealtimeSync() {
     if (!sb) return;
     realtimeChannel = sb.channel('route-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'route_entries' }, () => {
-        if (state.isSyncing) return;
-        clearTimeout(realtimeReloadTimer);
-        realtimeReloadTimer = setTimeout(async () => {
-          await loadFromSupabase();
-          showDataUpdatedToast();
-        }, 1500);
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'route_entries' }, onRemoteChange)
       .on('broadcast', { event: 'data_cleared' }, () => {
         if (state.isSyncing) return;
         state.routeData   = {};
@@ -1641,7 +1644,26 @@
         updateStorageUI();
         showDataUpdatedToast();
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log('[Realtime] status:', status, err ?? '');
+        if (status === 'SUBSCRIBED') {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          startPollingFallback();
+        }
+      });
+    setTimeout(() => {
+      if (!pollInterval && realtimeChannel?.state !== 'joined') startPollingFallback();
+    }, 8000);
+  }
+
+  function startPollingFallback() {
+    if (pollInterval) return;
+    console.log('[Realtime] WebSocket ej tillgänglig, faller tillbaka på polling var 30s');
+    pollInterval = setInterval(() => {
+      if (!document.hidden && !state.isSyncing) onRemoteChange();
+    }, 30_000);
   }
 
   function showDataUpdatedToast() {
