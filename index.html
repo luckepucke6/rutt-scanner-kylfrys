@@ -742,41 +742,61 @@
     }
     .sync-btn:active { opacity: 0.7; }
 
-    .route-group {
-      background: var(--color-surface);
-      border: 0.5px solid var(--color-border-strong);
+    /* ── Dokumentliknande ruttvyn ── */
+    .rutt-doc {
+      background: #fff;
+      border: 1px solid #bbb;
       border-radius: var(--radius);
       overflow: hidden;
     }
-
-    .route-group-header {
-      padding: 10px 14px;
-      background: var(--color-accent); color: #fff;
-      font-size: 15px; font-weight: 700;
+    .rutt-doc-header {
+      background: #cce5ff;
+      border-bottom: 1px solid #999;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #000;
+      line-height: 1.5;
+    }
+    .rutt-doc-header-line3 {
       display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; font-size: 13px;
     }
-
-    .route-group-header.s-route { background: #5856d6; }
-    .route-group-count { font-size: 12px; font-weight: 500; opacity: 0.85; }
-
-    .route-stop {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px;
-      border-bottom: 0.5px solid var(--color-border);
+    .rutt-doc-header-actions { display: flex; gap: 4px; align-items: center; }
+    .rutt-doc-header-btn {
+      width: 26px; height: 26px; border-radius: 4px;
+      background: rgba(0,0,0,0.08); border: none;
+      color: #333; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
     }
-
-    .route-stop:last-child { border-bottom: none; }
-
-    .route-stop-kof {
+    .rutt-doc-header-btn:active { background: rgba(0,0,0,0.20); }
+    .rutt-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12px; color: #000;
+    }
+    .rutt-table th {
+      background: #e8e8e8; border: 1px solid #999;
+      padding: 3px 5px; font-size: 11px; font-weight: 600;
+      text-align: center; white-space: nowrap;
+    }
+    .rutt-table td {
+      border: 1px solid #ccc; padding: 4px 5px; vertical-align: middle;
+    }
+    .rutt-kof-col { width: 80px; }
+    .rutt-est-col { width: 40px; }
+    .rutt-kof-cell {
+      font-weight: 700;
       font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 13px; font-weight: 600; color: var(--color-text-secondary);
-      flex-shrink: 0; width: 58px;
+      font-size: 12px; white-space: nowrap;
     }
-
-    .route-stop-store { flex: 1; font-size: 13px; color: var(--color-text-primary); line-height: 1.35; }
-    .route-stop-pall { font-size: 12px; color: var(--color-text-tertiary); flex-shrink: 0; font-style: italic; }
-    .route-stop-units { font-size: 12px; font-weight: 600; color: var(--color-accent); flex-shrink: 0; min-width: 18px; text-align: right; }
-    .confidence-warn { font-size: 11px; color: #b45309; margin-left: 4px; cursor: default; flex-shrink: 0; }
+    .rutt-est-cell { text-align: center; }
+    .rutt-separator td {
+      height: 8px; background: #eee; border: 1px solid #bbb;
+    }
+    .rutt-row { cursor: default; user-select: none; -webkit-user-select: none; }
+    @media (hover: hover) { .rutt-row:hover td { background: #f5f9ff; } }
+    .rutt-row.highlighted td { background: #fffbe6 !important; }
+    .confidence-warn { font-size: 10px; color: #b45309; margin-left: 3px; cursor: default; }
     .result-warn { font-size: 12px; color: #b45309; margin-top: 4px; }
 
     .route-summary-card {
@@ -865,14 +885,33 @@
 
 
 
-    .edit-stop-btn {
-      width: 38px; height: 38px; border-radius: var(--radius-xs);
-      background: none; border: 0.5px solid var(--color-border-strong);
-      color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
+    .row-context-menu {
+      position: fixed;
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      z-index: 500; overflow: hidden; min-width: 140px;
+    }
+    .row-context-menu button {
+      display: block; width: 100%; padding: 12px 16px;
+      text-align: left; font-size: 15px; font-family: var(--font);
+      border: none; background: none; cursor: pointer;
+      color: var(--color-text-primary);
       -webkit-tap-highlight-color: transparent;
     }
-    .edit-stop-btn:active { background: var(--color-surface-2); }
+    .row-context-menu button:active { background: var(--color-surface-2); }
+    .row-context-menu .ctx-delete { color: var(--color-error); }
+    .show-in-routes-btn {
+      display: block; width: 100%; margin-top: 8px;
+      padding: 9px 12px;
+      background: none; border: 0.5px solid var(--color-accent);
+      border-radius: var(--radius-xs);
+      color: var(--color-accent); font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer; text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .show-in-routes-btn:active { background: var(--color-accent-soft); }
 
     .modal-overlay {
       position: fixed; inset: 0; z-index: 200;
@@ -1523,6 +1562,12 @@
     </div>
     <button class="modal-delete-btn hidden" id="routeDeleteBtn" data-i18n="deleteRouteBtn">Ta bort rutt</button>
   </div>
+</div>
+
+<!-- Rad-kontextmeny (lång-tryck / högerklick) -->
+<div id="rowContextMenu" class="row-context-menu hidden">
+  <button id="ctxEditBtn">Redigera</button>
+  <button id="ctxDeleteBtn" class="ctx-delete">Ta bort</button>
 </div>
 
 <!-- Bildförhandsvisning -->
@@ -2954,9 +2999,9 @@ Rules:
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
 - driver: Text after the dash in the header. Strip trailing ":)" or emoji. Use "" if not found.
 - kof: the 6-digit number in the leftmost data column (skip header rows). Do NOT invent or guess digits — only include what is clearly visible.
-- store: store name and address from the middle column.
+- store: the full text from the middle column — includes store name, address, and any customer/account number visible in that column (e.g. "COOP CITY STHLM 4512" where 4512 is a customer number).
 - pall/bur/hlv: value in that column, empty string if blank.
-- units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
+- units: integer. This is the EST value — the number in the narrow column immediately to the right of the store name. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
 - route: CRITICAL — assign "Rutt N" or "SN" (where N = routeNumber) based solely on position relative to the first empty row.
   Above the first empty row → "Rutt N". Below the first empty row → "SN". No empty row → all "Rutt N".
   Double-check every entry's route value before returning. This is the most important field.
@@ -3612,6 +3657,7 @@ Rules:
     const resultArea = document.getElementById('resultArea');
 
     if (data) {
+      const foundKof = state.routeData[raw] ? raw : kof6;
       resultArea.innerHTML = `
         <div class="result-card found">
           <div class="result-header">
@@ -3624,6 +3670,7 @@ Rules:
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.units ? `<div class="result-estimate">${escHtml(tf('estimate', {n: data.units}))}</div>` : ''}
             ${(data.confidence === 'low' || data.confidence === 'medium') ? `<div class="result-warn">⚠️ ${escHtml(t('uncertainWarning'))}</div>` : ''}
+            <button class="show-in-routes-btn" data-kof="${escHtml(foundKof)}">Visa i ruttlistan →</button>
           </div>
         </div>`;
     } else {
@@ -3642,16 +3689,27 @@ Rules:
     setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
   }
 
+  function showKofInRoutes(kof) {
+    switchTab('routes');
+    document.querySelectorAll('.rutt-row.highlighted').forEach(r => r.classList.remove('highlighted'));
+    setTimeout(() => {
+      const row = document.querySelector(`.rutt-row[data-kof="${CSS.escape(kof)}"]`);
+      if (!row) return;
+      row.classList.add('highlighted');
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => row.classList.remove('highlighted'), 2500);
+    }, 80);
+  }
+
   /* ═══════════════════════════════════════════════
      RUTTÖVERSIKT
   ═══════════════════════════════════════════════ */
   function renderRoutesTab() {
-    const empty      = document.getElementById('routesEmpty');
-    const list       = document.getElementById('routesList');
+    const empty       = document.getElementById('routesEmpty');
+    const list        = document.getElementById('routesList');
     const addRouteBtn = document.getElementById('addRouteBtn');
 
-    // Update summary card
-    const entries = Object.values(state.routeData);
+    const entries    = Object.values(state.routeData);
     const totalUnits = entries.reduce((s, d) => s + (parseInt(d.units) || 0), 0);
     const summaryCard = document.getElementById('routeSummaryCard');
     summaryCard.classList.toggle('hidden', entries.length === 0);
@@ -3665,7 +3723,6 @@ Rules:
       groups[data.route].push({ kof, ...data });
     }
 
-    // All route names: union of explicit state.routes and routeData routes
     const allRouteNames = new Set([...Object.keys(state.routes), ...Object.keys(groups)]);
 
     if (allRouteNames.size === 0) {
@@ -3685,55 +3742,68 @@ Rules:
     }
     const sortedNums = [...nums].sort((a, b) => a - b);
 
-    const editSvg   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-    const trashSvg  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-    const plusSvg   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`;
-    const reviewSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const reviewSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const editSvg   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const plusSvg   = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`;
 
-    function stopRows(stops) {
-      return stops.map(s => `
-        <div class="route-stop">
-          <div class="route-stop-kof">${escHtml(s.kof)}${(s.confidence === 'low' || s.confidence === 'medium') ? `<span class="confidence-warn" title="${escHtml(t('uncertainWarning'))}">⚠️</span>` : ''}</div>
-          <div class="route-stop-store">${escHtml(s.store)}</div>
-          ${s.units ? `<div class="route-stop-units">${s.units}</div>` : ''}
-          <button class="edit-stop-btn" data-kof="${escHtml(s.kof)}" title="${escHtml(t('editTooltip'))}">
-            ${editSvg}
-          </button>
-        </div>`).join('');
-    }
-
-    function routeSection(routeKey, isSRoute) {
-      const stops  = groups[routeKey] ?? [];
-      const driver = state.routes[routeKey] ?? stops[0]?.driver ?? '';
-      const hdrClass = 'route-group-header' + (isSRoute ? ' s-route' : '');
-      const uncertainBadge = state.routeReview[routeKey] === 'uncertain'
-        ? `<span class="route-uncertain-badge" title="${escHtml(t('reviewFlag'))}">⚠</span>` : '';
-      return `
-        <div class="${hdrClass}">
-          <div>
-            <div>${escHtml(routeKey)}${uncertainBadge}</div>
-            ${driver ? `<div class="route-group-driver">👤 ${escHtml(driver)}</div>` : ''}
-          </div>
-          <div class="route-header-actions">
-            <span class="route-group-count">${escHtml(tf('stopCount', {n: stops.length}))}</span>
-            <button class="route-review-btn" data-route="${escHtml(routeKey)}" title="${escHtml(t('reviewBtn'))}">${reviewSvg}</button>
-            <button class="route-header-btn" data-route="${escHtml(routeKey)}" title="${escHtml(t('editTooltip'))}">${editSvg}</button>
-          </div>
-        </div>
-        ${stopRows(stops)}
-        <div class="add-kof-row">
-          <button class="add-kof-btn" data-route="${escHtml(routeKey)}">${plusSvg} ${escHtml(t('addKof'))}</button>
-        </div>`;
+    function tableRows(stops) {
+      return stops.map(s => {
+        const warn = (s.confidence === 'low' || s.confidence === 'medium')
+          ? `<span class="confidence-warn" title="${escHtml(t('uncertainWarning'))}">⚠️</span>` : '';
+        return `<tr class="rutt-row" data-kof="${escHtml(s.kof)}">
+          <td class="rutt-kof-cell">${escHtml(s.kof)}${warn}</td>
+          <td>${escHtml(s.store)}</td>
+          <td class="rutt-est-cell">${s.units || ''}</td>
+        </tr>`;
+      }).join('');
     }
 
     list.innerHTML = sortedNums.map(n => {
-      const mainKey = `Rutt ${n}`;
-      const sKey    = `S${n}`;
-      const hasMain = allRouteNames.has(mainKey);
-      const hasS    = allRouteNames.has(sKey);
-      const mainSection = hasMain ? routeSection(mainKey, false) : '';
-      const sSection    = hasS    ? routeSection(sKey,    true)  : '';
-      return `<div class="route-group">${mainSection}${sSection}</div>`;
+      const mainKey  = `Rutt ${n}`;
+      const sKey     = `S${n}`;
+      const hasMain  = allRouteNames.has(mainKey);
+      const hasS     = allRouteNames.has(sKey);
+      const mainStops = groups[mainKey] ?? [];
+      const sStops    = groups[sKey]    ?? [];
+      const driver    = state.routes[mainKey] ?? mainStops[0]?.driver
+                     ?? state.routes[sKey]    ?? sStops[0]?.driver ?? '';
+      const primaryKey = hasMain ? mainKey : sKey;
+      const isUncertain = state.routeReview[mainKey] === 'uncertain'
+                       || state.routeReview[sKey]    === 'uncertain';
+      const uncertainBadge = isUncertain
+        ? `<span class="route-uncertain-badge" title="${escHtml(t('reviewFlag'))}">⚠</span>` : '';
+      const routeLabel = (hasMain ? mainKey : sKey) + (driver ? ` - ${driver}` : '');
+      const separatorRow = (hasMain && hasS && (mainStops.length > 0 || sStops.length > 0))
+        ? `<tr class="rutt-separator"><td colspan="3"></td></tr>` : '';
+
+      return `<div class="rutt-doc">
+        <div class="rutt-doc-header">
+          <div>Startplats</div>
+          <div>KOF</div>
+          <div class="rutt-doc-header-line3">
+            <span>${escHtml(routeLabel)}${uncertainBadge}</span>
+            <div class="rutt-doc-header-actions">
+              <button class="rutt-doc-header-btn route-review-btn" data-route="${escHtml(primaryKey)}" title="${escHtml(t('reviewBtn'))}">${reviewSvg}</button>
+              <button class="rutt-doc-header-btn route-header-btn" data-route="${escHtml(primaryKey)}" title="${escHtml(t('editTooltip'))}">${editSvg}</button>
+            </div>
+          </div>
+        </div>
+        <table class="rutt-table">
+          <thead><tr>
+            <th class="rutt-kof-col">KOF</th>
+            <th>BUTIK</th>
+            <th class="rutt-est-col">EST</th>
+          </tr></thead>
+          <tbody>
+            ${tableRows(mainStops)}
+            ${separatorRow}
+            ${tableRows(sStops)}
+          </tbody>
+        </table>
+        <div class="add-kof-row">
+          <button class="add-kof-btn" data-route="${escHtml(primaryKey)}">${plusSvg} ${escHtml(t('addKof'))}</button>
+        </div>
+      </div>`;
     }).join('');
   }
 
@@ -4132,15 +4202,61 @@ Rules:
     if (item) selectSuggestion(item.dataset.kof);
   });
   // Event delegation — routes list
-  document.getElementById('routesList').addEventListener('click', e => {
+  const _routesList = document.getElementById('routesList');
+  _routesList.addEventListener('click', e => {
     const reviewBtn = e.target.closest('.route-review-btn');
     if (reviewBtn) { openRouteReview(reviewBtn.dataset.route); return; }
-    const editStopBtn = e.target.closest('.edit-stop-btn');
-    if (editStopBtn) { openEditModal(editStopBtn.dataset.kof); return; }
     const routeHeaderBtn = e.target.closest('.route-header-btn');
     if (routeHeaderBtn) { openRouteModal(routeHeaderBtn.dataset.route); return; }
     const addKofBtn = e.target.closest('.add-kof-btn');
     if (addKofBtn) { openNewKofModal(addKofBtn.dataset.route); return; }
+  });
+
+  // Lång-tryck på rad (mobil) → kontextmeny
+  let _longPressTimer = null;
+  let _longPressKof   = null;
+  function _showRowCtx(x, y, kof) {
+    _longPressKof = kof;
+    const menu = document.getElementById('rowContextMenu');
+    menu.classList.remove('hidden');
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const mw = 140, mh = 90;
+    menu.style.left = Math.min(x, vw - mw - 8) + 'px';
+    menu.style.top  = Math.min(y, vh - mh - 8) + 'px';
+  }
+  _routesList.addEventListener('touchstart', e => {
+    const row = e.target.closest('.rutt-row');
+    if (!row) return;
+    const touch = e.touches[0];
+    _longPressTimer = setTimeout(() => _showRowCtx(touch.clientX, touch.clientY, row.dataset.kof), 600);
+  }, { passive: true });
+  _routesList.addEventListener('touchend',    () => clearTimeout(_longPressTimer));
+  _routesList.addEventListener('touchcancel', () => clearTimeout(_longPressTimer));
+  _routesList.addEventListener('touchmove',   () => clearTimeout(_longPressTimer), { passive: true });
+  _routesList.addEventListener('contextmenu', e => {
+    const row = e.target.closest('.rutt-row');
+    if (!row) return;
+    e.preventDefault();
+    _showRowCtx(e.clientX, e.clientY, row.dataset.kof);
+  });
+  document.getElementById('ctxEditBtn').addEventListener('click', () => {
+    document.getElementById('rowContextMenu').classList.add('hidden');
+    if (_longPressKof) openEditModal(_longPressKof);
+  });
+  document.getElementById('ctxDeleteBtn').addEventListener('click', () => {
+    document.getElementById('rowContextMenu').classList.add('hidden');
+    if (_longPressKof) deleteKof(_longPressKof);
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#rowContextMenu')) {
+      document.getElementById('rowContextMenu').classList.add('hidden');
+    }
+  });
+
+  // Sökresultat → visa i ruttlistan
+  document.getElementById('resultArea').addEventListener('click', e => {
+    const btn = e.target.closest('.show-in-routes-btn');
+    if (btn) showKofInRoutes(btn.dataset.kof);
   });
   // Route review modal actions
   document.getElementById('reviewApproveBtn').addEventListener('click', e => {
