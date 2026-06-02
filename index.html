@@ -790,6 +790,19 @@
 
     .saved-badge { font-size: 11px; color: var(--color-success); text-align: center; padding: 4px 0 2px; }
 
+    .routes-sync-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 2px 4px; gap: 8px;
+    }
+    .routes-sync-time { font-size: 11px; color: var(--color-muted); }
+    .routes-refresh-btn {
+      font-size: 12px; padding: 4px 10px; border-radius: 20px;
+      border: 0.5px solid var(--color-border); background: transparent;
+      color: var(--color-accent); cursor: pointer; white-space: nowrap;
+    }
+    .routes-refresh-btn:active { opacity: 0.6; }
+    .routes-refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
     /* ── API-nyckel setup ── */
     .api-setup-card {
       background: var(--color-accent-soft);
@@ -1066,6 +1079,25 @@
     }
     .easter-egg-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); }
     .easter-egg-sub { font-size: 12px; color: var(--color-text-tertiary); }
+    #dataUpdatedToast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(4rem);
+      background: #1a7f3c;
+      color: #fff;
+      padding: .5rem 1.2rem;
+      border-radius: 2rem;
+      font-size: .9rem;
+      opacity: 0;
+      transition: transform .25s, opacity .25s;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    #dataUpdatedToast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1398,7 +1430,6 @@
           autocomplete="off"
           onkeydown="if(event.key==='Enter'){hideSuggestions();searchKof();}"
           oninput="handleKofInput(this)"
-          onfocus="startSession()"
         >
         <button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
       </div>
@@ -1419,6 +1450,10 @@
 
   <!-- ════ ROUTES TAB ════ -->
   <div id="pane-routes" class="content">
+    <div id="routesSyncBar" class="routes-sync-bar hidden">
+      <span id="routesSyncTime" class="routes-sync-time"></span>
+      <button id="routesRefreshBtn" class="routes-refresh-btn" onclick="loadFromSupabase()">↻ Uppdatera</button>
+    </div>
     <div class="route-summary-card hidden" id="routeSummaryCard">
       <div class="route-summary-total">Ca <span id="summaryUnitsTotal">0</span> enheter inkommande</div>
     </div>
@@ -1577,6 +1612,30 @@
     }
   }
 
+  let realtimeReloadTimer = null;
+
+  function initRealtimeSync() {
+    if (!sb) return;
+    sb.channel('route-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'route_entries' }, () => {
+        if (state.isSyncing) return;
+        clearTimeout(realtimeReloadTimer);
+        realtimeReloadTimer = setTimeout(async () => {
+          await loadFromSupabase();
+          showDataUpdatedToast();
+        }, 1500);
+      })
+      .subscribe();
+  }
+
+  function showDataUpdatedToast() {
+    const el = document.getElementById('dataUpdatedToast');
+    if (!el) return;
+    el.textContent = t('dataUpdated');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+
   async function cleanupOldSupabaseData() {
     if (!sb) return;
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -1598,45 +1657,92 @@
 
   async function loadFromSupabase() {
     if (!sb) return;
+    state.isLoadingSupabase = true;
+    updateStorageUI();
     try {
-      const { data, error } = await sb.from('route_entries').select('*');
+      const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await sb.from('route_entries')
+        .select('*')
+        .gte('inserted_at', cutoff24h)
+        .order('sort_order', { ascending: true })
+        .order('inserted_at', { ascending: true });
       if (error) throw error;
+      // Supabase is always authoritative — clear local state before populating
+      state.routeData  = {};
+      state.routeOrder = [];
       for (const row of (data ?? [])) {
         if (!validateEntry({ kof: row.kof, route: row.route })) continue;
-        if (!state.routeData[row.kof]) state.routeOrder.push(row.kof);
+        state.routeOrder.push(row.kof);
         state.routeData[row.kof] = {
-          route:  row.route,
-          driver: row.driver ?? '',
-          store:  row.store_name ?? '',
-          pall:   row.pall ?? '',
-          bur:    row.bur ?? '',
-          hlv:    row.hlv ?? '',
-          units:  parseInt(row.units ?? 0) || 0,
+          route:       row.route,
+          driver:      row.driver ?? '',
+          store:       row.store_name ?? '',
+          pall:        row.pall ?? '',
+          bur:         row.bur ?? '',
+          hlv:         row.hlv ?? '',
+          units:       parseInt(row.units ?? 0) || 0,
+          sortOrder:   parseInt(row.sort_order ?? 0) || 0,
+          scanImageId: row.scan_image_id ?? null,
         };
       }
-      if ((data ?? []).length > 0) {
-        syncRoutesMeta();
-        updateStorageUI();
-        renderSearchUI();
-        renderRoutesTab();
+      const imgIds = [...new Set(
+        Object.values(state.routeData).map(d => d.scanImageId).filter(Boolean)
+      )];
+      if (imgIds.length > 0) {
+        const { data: imgs } = await sb.from('scan_images')
+          .select('id, image_data')
+          .in('id', imgIds);
+        for (const img of (imgs ?? [])) {
+          state.scanImages[img.id] = img.image_data;
+        }
       }
+      state.supabaseLoadedAt = Date.now();
+      localStorage.removeItem(STORAGE_KEY);
+      syncRoutesMeta();
+      renderSearchUI();
+      renderRoutesTab();
     } catch (err) {
       console.warn('Supabase laddningsfel:', err);
     }
+    state.isLoadingSupabase = false;
+    updateStorageUI();
   }
 
   async function saveToSupabase() {
     if (!sb) return false;
     const rows = Object.entries(state.routeData).map(([kof, d]) => ({
       kof,
-      route:      d.route,
-      store_name: d.store,
-      units:      d.units ?? 0,
+      route:         d.route,
+      store_name:    d.store,
+      units:         d.units ?? 0,
+      sort_order:    d.sortOrder ?? 0,
+      scan_image_id: d.scanImageId ?? null,
     }));
     if (!rows.length) return false;
     const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
     if (error) { console.warn('Supabase upsert-fel:', error); return false; }
     return true;
+  }
+
+  async function uploadScanImage(dataUrl, localImgId) {
+    if (!sb || dataUrl.startsWith('data:application/pdf')) return null;
+    let data = dataUrl;
+    const b64 = dataUrl.split(',')[1] || '';
+    if (Math.ceil(b64.length * 0.75) > 1_000_000) {
+      data = await toJpeg(dataUrl, 800, 0.7);
+    }
+    const { data: row, error } = await sb.from('scan_images')
+      .insert({ image_data: data })
+      .select('id')
+      .single();
+    if (error) { console.warn('scan_images insert-fel:', error); return null; }
+    const uuid = row.id;
+    for (const kof of Object.keys(state.routeData)) {
+      if (state.routeData[kof].sourceImgId === localImgId) {
+        state.routeData[kof].scanImageId = uuid;
+      }
+    }
+    return uuid;
   }
 
   const SESSION_TIMEOUT_MS = 60_000;
@@ -1656,67 +1762,53 @@
 
   let searchStartTime = 0;
 
-  const SESSION_INACTIVITY_MS = 60 * 60 * 1000;
-  const ACTIVE_GAP_MS         =  5 * 60 * 1000;
+  const SEGMENT_INACTIVITY_MS = 10 * 60 * 1000; // 10 min inaktivitet avslutar segment
 
-  let sess = {
-    active:           false,
-    startTime:        null,
-    searchTimestamps: [],
-    searchCount:      0,
-    inactivityTimer:  null,
+  let seg = {
+    active:      false,
+    startTime:   null,
+    searchCount: 0,
+    timer:       null,
   };
 
-  function startSession() {
-    if (sess.active) return;
-    sess.active           = true;
-    sess.startTime        = new Date();
-    sess.searchTimestamps = [];
-    sess.searchCount      = 0;
-    resetInactivityTimer();
+  function startSegment() {
+    if (seg.active) return;
+    seg.active      = true;
+    seg.startTime   = new Date();
+    seg.searchCount = 0;
+    resetSegmentTimer();
   }
 
-  function endSession() {
-    if (!sess.active) return;
-    clearTimeout(sess.inactivityTimer);
-    const end           = new Date();
-    const activeMinutes = calcActiveMinutes(sess.searchTimestamps);
-    logSession(sess.startTime, end, activeMinutes, sess.searchCount);
-    sess.active = false;
+  function endSegment() {
+    if (!seg.active) return;
+    clearTimeout(seg.timer);
+    seg.active = false;
+    const end             = new Date();
+    const durationMinutes = (end - seg.startTime) / 60000;
+    logSegment(seg.startTime, end, durationMinutes, seg.searchCount);
   }
 
-  function calcActiveMinutes(ts) {
-    if (ts.length < 2) return 0;
-    const sorted = [...ts].sort((a, b) => a - b);
-    let total = 0;
-    for (let i = 1; i < sorted.length; i++) {
-      const gap = sorted[i] - sorted[i - 1];
-      if (gap <= ACTIVE_GAP_MS) total += gap;
-    }
-    return Math.round(total / 60000 * 100) / 100;
+  function resetSegmentTimer() {
+    clearTimeout(seg.timer);
+    seg.timer = setTimeout(endSegment, SEGMENT_INACTIVITY_MS);
   }
 
-  function resetInactivityTimer() {
-    clearTimeout(sess.inactivityTimer);
-    sess.inactivityTimer = setTimeout(endSession, SESSION_INACTIVITY_MS);
+  function recordSearchInSegment() {
+    if (!seg.active) startSegment();
+    seg.searchCount++;
+    resetSegmentTimer();
   }
 
-  function recordSearch() {
-    if (!sess.active) return;
-    sess.searchTimestamps.push(new Date());
-    sess.searchCount++;
-    resetInactivityTimer();
-  }
-
-  function logSession(start, end, activeMinutes, searchCount) {
+  function logSegment(start, end, durationMinutes, searchCount) {
     if (!sb) return;
-    sb.from('session_logs').insert({
-      session_start:  start.toISOString(),
-      session_end:    end.toISOString(),
-      active_minutes: activeMinutes,
-      search_count:   searchCount,
-      device_id:      getDeviceId(),
-    }).then(({ error }) => { if (error) console.warn('Supabase session-logg fel:', error); });
+    sb.from('session_segments').insert({
+      segment_start:    start.toISOString(),
+      segment_end:      end.toISOString(),
+      duration_minutes: Math.round(durationMinutes * 100) / 100,
+      search_count:     searchCount,
+      session_date:     start.toISOString().slice(0, 10),
+      device_id:        getDeviceId(),
+    }).then(({ error }) => { if (error) console.warn('Supabase segment-logg fel:', error); });
   }
 
   function logScan(routeCount, unitCount) {
@@ -1779,6 +1871,7 @@
       confirmClear: 'Rensa all inläst data? Detta kan inte ångras.',
       badgeSaved: '💾 {total} KOF sparade sedan {saved} — raderas automatiskt {expires}',
       badgeCloud: '☁️ {total} KOF synkade från molnet',
+      lastLoaded: 'Inläst {time}', refresh: '↻ Uppdatera', refreshing: 'Hämtar…',
       searchHint: 'Skriv ett KOF-nummer för att hitta rutten',
       searchEmptyTitle: 'Inga ruttdata inlästa',
       searchEmptySub: 'Scanna ruttlistorna först och kom sedan tillbaka hit',
@@ -1881,6 +1974,7 @@
       guideIllusRight: 'Rätt ✓', guideIllusWrong: 'Fel ✗',
       guideIllusBilder: 'Bilder', guideIllusApp: 'App', guideIllusMoln: 'Moln',
       guideIllusEtikett: 'Etikett', guideIllusSok: 'Sök KOF',
+      dataUpdated: 'Data uppdaterad',
     },
     en: {
       tabRoutes: 'Routes', tabSearch: 'Search KOF', tabScan: 'Scan', tabGuide: 'Guide',
@@ -1901,6 +1995,7 @@
       confirmClear: 'Clear all loaded data? This cannot be undone.',
       badgeSaved: '💾 {total} KOF saved since {saved} — auto-deleted at {expires}',
       badgeCloud: '☁️ {total} KOF synced from cloud',
+      lastLoaded: 'Loaded {time}', refresh: '↻ Refresh', refreshing: 'Loading…',
       searchHint: 'Type a KOF number to find the route',
       searchEmptyTitle: 'No route data loaded',
       searchEmptySub: 'Scan the route lists first and come back here',
@@ -2003,6 +2098,7 @@
       guideIllusRight: 'Correct ✓', guideIllusWrong: 'Wrong ✗',
       guideIllusBilder: 'Photos', guideIllusApp: 'App', guideIllusMoln: 'Cloud',
       guideIllusEtikett: 'Label', guideIllusSok: 'Search KOF',
+      dataUpdated: 'Data updated',
     },
     ru: {
       tabRoutes: 'Маршруты', tabSearch: 'Поиск КОФ', tabScan: 'Сканер', tabGuide: 'Гид',
@@ -2023,6 +2119,7 @@
       confirmClear: 'Очистить все данные? Это нельзя отменить.',
       badgeSaved: '💾 {total} КОФ сохранено с {saved} — автоудаление {expires}',
       badgeCloud: '☁️ {total} КОФ синхронизировано из облака',
+      lastLoaded: 'Загружено {time}', refresh: '↻ Обновить', refreshing: 'Загрузка…',
       searchHint: 'Введите КОФ-номер для поиска маршрута',
       searchEmptyTitle: 'Данные маршрутов не загружены',
       searchEmptySub: 'Сначала отсканируйте маршрутные листы',
@@ -2124,6 +2221,7 @@
       guideIllusRight: 'Верно ✓', guideIllusWrong: 'Ошибка ✗',
       guideIllusBilder: 'Фото', guideIllusApp: 'Апп', guideIllusMoln: 'Облако',
       guideIllusEtikett: 'Этикетка', guideIllusSok: 'Поиск КОФ',
+      dataUpdated: 'Данные обновлены',
     },
   };
 
@@ -2192,10 +2290,14 @@
     apiKey: '',
     nextId: 1,
     savedAt: null,
+    supabaseLoadedAt: null,
+    isLoadingSupabase: false,
+    isSyncing: false,
     scanReview: {
       active: false, img: null, result: null, judgeResult: null,
       editMode: false, editEntries: [],
     },
+    scanImages: {},
   };
 
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
@@ -2292,9 +2394,29 @@
   }
 
   async function syncToCloud() {
+    if (!sb) { addLog(t('logSyncFailed'), 'err'); return; }
     addLog(t('logSyncing'), 'info');
-    const synced = await saveToSupabase();
-    addLog(synced ? t('logSynced') : t('logSyncFailed'), synced ? 'ok' : 'err');
+    state.isSyncing = true;
+    try {
+      await sb.from('route_entries').delete().not('kof', 'is', null);
+      const rows = Object.entries(state.routeData).map(([kof, d]) => ({
+        kof,
+        route:         d.route,
+        store_name:    d.store,
+        units:         d.units ?? 0,
+        scan_image_id: d.scanImageId ?? null,
+      }));
+      if (rows.length) {
+        const { error } = await sb.from('route_entries').insert(rows);
+        if (error) throw error;
+      }
+      addLog(t('logSynced'), 'ok');
+    } catch (err) {
+      console.warn('Sync error:', err);
+      addLog(t('logSyncFailed'), 'err');
+    } finally {
+      state.isSyncing = false;
+    }
   }
 
   async function clearAllData() {
@@ -2310,8 +2432,12 @@
     renderRoutesTab();
     addLog(t('logCleared'), 'err');
     if (sb) {
+      state.isSyncing = true;
+      state.scanImages = {};
+      await sb.from('scan_images').delete().not('id', 'is', null);
       const { error } = await sb.from('route_entries').delete().not('kof', 'is', null);
       if (error) console.warn('Supabase clearAllData-fel:', error);
+      state.isSyncing = false;
     }
   }
 
@@ -2319,17 +2445,45 @@
     const total  = Object.keys(state.routeData).length;
     const badge  = document.getElementById('savedBadge');
     const btnRow = document.getElementById('btnRow');
-    if (total === 0) { badge.classList.add('hidden'); btnRow.classList.add('hidden'); return; }
-    btnRow.classList.remove('hidden');
-    if (state.savedAt) {
-      const saved   = new Date(state.savedAt);
-      const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
-      const fmt = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-      badge.textContent = tf('badgeSaved', {total, saved: fmt(saved), expires: fmt(expires)});
-      badge.classList.remove('hidden');
+    if (total === 0 && !state.isLoadingSupabase) {
+      badge.classList.add('hidden');
+      btnRow.classList.add('hidden');
+    } else if (total > 0) {
+      btnRow.classList.remove('hidden');
+      if (state.savedAt) {
+        const saved   = new Date(state.savedAt);
+        const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
+        const fmt = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        badge.textContent = tf('badgeSaved', {total, saved: fmt(saved), expires: fmt(expires)});
+        badge.classList.remove('hidden');
+      } else {
+        badge.textContent = tf('badgeCloud', {total});
+        badge.classList.remove('hidden');
+      }
+    }
+
+    // Routes tab sync bar
+    const syncBar    = document.getElementById('routesSyncBar');
+    const syncTime   = document.getElementById('routesSyncTime');
+    const refreshBtn = document.getElementById('routesRefreshBtn');
+    if (!syncBar) return;
+    if (state.isLoadingSupabase) {
+      syncBar.classList.remove('hidden');
+      syncTime.textContent = t('refreshing');
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = t('refreshing');
+    } else if (state.supabaseLoadedAt || total > 0) {
+      syncBar.classList.remove('hidden');
+      if (state.supabaseLoadedAt) {
+        const hhmm = new Date(state.supabaseLoadedAt).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        syncTime.textContent = tf('lastLoaded', { time: hhmm });
+      } else {
+        syncTime.textContent = '';
+      }
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = t('refresh');
     } else {
-      badge.textContent = tf('badgeCloud', {total});
-      badge.classList.remove('hidden');
+      syncBar.classList.add('hidden');
     }
   }
 
@@ -2562,6 +2716,8 @@
           const _ve = (result.entries ?? []).filter(validateEntry);
           logScan(new Set(_ve.map(e => e.route)).size, _ve.reduce((s, e) => s + (parseInt(e.units) || 0), 0));
           judgePromises.push(runJudge(img.id, apiUrl, result));
+          const scanImageId = await uploadScanImage(apiUrl, img.id);
+          if (scanImageId) state.scanImages[scanImageId] = apiUrl;
         }
       } catch (err) {
         if (err.name === 'AbortError') {
@@ -2726,6 +2882,14 @@ Extract route info from this Swedish logistics route sheet. The image may be rot
 
 Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
 Return ONLY rows that are actually visible in the image. Do not invent numbers, fill gaps, or guess. Return rows in the exact order they appear top-to-bottom.
+
+DOCUMENT STRUCTURE — each page has this exact layout:
+1. HEADER ROW: route name, e.g. "Rutt 2 - 138 Laertis"
+2. MAIN BLOCK: KOF rows belonging to "Rutt 2"
+3. SEPARATOR: 1–2 completely empty rows (no KOF, no store name) — THIS IS NOT THE END OF THE PAGE
+4. S-BLOCK: more KOF rows belonging to "S2" (same route number)
+Steps 3 and 4 may be absent if the page has only one section.
+CRITICAL: Do NOT stop extracting when you hit the empty rows. They are a visual separator, not end-of-page. Always continue reading below them and include ALL entries from the S-block. Omitting S-block entries is an extraction error.
 
 {"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
@@ -3215,14 +3379,14 @@ Rules:
     const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1] ?? raw.match(/(\d+)/)?.[1] ?? '?';
     let count = 0;
     const invalid = [];
-    for (const entry of (parsed.entries ?? [])) {
+    ;(parsed.entries ?? []).forEach((entry, entryIndex) => {
       const kof = String(entry.kof ?? '').trim();
-      if (!kof) continue;
+      if (!kof) return;
       const route = entry.route ?? (entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`);
       const normalized = { ...entry, kof, route };
       if (!validateEntry(normalized)) {
         invalid.push(normalized);
-        continue;
+        return;
       }
       if (!state.routeData[kof]) state.routeOrder.push(kof);
       state.routeData[kof] = {
@@ -3235,9 +3399,10 @@ Rules:
         units:       parseInt(entry.units ?? 0) || 0,
         confidence:  entry.confidence ?? 'high',
         sourceImgId: imgId,
+        sortOrder:   entryIndex,
       };
       count++;
-    }
+    });
     syncRoutesMeta();
     return { count, invalid };
   }
@@ -3322,7 +3487,7 @@ Rules:
     const responseTime = searchStartTime > 0 ? Date.now() - searchStartTime : null;
     searchStartTime = 0;
     logSearch(raw, data ?? null, responseTime);
-    recordSearch();
+    recordSearchInSegment();
     const resultArea = document.getElementById('resultArea');
 
     if (data) {
@@ -3693,7 +3858,13 @@ Rules:
     const allStops  = [...mainStops, ...sStops];
 
     const imgIds    = [...new Set(allStops.map(s => s.sourceImgId).filter(Boolean))];
-    const sourceImgs = imgIds.map(id => state.images.find(i => i.id === id)).filter(Boolean);
+    let sourceImgs  = imgIds.map(id => state.images.find(i => i.id === id)).filter(Boolean);
+    if (sourceImgs.length === 0) {
+      const scanIds = [...new Set(allStops.map(s => s.scanImageId).filter(Boolean))];
+      sourceImgs = scanIds
+        .map(id => state.scanImages[id] ? { dataUrl: state.scanImages[id] } : null)
+        .filter(Boolean);
+    }
 
     document.getElementById('reviewModalTitle').textContent = tf('reviewTitle', {route: mainKey});
     const approveBtn = document.getElementById('reviewApproveBtn');
@@ -3804,6 +3975,7 @@ Rules:
      INIT
   ═══════════════════════════════════════════════ */
   initSupabase();
+  initRealtimeSync();
   cleanupOldSupabaseData();
   getDeviceId();
   loadApiKey();
@@ -3811,9 +3983,9 @@ Rules:
   loadLang();
   updateStorageUI();
   loadFromSupabase();
-  document.addEventListener('click', () => { if (sess.active) resetInactivityTimer(); });
-  document.addEventListener('input', () => { if (sess.active) resetInactivityTimer(); });
-  window.addEventListener('beforeunload', endSession);
+  document.addEventListener('click', () => { if (seg.active) resetSegmentTimer(); });
+  document.addEventListener('input', () => { if (seg.active) resetSegmentTimer(); });
+  window.addEventListener('beforeunload', endSegment);
 
   // Event delegation — image list
   document.getElementById('imageList').addEventListener('click', e => {
@@ -4028,5 +4200,6 @@ Rules:
     }
   });
 </script>
+<div id="dataUpdatedToast"></div>
 </body>
 </html>
