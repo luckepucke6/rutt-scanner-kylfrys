@@ -2489,7 +2489,7 @@
       syncTime.textContent = t('refreshing');
       refreshBtn.disabled = true;
       refreshBtn.textContent = t('refreshing');
-    } else if (state.supabaseLoadedAt || total > 0) {
+    } else if (sb) {
       syncBar.classList.remove('hidden');
       if (state.supabaseLoadedAt) {
         const hhmm = new Date(state.supabaseLoadedAt).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
