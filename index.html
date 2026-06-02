@@ -1772,6 +1772,8 @@
       .single();
     if (error) { console.error('scan_images insert-fel:', error.message, error.code); return null; }
     const uuid = row.id;
+    const imgObj = state.images.find(i => i.id === localImgId);
+    if (imgObj) imgObj.supabaseImageId = uuid;
     for (const kof of Object.keys(state.routeData)) {
       if (state.routeData[kof].sourceImgId === localImgId) {
         state.routeData[kof].scanImageId = uuid;
@@ -3072,7 +3074,9 @@ Rules:
         j.issues ?? [],
         result.entries?.length ?? 0,
       );
-      if (!j.approved || j.confidence < 70) {
+      const onlyOrientationIssues = j.issues?.length > 0 &&
+        j.issues.every(s => /rotat|orient|upside|inverted|tilted/i.test(s));
+      if ((!j.approved || j.confidence < 70) && !onlyOrientationIssues) {
         revertEntries(result);
         img.pendingResult = result;
         const issueNote = j.issues?.length ? ` (${j.issues.slice(0, 2).join('; ')})` : '';
@@ -3440,6 +3444,16 @@ Rules:
       };
       count++;
     });
+    if (imgId !== null && imgId !== undefined) {
+      const imgObj = state.images.find(i => i.id === imgId);
+      if (imgObj?.supabaseImageId) {
+        for (const kof of Object.keys(state.routeData)) {
+          if (state.routeData[kof].sourceImgId === imgId && !state.routeData[kof].scanImageId) {
+            state.routeData[kof].scanImageId = imgObj.supabaseImageId;
+          }
+        }
+      }
+    }
     syncRoutesMeta();
     return { count, invalid };
   }
