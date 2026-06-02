@@ -1756,7 +1756,7 @@
       sort_order:    d.sortOrder ?? 0,
       scan_image_id: d.scanImageId ?? null,
     }));
-    if (!rows.length) return false;
+    if (!rows.length) return null;
     const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
     if (error) { console.warn('Supabase upsert-fel:', error); return false; }
     return true;
@@ -2781,9 +2781,9 @@
     state.savedAt = Date.now();
     updateProcessButton();
     saveToStorage();
-    addLog(t('logSyncing'), 'info');
     const synced = await saveToSupabase();
-    addLog(synced ? t('logSynced') : t('logSyncFailed'), synced ? 'ok' : 'err');
+    if (synced === true)  addLog(t('logSynced'), 'ok');
+    if (synced === false) addLog(t('logSyncFailed'), 'err');
 
     const processedCount = okCount + failCount;
     const summaryBox     = document.getElementById('summaryBox');
@@ -2955,7 +2955,8 @@ When evaluating route assignments, trust the extraction model's Rutt X vs SX spl
 Rules:
 - approved: true if the extraction looks correct, false if there are clear errors.
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
-- issues: list specific discrepancies, empty array if none.`;
+- issues: list specific discrepancies, empty array if none.
+- IMPORTANT: The image may be rotated or photographed at an angle. Do NOT flag image orientation/rotation as an issue and do NOT lower confidence or set approved=false solely because the image looks rotated. Claude can read rotated images. Only reject if you can clearly see that extracted KOF numbers or addresses do NOT match the document content.`;
 
   async function callClaudeApi(dataUrl) {
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
