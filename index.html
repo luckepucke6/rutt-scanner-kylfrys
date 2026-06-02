@@ -3468,7 +3468,8 @@ Rules:
     input.style.paddingLeft = val.length > 0 ? '54px' : '15px';
     document.getElementById('searchHint').classList.toggle('hidden', val.length > 0);
     if (val.length === 0) { searchStartTime = 0; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
-    if (val.length === 1 && searchStartTime === 0) searchStartTime = Date.now();
+    if (val.length === 1 && searchStartTime === 0) { searchStartTime = Date.now(); if (!seg.active) startSegment(); }
+    if (seg.active) resetSegmentTimer();
     if (val.length === 6) { hideSuggestions(); searchKof(); return; }
     showSuggestions(val);
   }
