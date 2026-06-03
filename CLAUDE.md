@@ -46,6 +46,8 @@ The script calls the real Claude API for each image, validates the response (6-d
 
 **Mobile-first, cold-warehouse UX** — no hover-only primary interactions. Touch targets minimum 44×44 px. Assume the user has gloves on and is using one hand in a cold environment.
 
+**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content).
+
 ---
 
 ## Architecture
