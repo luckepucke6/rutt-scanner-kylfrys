@@ -2675,11 +2675,10 @@
     showToast(t('toastSaved'));
     if (sb) {
       try {
-        await sb.from('route_entries').upsert([{
-          kof, route: newRoute, driver: data.driver ?? '',
-          store: data.store ?? '', units: parseInt(data.units) || 0,
-          scan_image_id: data.scanImageId ?? null,
-        }]);
+        await sb.from('route_entries').upsert(
+          { kof, route: newRoute, store_name: data.store ?? '', units: parseInt(data.units) || 0 },
+          { onConflict: 'kof' }
+        );
       } catch (err) { console.warn('Supabase inline route update failed', err); }
     }
   }
