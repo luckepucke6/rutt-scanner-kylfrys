@@ -278,6 +278,39 @@
       border-radius: var(--radius-xs);
       max-height: 220px; overflow: hidden auto;
     }
+    .route-modal-kof-list {
+      margin: 8px 0 4px;
+      border: 0.5px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+    .route-modal-kof-header {
+      display: flex; gap: 8px;
+      padding: 5px 10px;
+      background: var(--color-surface-2);
+      border-bottom: 0.5px solid var(--color-border);
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--color-text-secondary);
+    }
+    .route-modal-kof-header-kof { min-width: 68px; flex-shrink: 0; }
+    .route-modal-kof-header-store { flex: 1; }
+    .route-modal-kof-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 10px;
+      border-bottom: 0.5px solid var(--color-border);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .route-modal-kof-row:last-child { border-bottom: none; }
+    .route-modal-kof-row:active { background: var(--color-surface-2); }
+    @media (hover: hover) { .route-modal-kof-row:hover { background: var(--color-surface-2); } }
+    .route-modal-kof-num { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 68px; flex-shrink: 0; }
+    .route-modal-kof-store { flex: 1; color: var(--color-text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .route-modal-kof-est { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
     .review-entry-row {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 10px;
@@ -285,6 +318,9 @@
       font-size: 13px;
     }
     .review-entry-row:last-child { border-bottom: none; }
+    .review-entry-row[data-kof] { cursor: pointer; transition: background 0.12s; }
+    .review-entry-row[data-kof]:active { background: var(--color-surface-2); }
+    @media (hover: hover) { .review-entry-row[data-kof]:hover { background: var(--color-surface-2); } }
     .review-section-separator {
       display: flex; align-items: center; gap: 8px;
       padding: 5px 10px;
@@ -1714,6 +1750,7 @@
       <div class="modal-label" data-i18n="routeDriverLabel">Förare</div>
       <input type="text" class="modal-input" id="routeDriverInput">
     </div>
+    <div id="routeModalKofList" class="route-modal-kof-list hidden"></div>
     <div class="modal-actions">
       <button class="modal-cancel-btn" onclick="closeRouteModal()" data-i18n="modalCancel">Avbryt</button>
       <button class="modal-save-btn" onclick="saveRouteModal()" data-i18n="modalSave">Spara</button>
@@ -2583,9 +2620,10 @@
   };
 
   /* Session-only UI state — not persisted to localStorage */
-  let routesVerified = false;
-  let inlineEditKof  = null;
-  let reviewViewMode = 'routes';
+  let routesVerified     = false;
+  let inlineEditKof      = null;
+  let reviewViewMode     = 'routes';
+  let editModalAfterClose = null;
 
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
   let _reviewDrag = null;
@@ -4136,7 +4174,8 @@ Rules:
   /* ═══════════════════════════════════════════════
      REDIGERA STOPP
   ═══════════════════════════════════════════════ */
-  function openEditModal(kof, presetRoute) {
+  function openEditModal(kof, presetRoute, afterClose) {
+    editModalAfterClose = afterClose ?? null;
     document.getElementById('editModal').dataset.editingKof = kof ?? '';
     const data = kof ? (state.routeData[kof] ?? {}) : {};
     const isNew = !kof;
@@ -4172,6 +4211,9 @@ Rules:
   function closeEditModal() {
     document.getElementById('editModal').dataset.editingKof = '';
     document.getElementById('editModal').classList.add('hidden');
+    const cb = editModalAfterClose;
+    editModalAfterClose = null;
+    if (cb) cb();
   }
 
   async function saveEdit() {
@@ -4249,6 +4291,36 @@ Rules:
     document.getElementById('routeDriverInput').value =
       routeName ? (state.routes[routeName] ?? '') : '';
     document.getElementById('routeDeleteBtn').classList.toggle('hidden', !routeName);
+
+    const kofListEl = document.getElementById('routeModalKofList');
+    if (routeName) {
+      const stops = state.routeOrder
+        .filter(kof => state.routeData[kof]?.route === routeName)
+        .map(kof => ({ kof, ...state.routeData[kof] }));
+      if (stops.length > 0) {
+        kofListEl.innerHTML =
+          `<div class="route-modal-kof-header">
+            <span class="route-modal-kof-header-kof">KOF</span>
+            <span class="route-modal-kof-header-store">BUTIK</span>
+            <span>EST</span>
+          </div>` +
+          stops.map(s =>
+            `<div class="route-modal-kof-row" data-kof="${escHtml(s.kof)}">
+              <span class="route-modal-kof-num">${escHtml(s.kof)}</span>
+              <span class="route-modal-kof-store">${escHtml(s.store)}</span>
+              <span class="route-modal-kof-est">${s.units || ''}</span>
+            </div>`
+          ).join('');
+        kofListEl.classList.remove('hidden');
+      } else {
+        kofListEl.innerHTML = '';
+        kofListEl.classList.add('hidden');
+      }
+    } else {
+      kofListEl.innerHTML = '';
+      kofListEl.classList.add('hidden');
+    }
+
     document.getElementById('routeModal').classList.remove('hidden');
   }
 
@@ -4399,8 +4471,7 @@ Rules:
       : '';
 
     const buildRows = stops => stops.map(s => `
-      <div class="review-entry-row">
-        <input type="checkbox" class="review-entry-checkbox">
+      <div class="review-entry-row" data-kof="${escHtml(s.kof)}">
         <span class="review-entry-kof">${escHtml(s.kof)}</span>
         <span class="review-entry-store">${escHtml(s.store)}</span>
         ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
@@ -4527,6 +4598,24 @@ Rules:
   document.getElementById('suggestions').addEventListener('click', e => {
     const item = e.target.closest('.suggestion-item');
     if (item) selectSuggestion(item.dataset.kof);
+  });
+  // Event delegation — route modal KOF list
+  document.getElementById('routeModalKofList').addEventListener('click', e => {
+    const row = e.target.closest('.route-modal-kof-row');
+    if (!row) return;
+    const kof = row.dataset.kof;
+    const callerRoute = document.getElementById('routeModal').dataset.editingRoute;
+    closeRouteModal();
+    openEditModal(kof, null, () => openRouteModal(callerRoute));
+  });
+  // Event delegation — comparison view KOF rows
+  document.getElementById('reviewBody').addEventListener('click', e => {
+    const row = e.target.closest('.review-entry-row[data-kof]');
+    if (!row) return;
+    const kof = row.dataset.kof;
+    const route = document.getElementById('reviewApproveBtn').dataset.route;
+    closeRouteReview();
+    openEditModal(kof, null, () => openRouteReview(route));
   });
   // Event delegation — routes list
   const _routesList = document.getElementById('routesList');
