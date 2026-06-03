@@ -188,10 +188,40 @@
       width: 16px; height: 16px;
       margin-left: 4px; flex-shrink: 0; vertical-align: middle;
     }
+    /* ─── Verifieringsbanner ─── */
+    .routes-verify-banner {
+      background: #fef3c7; border: 0.5px solid #d97706;
+      border-radius: var(--radius); padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .routes-verify-text { font-size: 13px; color: #78350f; font-weight: 500; line-height: 1.5; }
+    .routes-verify-btn {
+      align-self: flex-start; padding: 8px 16px;
+      background: none; border: 0.5px solid #d97706;
+      border-radius: var(--radius-xs); color: #92400e;
+      font-size: 13px; font-weight: 600; font-family: var(--font); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .routes-verify-btn:active { background: #fde68a; }
+    /* ─── Inline ruttredigering ─── */
+    .rutt-inline-edit-cell { padding: 8px 10px !important; background: var(--color-surface-2); }
+    .rutt-inline-edit { display: flex; align-items: center; gap: 8px; }
+    .rutt-inline-kof { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 60px; flex-shrink: 0; font-size: 13px; }
+    .rutt-inline-store { flex: 1; font-size: 12px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rutt-inline-btns { display: flex; gap: 4px; flex-shrink: 0; }
+    .rutt-inline-route-btn {
+      padding: 5px 10px; font-size: 12px; font-weight: 600;
+      background: none; border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs); font-family: var(--font);
+      color: var(--color-text-secondary); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .rutt-inline-route-btn.active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+    .rutt-inline-route-btn:not(.active):active { background: var(--color-surface-2); }
     .review-sheet {
       background: var(--color-surface);
       border-radius: var(--radius) var(--radius) 0 0;
-      width: 100%; max-width: 560px;
+      width: 100%; max-width: 720px;
       max-height: 90dvh;
       display: flex; flex-direction: column; overflow: hidden;
     }
@@ -202,12 +232,40 @@
       border-bottom: 0.5px solid var(--color-border);
       flex-shrink: 0; gap: 10px;
     }
-    .review-scroll-area {
-      flex: 1; overflow-y: auto;
-      display: flex; flex-direction: column;
+    /* Toggle-rad för smal skärm */
+    .review-view-toggle {
+      display: none; flex-shrink: 0;
+      border-bottom: 0.5px solid var(--color-border);
+      padding: 0 16px;
+    }
+    .review-view-btn {
+      flex: 1; padding: 10px 0; background: none; border: none;
+      border-bottom: 2px solid transparent;
+      font-size: 14px; font-weight: 600; font-family: var(--font);
+      color: var(--color-text-secondary); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .review-view-btn.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+    /* Tvåkolumnslayout */
+    .review-two-col {
+      flex: 1; display: flex; flex-direction: row;
+      min-height: 0; overflow: hidden;
+    }
+    .review-left-col {
+      flex: 1; overflow-y: auto; min-width: 0;
+      border-right: 0.5px solid var(--color-border);
+    }
+    .review-right-col {
+      flex: 1.3; display: flex; flex-direction: column;
+      overflow: hidden; min-width: 0;
+    }
+    @media (max-width: 399px) {
+      .review-view-toggle { display: flex; }
+      .review-left-col.review-col-hidden,
+      .review-right-col.review-col-hidden { display: none; }
     }
     .review-body {
-      padding: 14px 16px 0;
+      padding: 14px 16px 14px;
       display: flex; flex-direction: column; gap: 10px;
     }
     .review-section-label {
@@ -246,6 +304,7 @@
     .review-image-section {
       padding: 10px 16px 14px;
       display: flex; flex-direction: column; gap: 6px;
+      flex: 1; min-height: 0;
     }
     .review-img-toolbar {
       display: flex; align-items: center; justify-content: space-between;
@@ -262,7 +321,7 @@
     .review-img-viewport {
       overflow: hidden; border-radius: var(--radius-xs);
       border: 0.5px solid var(--color-border);
-      height: 260px;
+      flex: 1; min-height: 120px;
       display: flex; align-items: center; justify-content: center;
       cursor: grab; touch-action: none;
       background: var(--color-bg);
@@ -1584,6 +1643,10 @@
 
   <!-- ════ ROUTES TAB ════ -->
   <div id="pane-routes" class="content">
+    <div id="routesVerifyBanner" class="routes-verify-banner hidden">
+      <div class="routes-verify-text" id="routesVerifyText"></div>
+      <button class="routes-verify-btn" id="routesVerifyBtn" onclick="dismissRoutesVerify()"></button>
+    </div>
     <div id="routesSyncBar" class="routes-sync-bar hidden">
       <span id="routesSyncTime" class="routes-sync-time"></span>
       <button id="routesRefreshBtn" class="routes-refresh-btn" onclick="loadFromSupabase()">↻ Uppdatera</button>
@@ -1705,21 +1768,29 @@
       <div class="modal-title" id="reviewModalTitle"></div>
       <button class="modal-cancel-btn" onclick="closeRouteReview()" data-i18n="modalCancel" style="padding:8px 14px;font-size:13px">Avbryt</button>
     </div>
-    <div class="review-scroll-area">
-      <div class="review-body" id="reviewBody"></div>
-      <div class="review-image-section hidden" id="reviewImageSection">
-        <div class="review-img-toolbar">
-          <span class="review-section-label" id="reviewImageSectionLabel"></span>
-          <button class="review-rotate-btn" id="reviewRotateBtn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
-            Rotera
-          </button>
-        </div>
-        <div class="review-img-viewport" id="reviewImgViewport">
-          <img class="review-source-img" id="reviewSourceImg" alt="">
-        </div>
+    <div class="review-view-toggle" id="reviewViewToggle">
+      <button class="review-view-btn active" id="reviewToggleRoutes" onclick="setReviewView('routes')" data-i18n="reviewToggleRoutes">Rutter</button>
+      <button class="review-view-btn" id="reviewToggleDocs" onclick="setReviewView('docs')" data-i18n="reviewToggleDocs">Dokument</button>
+    </div>
+    <div class="review-two-col">
+      <div class="review-left-col" id="reviewLeftCol">
+        <div class="review-body" id="reviewBody"></div>
       </div>
-      <div class="review-no-image hidden" id="reviewNoImageMsg"></div>
+      <div class="review-right-col" id="reviewRightCol">
+        <div class="review-image-section hidden" id="reviewImageSection">
+          <div class="review-img-toolbar">
+            <span class="review-section-label" id="reviewImageSectionLabel"></span>
+            <button class="review-rotate-btn" id="reviewRotateBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+              Rotera
+            </button>
+          </div>
+          <div class="review-img-viewport" id="reviewImgViewport">
+            <img class="review-source-img" id="reviewSourceImg" alt="">
+          </div>
+        </div>
+        <div class="review-no-image hidden" id="reviewNoImageMsg"></div>
+      </div>
     </div>
     <div class="review-actions">
       <button class="review-flag-btn" id="reviewFlagBtn"></button>
@@ -2173,6 +2244,10 @@
       guideIllusBilder: 'Bilder', guideIllusApp: 'App', guideIllusMoln: 'Moln',
       guideIllusEtikett: 'Etikett', guideIllusSok: 'Sök KOF',
       dataUpdated: 'Data uppdaterad',
+      verifyBannerText: '⚠️ Kontrollera att alla rutter stämmer med papprena innan körning startar. Rapportera avvikelser till arbetsledaren.',
+      verifyBannerBtn: 'Jag har kontrollerat ✓',
+      reviewToggleRoutes: 'Rutter',
+      reviewToggleDocs: 'Dokument',
     },
     en: {
       tabRoutes: 'Routes', tabSearch: 'Search KOF', tabScan: 'Scan', tabGuide: 'Guide',
@@ -2297,6 +2372,10 @@
       guideIllusBilder: 'Photos', guideIllusApp: 'App', guideIllusMoln: 'Cloud',
       guideIllusEtikett: 'Label', guideIllusSok: 'Search KOF',
       dataUpdated: 'Data updated',
+      verifyBannerText: '⚠️ Verify that all routes match the printed sheets before the shift starts. Report discrepancies to your supervisor.',
+      verifyBannerBtn: 'I have checked ✓',
+      reviewToggleRoutes: 'Routes',
+      reviewToggleDocs: 'Document',
     },
     ru: {
       tabRoutes: 'Маршруты', tabSearch: 'Поиск КОФ', tabScan: 'Сканер', tabGuide: 'Гид',
@@ -2420,6 +2499,10 @@
       guideIllusBilder: 'Фото', guideIllusApp: 'Апп', guideIllusMoln: 'Облако',
       guideIllusEtikett: 'Этикетка', guideIllusSok: 'Поиск КОФ',
       dataUpdated: 'Данные обновлены',
+      verifyBannerText: '⚠️ Проверьте, что все маршруты соответствуют распечатанным листам до начала смены. Сообщайте о расхождениях руководителю.',
+      verifyBannerBtn: 'Я проверил ✓',
+      reviewToggleRoutes: 'Маршруты',
+      reviewToggleDocs: 'Документ',
     },
   };
 
@@ -2499,6 +2582,11 @@
     pendingReview: null,
   };
 
+  /* Session-only UI state — not persisted to localStorage */
+  let routesVerified = false;
+  let inlineEditKof  = null;
+  let reviewViewMode = 'routes';
+
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
   let _reviewDrag = null;
   let _reviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
@@ -2512,6 +2600,38 @@
     const img = document.getElementById('obligReviewSourceImg');
     if (img) img.style.transform =
       `rotate(${obligReviewImgState.rotation}deg) scale(${obligReviewImgState.scale})`;
+  }
+
+  function dismissRoutesVerify() {
+    routesVerified = true;
+    document.getElementById('routesVerifyBanner').classList.add('hidden');
+  }
+
+  function setReviewView(mode) {
+    reviewViewMode = mode;
+    document.getElementById('reviewLeftCol').classList.toggle('review-col-hidden', mode === 'docs');
+    document.getElementById('reviewRightCol').classList.toggle('review-col-hidden', mode === 'routes');
+    document.getElementById('reviewToggleRoutes').classList.toggle('active', mode === 'routes');
+    document.getElementById('reviewToggleDocs').classList.toggle('active', mode === 'docs');
+  }
+
+  async function changeInlineRoute(kof, newRoute) {
+    const data = state.routeData[kof];
+    if (!data || data.route === newRoute) { inlineEditKof = null; renderRoutesTab(); return; }
+    data.route = newRoute;
+    inlineEditKof = null;
+    saveToStorage();
+    renderRoutesTab();
+    showToast(t('toastSaved'));
+    if (sb) {
+      try {
+        await sb.from('route_entries').upsert([{
+          kof, route: newRoute, driver: data.driver ?? '',
+          store: data.store ?? '', units: parseInt(data.units) || 0,
+          scan_image_id: data.scanImageId ?? null,
+        }]);
+      } catch (err) { console.warn('Supabase inline route update failed', err); }
+    }
   }
 
   function applyScanReviewImgTransform() {
@@ -3897,6 +4017,14 @@ Rules:
     summaryCard.classList.toggle('hidden', entries.length === 0);
     document.getElementById('summaryUnitsTotal').textContent = totalUnits;
 
+    // Verify banner: show when there are routes and user hasn't dismissed yet
+    const verifyBanner = document.getElementById('routesVerifyBanner');
+    const verifyText   = document.getElementById('routesVerifyText');
+    const verifyBtn    = document.getElementById('routesVerifyBtn');
+    if (verifyText) verifyText.textContent = t('verifyBannerText');
+    if (verifyBtn)  verifyBtn.textContent  = t('verifyBannerBtn');
+    verifyBanner.classList.toggle('hidden', routesVerified || entries.length === 0);
+
     const groups = {};
     for (const kof of state.routeOrder) {
       const data = state.routeData[kof];
@@ -3930,6 +4058,24 @@ Rules:
 
     function tableRows(stops) {
       return stops.map(s => {
+        if (s.kof === inlineEditKof) {
+          const rNum = s.route.match(/\d+/)?.[0] ?? '';
+          const isS  = s.route.startsWith('S');
+          const mKey = `Rutt ${rNum}`;
+          const sK   = `S${rNum}`;
+          return `<tr class="rutt-row rutt-row-inline-edit" data-kof="${escHtml(s.kof)}">
+            <td colspan="3" class="rutt-inline-edit-cell">
+              <div class="rutt-inline-edit">
+                <span class="rutt-inline-kof">${escHtml(s.kof)}</span>
+                <span class="rutt-inline-store">${escHtml(s.store)}</span>
+                <div class="rutt-inline-btns">
+                  <button class="rutt-inline-route-btn${!isS ? ' active' : ''}" data-kof="${escHtml(s.kof)}" data-route="${escHtml(mKey)}">${escHtml(mKey)}</button>
+                  <button class="rutt-inline-route-btn${isS ? ' active' : ''}" data-kof="${escHtml(s.kof)}" data-route="${escHtml(sK)}">${escHtml(sK)}</button>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        }
         const warn = (s.confidence === 'low' || s.confidence === 'medium')
           ? `<span class="confidence-warn" title="${escHtml(t('uncertainWarning'))}">⚠️</span>` : '';
         return `<tr class="rutt-row" data-kof="${escHtml(s.kof)}">
@@ -4287,6 +4433,7 @@ Rules:
     reviewImgState.panX  = 0; reviewImgState.panY     = 0;
     applyReviewImgTransform();
 
+    setReviewView('routes');
     document.getElementById('routeReviewModal').classList.remove('hidden');
   }
 
@@ -4390,6 +4537,16 @@ Rules:
     if (routeHeaderBtn) { openRouteModal(routeHeaderBtn.dataset.route); return; }
     const addKofBtn = e.target.closest('.add-kof-btn');
     if (addKofBtn) { openNewKofModal(addKofBtn.dataset.route); return; }
+    // Inline route toggle button
+    const inlineBtn = e.target.closest('.rutt-inline-route-btn');
+    if (inlineBtn) { changeInlineRoute(inlineBtn.dataset.kof, inlineBtn.dataset.route); return; }
+    // Tap on a rutt-row → open/close inline edit
+    const ruttRow = e.target.closest('.rutt-row');
+    if (ruttRow) {
+      inlineEditKof = (inlineEditKof === ruttRow.dataset.kof) ? null : ruttRow.dataset.kof;
+      renderRoutesTab();
+      return;
+    }
   });
 
   // Lång-tryck på rad (mobil) → kontextmeny
@@ -4406,7 +4563,7 @@ Rules:
   }
   _routesList.addEventListener('touchstart', e => {
     const row = e.target.closest('.rutt-row');
-    if (!row) return;
+    if (!row || row.classList.contains('rutt-row-inline-edit')) return;
     const touch = e.touches[0];
     _longPressTimer = setTimeout(() => _showRowCtx(touch.clientX, touch.clientY, row.dataset.kof), 600);
   }, { passive: true });
@@ -4430,6 +4587,11 @@ Rules:
   document.addEventListener('click', e => {
     if (!e.target.closest('#rowContextMenu')) {
       document.getElementById('rowContextMenu').classList.add('hidden');
+    }
+    const _rl = document.getElementById('routesList');
+    if (inlineEditKof && !e.composedPath().includes(_rl)) {
+      inlineEditKof = null;
+      renderRoutesTab();
     }
   });
 

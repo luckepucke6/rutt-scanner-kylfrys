@@ -64,3 +64,15 @@ The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → route
 ### Camera scanner
 
 `cam` object manages the live scan loop: every 2500 ms, `scanFrame()` captures the center 75%×35% of the video frame, compresses it, and calls `callClaudeForKof`. A 5-second cooldown prevents the same KOF from triggering multiple result updates.
+
+### Session-only UI state
+
+Three module-level `let` variables track transient UI state that resets on every page load (intentionally **not** in `state` and **not** persisted):
+
+- `routesVerified` — set to `true` when user taps the "Jag har kontrollerat ✓" button in the Routes tab verification banner. The banner is shown whenever there are routes and this is `false`. Reset by `dismissRoutesVerify()`.
+- `inlineEditKof` — the KOF number whose row is currently expanded for inline route-switching in the Routes tab table. Tapping a row sets it; tapping again or outside `#routesList` clears it. Saved by `changeInlineRoute(kof, newRoute)` which upserts to Supabase.
+- `reviewViewMode` — `'routes'` or `'docs'`; controls which column is visible in the comparison view modal on narrow screens (<400 px). Updated by `setReviewView(mode)`.
+
+### Comparison view (eye button)
+
+`openRouteReview(routeName)` opens the `#routeReviewModal` bottom sheet with a **two-column layout**: route entries on the left, source document image on the right. On screens narrower than 400 px a toggle bar ("Rutter" / "Dokument") is shown instead; `setReviewView()` toggles `review-col-hidden` class on the columns (CSS-only show/hide so scroll positions are preserved).
