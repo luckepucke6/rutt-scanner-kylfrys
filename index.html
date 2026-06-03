@@ -475,6 +475,101 @@
       .scan-review-entries { max-height: none; }
     }
 
+    /* ── Obligatorisk granskningsskärm ── */
+    .oblig-review-overlay {
+      position: fixed; inset: 0; z-index: 260;
+      background: var(--color-bg);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .oblig-review-sheet {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      max-width: 640px; width: 100%; margin: 0 auto;
+    }
+    .oblig-review-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 0.5px solid var(--color-border);
+      flex-shrink: 0; gap: 12px;
+    }
+    .oblig-review-title { font-size: 16px; font-weight: 700; }
+    .oblig-review-subtitle { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+    .oblig-review-rotate-btn {
+      flex-shrink: 0; font-size: 13px; padding: 6px 12px;
+      background: none; border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius-xs); cursor: pointer; color: var(--color-text-secondary);
+      font-family: var(--font); -webkit-tap-highlight-color: transparent;
+    }
+    .oblig-review-img-viewport {
+      flex: 0 0 42vh; overflow: hidden; cursor: grab;
+      background: #111;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .oblig-review-img-viewport:active { cursor: grabbing; }
+    .oblig-review-source-img {
+      max-width: 100%; max-height: 100%;
+      transform-origin: center center; pointer-events: none;
+      user-select: none; -webkit-user-select: none;
+    }
+    .oblig-review-entries {
+      flex: 1; overflow-y: auto; padding: 8px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .oblig-review-route-label {
+      font-size: 11px; font-weight: 700; color: var(--color-text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 6px 2px 2px;
+    }
+    .oblig-review-entry-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 8px;
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-xs);
+    }
+    .oblig-review-kof {
+      font-weight: 700; font-family: 'SF Mono','Fira Code',monospace;
+      font-size: 12px; flex-shrink: 0; min-width: 62px;
+    }
+    .oblig-review-store {
+      flex: 1; font-size: 12px; line-height: 1.3;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: var(--color-text-primary);
+    }
+    .oblig-review-est {
+      font-weight: 600; font-size: 12px; color: var(--color-accent);
+      flex-shrink: 0; min-width: 20px; text-align: right;
+    }
+    .oblig-review-toggle-btn {
+      flex-shrink: 0; padding: 3px 8px;
+      background: none; border: 0.5px solid var(--color-accent);
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+      color: var(--color-accent); cursor: pointer;
+      white-space: nowrap; -webkit-tap-highlight-color: transparent;
+      font-family: var(--font);
+    }
+    .oblig-review-toggle-btn.is-s-route { border-color: #5856d6; color: #5856d6; }
+    .oblig-review-actions {
+      display: flex; gap: 10px; padding: 12px 14px 44px;
+      border-top: 0.5px solid var(--color-border); flex-shrink: 0;
+    }
+    .oblig-review-save-btn {
+      flex: 2; padding: 15px;
+      background: var(--color-success); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-size: 16px; font-weight: 700; font-family: var(--font);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .oblig-review-save-btn:active { opacity: 0.85; }
+    .oblig-review-save-btn:disabled { opacity: 0.6; cursor: default; }
+    .oblig-review-discard-btn {
+      flex: 1; padding: 15px;
+      background: none; border: 0.5px solid var(--color-error);
+      border-radius: var(--radius); color: var(--color-error);
+      font-size: 15px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .oblig-review-discard-btn:active { background: var(--color-error-bg); }
+
     .image-thumb-btn { cursor: zoom-in; }
 
     .image-preview-overlay {
@@ -1564,6 +1659,27 @@
   </div>
 </div>
 
+<!-- Obligatorisk granskning efter inläsning -->
+<div class="oblig-review-overlay hidden" id="obligReviewOverlay">
+  <div class="oblig-review-sheet">
+    <div class="oblig-review-toolbar">
+      <div>
+        <div class="oblig-review-title" id="obligReviewTitle">Granska inläsning</div>
+        <div class="oblig-review-subtitle" id="obligReviewSubtitle"></div>
+      </div>
+      <button class="oblig-review-rotate-btn" id="obligReviewRotateBtn">↺ Rotera</button>
+    </div>
+    <div class="oblig-review-img-viewport" id="obligReviewImgViewport">
+      <img class="oblig-review-source-img" id="obligReviewSourceImg" alt="">
+    </div>
+    <div class="oblig-review-entries" id="obligReviewEntries"></div>
+    <div class="oblig-review-actions">
+      <button class="oblig-review-save-btn" id="obligReviewSaveBtn">✓ Ser bra ut — spara</button>
+      <button class="oblig-review-discard-btn" id="obligReviewDiscardBtn">↺ Börja om</button>
+    </div>
+  </div>
+</div>
+
 <!-- Rad-kontextmeny (lång-tryck / högerklick) -->
 <div id="rowContextMenu" class="row-context-menu hidden">
   <button id="ctxEditBtn">Redigera</button>
@@ -2380,6 +2496,7 @@
       editMode: false, editEntries: [],
     },
     scanImages: {},
+    pendingReview: null,
   };
 
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
@@ -2389,6 +2506,13 @@
   const scanReviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
   let _scanReviewDrag = null;
   let _scanReviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
+
+  const obligReviewImgState = { scale: 1, rotation: 0 };
+  function applyObligReviewImgTransform() {
+    const img = document.getElementById('obligReviewSourceImg');
+    if (img) img.style.transform =
+      `rotate(${obligReviewImgState.rotation}deg) scale(${obligReviewImgState.scale})`;
+  }
 
   function applyScanReviewImgTransform() {
     const img = document.getElementById('scanReviewSourceImg');
@@ -2784,90 +2908,50 @@
     state.isProcessing = true;
     updateProcessButton();
     document.getElementById('summaryBox').classList.add('hidden');
-    addLog(tf('logStarting', {n: pending.length}), 'info');
 
-    let okCount = 0;
-    let failCount = 0;
-    const judgePromises = [];
+    const img = pending[0];
+    const idx = state.images.indexOf(img) + 1;
+    addLog(tf('logPrep', { n: idx }), 'info');
+    updateImageItem(img.id, 'loading', t('statusAnalyzing'));
 
-    for (const img of pending) {
-      const idx = state.images.indexOf(img) + 1;
-      addLog(tf('logPrep', {n: idx}));
-      updateImageItem(img.id, 'loading', t('statusAnalyzing'));
-      try {
-        let apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
-        if (!img.dataUrl.startsWith('data:application/pdf')) {
-          const rot = await detectRotation(apiUrl);
-          if (rot) { apiUrl = await applyRotation(apiUrl, rot); img.dataUrl = apiUrl; }
-        }
-        addLog(tf('logSending', {n: idx}));
-        const result = await callClaudeApi(apiUrl);
-        const { count, invalid } = storeEntries(result, img.id);
-        for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
-        if (count === 0) {
-          const errMsg = tf('errNoKof', {n: idx});
-          updateImageItem(img.id, 'error', errMsg);
-          addLog(errMsg, 'err');
-          failCount++;
-        } else {
-          const invalidNote = invalid.length ? ` (${invalid.length} ogiltiga)` : '';
-          const msg = tf('logResult', {route: result.routeNumber, count}) + invalidNote;
-          updateImageItem(img.id, 'done', msg);
-          addLog(tf('logDone', {n: idx, msg}), 'ok');
-          okCount++;
-          const _ve = (result.entries ?? []).filter(validateEntry);
-          logScan(new Set(_ve.map(e => e.route)).size, _ve.reduce((s, e) => s + (parseInt(e.units) || 0), 0));
-          judgePromises.push(runJudge(img.id, apiUrl, result));
-          const scanImageId = await uploadScanImage(apiUrl, img.id);
-          if (scanImageId) state.scanImages[scanImageId] = apiUrl;
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          updateImageItem(img.id, 'error', t('logCancelled'));
-          break;
-        }
+    try {
+      let apiUrl = img.dataUrl.startsWith('data:application/pdf')
+        ? img.dataUrl : await toJpeg(img.dataUrl);
+      if (!img.dataUrl.startsWith('data:application/pdf')) {
+        const rot = await detectRotation(apiUrl);
+        if (rot) { apiUrl = await applyRotation(apiUrl, rot); img.dataUrl = apiUrl; }
+      }
+      addLog(tf('logSending', { n: idx }));
+      const result = await callClaudeApi(apiUrl);
+      const valid  = (result.entries ?? []).filter(validateEntry);
+      if (valid.length === 0) {
+        const errMsg = tf('errNoKof', { n: idx });
+        updateImageItem(img.id, 'error', errMsg);
+        addLog(errMsg, 'err');
+        state.isProcessing = false;
+        updateProcessButton();
+        saveToStorage();
+        renderImageList();
+        processImages();
+        return;
+      }
+      addLog(tf('logResult', { route: result.routeNumber, count: valid.length }), 'ok');
+      updateImageItem(img.id, 'loading', 'Väntar på granskning…');
+      state.isProcessing = false;
+      updateProcessButton();
+      showObligReview(img, apiUrl, result);
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        updateImageItem(img.id, 'error', t('logCancelled'));
+      } else {
         const errMsg = String(err.message || err).slice(0, 160);
         updateImageItem(img.id, 'error', errMsg);
-        addLog(tf('logError', {n: idx, msg: errMsg}), 'err');
-        failCount++;
+        addLog(tf('logError', { n: idx, msg: errMsg }), 'err');
         if (!state.scanReview.active) showScanReview(img, null, null);
       }
+      state.isProcessing = false;
+      updateProcessButton();
     }
-
-    const total = Object.keys(state.routeData).length;
-    addLog(tf('logFinished', {total}), 'ok');
-
-    await Promise.allSettled(judgePromises);
-
-    state.abortController = null;
-    state.isProcessing = false;
-    state.savedAt = Date.now();
-    updateProcessButton();
-    saveToStorage();
-    const synced = await saveToSupabase();
-    if (synced === true)  addLog(t('logSynced'), 'ok');
-    if (synced === false) addLog(t('logSyncFailed'), 'err');
-
-    const processedCount = okCount + failCount;
-    const summaryBox     = document.getElementById('summaryBox');
-    const summaryLinkBtn = document.getElementById('summaryLinkBtn');
-    if (okCount === 0 && failCount > 0) {
-      document.getElementById('summaryTitle').textContent = tf('summaryPartial', {ok: 0, total: processedCount, failed: failCount});
-      document.querySelector('#summaryBox .summary-icon').textContent = '❌';
-      summaryBox.classList.add('error');
-      summaryLinkBtn.classList.add('hidden');
-    } else if (failCount > 0) {
-      document.getElementById('summaryTitle').textContent = tf('summaryPartial', {ok: okCount, total: processedCount, failed: failCount});
-      document.querySelector('#summaryBox .summary-icon').textContent = '⚠️';
-      summaryBox.classList.remove('error');
-      summaryLinkBtn.classList.remove('hidden');
-    } else {
-      document.getElementById('summaryTitle').textContent = tf('summaryTitle', {total});
-      document.querySelector('#summaryBox .summary-icon').textContent = '✅';
-      summaryBox.classList.remove('error');
-      summaryLinkBtn.classList.remove('hidden');
-    }
-    summaryBox.classList.remove('hidden');
   }
 
   /* ═══════════════════════════════════════════════
@@ -3527,6 +3611,104 @@ Rules:
     if (!/^\d{6}$/.test(String(entry.kof ?? ''))) return false;
     if (!/^(Rutt \d{1,2}|S\d{1,2})$/.test(String(entry.route ?? ''))) return false;
     return true;
+  }
+
+  /* ═══════════════════════════════════════════════
+     OBLIGATORISK GRANSKNING
+  ═══════════════════════════════════════════════ */
+  function showObligReview(img, apiUrl, result) {
+    const entries = (result.entries ?? [])
+      .filter(e => /^\d{6}$/.test((e.kof ?? '').trim()))
+      .map(e => ({ ...e, kof: e.kof.trim() }));
+    state.pendingReview = { img, apiUrl, result, entries };
+    obligReviewImgState.scale = 1;
+    obligReviewImgState.rotation = 0;
+    const routeLabel = result.routeNumber
+      ? `Rutt ${result.routeNumber} — ${entries.length} rader`
+      : `${entries.length} rader`;
+    document.getElementById('obligReviewTitle').textContent = routeLabel;
+    document.getElementById('obligReviewSubtitle').textContent =
+      'Jämför med pappret. Tryck → S-rutt / → Huvudrutt för att flytta rad.';
+    const imgEl = document.getElementById('obligReviewSourceImg');
+    const vp    = document.getElementById('obligReviewImgViewport');
+    const isPdf = apiUrl?.startsWith('data:application/pdf');
+    imgEl.src   = (!isPdf && apiUrl) ? apiUrl : '';
+    vp.classList.toggle('hidden', !!(isPdf || !apiUrl));
+    applyObligReviewImgTransform();
+    renderObligReviewEntries();
+    document.getElementById('obligReviewOverlay').classList.remove('hidden');
+  }
+
+  function renderObligReviewEntries() {
+    const { entries } = state.pendingReview;
+    const groups = {};
+    for (const e of entries) {
+      if (!groups[e.route]) groups[e.route] = [];
+      groups[e.route].push(e);
+    }
+    const sorted = Object.keys(groups).sort((a, b) => {
+      const aS = a.startsWith('S'), bS = b.startsWith('S');
+      if (aS !== bS) return aS ? 1 : -1;
+      return (parseInt(a.match(/\d+/)?.[0]) || 0) - (parseInt(b.match(/\d+/)?.[0]) || 0);
+    });
+    document.getElementById('obligReviewEntries').innerHTML = sorted.map(route => {
+      const isS = route.startsWith('S');
+      const rows = groups[route].map(e => `
+        <div class="oblig-review-entry-row">
+          <div class="oblig-review-kof">${escHtml(e.kof)}</div>
+          <div class="oblig-review-store">${escHtml(e.store)}</div>
+          <div class="oblig-review-est">${e.units || ''}</div>
+          <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
+                  data-kof="${escHtml(e.kof)}">→ ${isS ? 'Huvud&shy;rutt' : 'S-rutt'}</button>
+        </div>`).join('');
+      return `<div><div class="oblig-review-route-label">${escHtml(route)}</div>${rows}</div>`;
+    }).join('');
+  }
+
+  function toggleObligReviewRoute(kof) {
+    const e = state.pendingReview.entries.find(x => x.kof === kof);
+    if (!e) return;
+    const n = state.pendingReview.result.routeNumber;
+    e.route = e.route.startsWith('S') ? `Rutt ${n}` : `S${n}`;
+    renderObligReviewEntries();
+  }
+
+  async function confirmObligReview() {
+    const btn = document.getElementById('obligReviewSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sparar…';
+    const { img, apiUrl, result, entries } = state.pendingReview;
+    result.entries = entries;
+    const { count } = storeEntries(result, img.id);
+    const scanImageId = await uploadScanImage(apiUrl, img.id);
+    if (scanImageId) state.scanImages[scanImageId] = apiUrl;
+    updateImageItem(img.id, 'done', tf('logResult', { route: result.routeNumber, count }));
+    logScan(
+      new Set(entries.map(e => e.route)).size,
+      entries.reduce((s, e) => s + (parseInt(e.units) || 0), 0)
+    );
+    state.savedAt = Date.now();
+    saveToStorage();
+    const synced = await saveToSupabase();
+    if (synced === false) addLog(t('logSyncFailed'), 'err');
+    state.pendingReview = null;
+    document.getElementById('obligReviewOverlay').classList.add('hidden');
+    btn.disabled = false;
+    btn.textContent = '✓ Ser bra ut — spara';
+    renderRoutesTab();
+    renderImageList();
+    showToast(t('toastSaved'));
+    processImages();
+  }
+
+  function discardObligReview() {
+    const { img } = state.pendingReview;
+    updateImageItem(img.id, 'pending', t('statusPending'));
+    state.pendingReview = null;
+    state.isProcessing = false;
+    document.getElementById('obligReviewOverlay').classList.add('hidden');
+    updateProcessButton();
+    renderImageList();
   }
 
   function storeEntries(parsed, imgId = null) {
@@ -4258,6 +4440,41 @@ Rules:
     const btn = e.target.closest('.show-in-routes-btn');
     if (btn) showKofInRoutes(btn.dataset.kof);
   });
+
+  // Obligatorisk granskning — knappar
+  document.getElementById('obligReviewRotateBtn').addEventListener('click', () => {
+    obligReviewImgState.rotation = (obligReviewImgState.rotation + 90) % 360;
+    applyObligReviewImgTransform();
+  });
+  document.getElementById('obligReviewSaveBtn').addEventListener('click', confirmObligReview);
+  document.getElementById('obligReviewDiscardBtn').addEventListener('click', discardObligReview);
+  // S-rutt-toggle (delegerat)
+  document.getElementById('obligReviewEntries').addEventListener('click', e => {
+    const btn = e.target.closest('.oblig-review-toggle-btn');
+    if (btn) toggleObligReviewRoute(btn.dataset.kof);
+  });
+  // Pinch-to-zoom på granskningsbilden
+  (function() {
+    const vp = document.getElementById('obligReviewImgViewport');
+    let _initDist = 0;
+    vp.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        _initDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY);
+      }
+    }, { passive: true });
+    vp.addEventListener('touchmove', e => {
+      if (e.touches.length !== 2 || !_initDist) return;
+      const d = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+      obligReviewImgState.scale = Math.max(0.5, Math.min(5,
+        obligReviewImgState.scale * (d / _initDist)));
+      _initDist = d;
+      applyObligReviewImgTransform();
+    }, { passive: true });
+  })();
   // Route review modal actions
   document.getElementById('reviewApproveBtn').addEventListener('click', e => {
     if (e.currentTarget.dataset.route) approveRoute(e.currentTarget.dataset.route);
