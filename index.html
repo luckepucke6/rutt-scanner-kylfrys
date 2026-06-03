@@ -286,7 +286,7 @@
       .review-entry-row { padding: 5px 6px; gap: 4px; }
       .review-entry-kof { font-size: 12px; min-width: unset; }
       .review-entry-store, .review-entry-units { display: none; }
-      .review-move-btn { font-size: 10px; padding: 2px 5px; }
+      .review-move-btn { font-size: 10px; padding: 2px 5px; margin-left: 0; }
     }
     .review-body {
       padding: 14px 16px 14px;
@@ -2010,6 +2010,8 @@
     if (e1) console.warn('Supabase cleanup route_entries:', e1);
     const { error: e2 } = await sb.from('search_logs').delete().lt('searched_at', cutoff);
     if (e2) console.warn('Supabase cleanup search_logs:', e2);
+    const { error: e3 } = await sb.from('scan_images').delete().lt('created_at', cutoff);
+    if (e3) console.warn('Supabase cleanup scan_images:', e3);
   }
 
   function getDeviceId() {
