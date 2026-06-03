@@ -242,6 +242,16 @@
       border-bottom: 0.5px solid var(--color-border);
       flex-shrink: 0; gap: 10px;
     }
+    .review-header .modal-title { flex: 1; text-align: center; }
+    .review-nav-btn {
+      padding: 0; font-size: 22px; line-height: 1;
+      background: none; border: none; color: var(--color-text-secondary);
+      cursor: pointer; flex-shrink: 0; min-width: 44px; min-height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .review-nav-btn:active { color: var(--color-accent); }
+    @media (hover: hover) { .review-nav-btn:hover { color: var(--color-accent); } }
     /* Toggle-rad för smal skärm */
     .review-view-toggle {
       display: none; flex-shrink: 0;
@@ -272,11 +282,8 @@
     @media (max-width: 500px) {
       .review-left-col { flex: 0 0 42%; }
       .review-right-col { flex: 1; }
-      .review-entry-row { flex-wrap: wrap; gap: 2px 6px; padding: 6px 8px; }
-      .review-entry-kof { flex: 1; font-size: 12px; min-width: unset; }
-      .review-entry-sub { display: flex; gap: 4px; width: 100%; font-size: 11px; color: var(--color-text-secondary); overflow: hidden; }
-      .review-entry-sub .review-entry-store { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 11px; }
-      .review-entry-sub .review-entry-units { white-space: nowrap; font-size: 11px; }
+      .review-entry-kof { font-size: 12px; min-width: unset; }
+      .review-entry-store, .review-entry-units { display: none; }
       .review-move-btn { font-size: 10px; padding: 2px 5px; }
     }
     .review-body {
@@ -364,7 +371,19 @@
     .review-entry-kof { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 68px; flex-shrink: 0; }
     .review-entry-store { flex: 1; color: var(--color-text-secondary); font-size: 12px; }
     .review-entry-units { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
-    .review-entry-sub { display: contents; }
+    .review-entry-info-btn {
+      padding: 2px 5px; font-size: 13px; background: none; border: none;
+      color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0;
+      line-height: 1; -webkit-tap-highlight-color: transparent;
+      min-width: 28px; min-height: 28px; display: flex; align-items: center; justify-content: center;
+    }
+    .review-entry-info-btn:active { color: var(--color-accent); }
+    .review-entry-detail {
+      padding: 3px 10px 5px 14px;
+      font-size: 11px; color: var(--color-text-secondary);
+      background: var(--color-surface-2);
+      border-bottom: 0.5px solid var(--color-border);
+    }
     .review-image-section {
       padding: 10px 16px 14px;
       display: flex; flex-direction: column; gap: 6px;
@@ -1835,7 +1854,9 @@
 <div class="modal-overlay hidden" id="routeReviewModal" onclick="if(event.target===this)closeRouteReview()">
   <div class="review-sheet">
     <div class="review-header">
+      <button class="review-nav-btn hidden" id="reviewNavPrev" onclick="navigateRouteReview(-1)">‹</button>
       <div class="modal-title" id="reviewModalTitle"></div>
+      <button class="review-nav-btn hidden" id="reviewNavNext" onclick="navigateRouteReview(1)">›</button>
       <button class="modal-cancel-btn" onclick="closeRouteReview()" data-i18n="modalCancel" style="padding:8px 14px;font-size:13px">Avbryt</button>
     </div>
     <div class="review-view-toggle" id="reviewViewToggle">
@@ -1931,6 +1952,10 @@
     if (!sb) return;
     realtimeChannel = sb.channel('route-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'route_entries' }, onRemoteChange)
+      .on('broadcast', { event: 'routes_verified' }, () => {
+        routesVerified = true;
+        renderRoutesTab();
+      })
       .on('broadcast', { event: 'data_cleared' }, () => {
         if (state.isSyncing) return;
         state.routeData   = {};
@@ -2668,6 +2693,8 @@
   let inlineEditKof      = null;
   let reviewViewMode     = 'routes';
   let editModalAfterClose = null;
+  let reviewRouteNums    = [];
+  let reviewRouteIdx     = 0;
 
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
   let _reviewDrag = null;
@@ -2686,7 +2713,10 @@
 
   function dismissRoutesVerify() {
     routesVerified = true;
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('rutt_verified_date', today);
     document.getElementById('routesVerifyBanner').classList.add('hidden');
+    realtimeChannel?.send({ type: 'broadcast', event: 'routes_verified', payload: {} });
   }
 
   function setReviewView(mode) {
@@ -4502,15 +4532,16 @@ Rules:
       const isMain   = s.route === mainKey;
       const target   = isMain ? sKey : mainKey;
       const btnLabel = isMain ? `↓ ${sKey}` : `↑ ${mainKey}`;
+      const detail   = [s.store, s.units ? `${s.units} enh` : ''].filter(Boolean).join(' · ');
       return `
       <div class="review-entry-row" data-kof="${escHtml(s.kof)}">
         <span class="review-entry-kof">${escHtml(s.kof)}</span>
-        <span class="review-entry-sub">
-          <span class="review-entry-store">${escHtml(s.store)}</span>
-          ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
-        </span>
+        <span class="review-entry-store">${escHtml(s.store)}</span>
+        ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
+        <button class="review-entry-info-btn" data-info-kof="${escHtml(s.kof)}">ⓘ</button>
         <button class="review-move-btn" data-kof="${escHtml(s.kof)}" data-target="${escHtml(target)}" data-routenum="${escHtml(routeNum)}">${escHtml(btnLabel)}</button>
-      </div>`;
+      </div>
+      <div class="review-entry-detail hidden" data-detail-kof="${escHtml(s.kof)}">${escHtml(detail)}</div>`;
     }).join('');
 
     const separator = (mainStops.length > 0 && sStops.length > 0)
@@ -4531,11 +4562,35 @@ Rules:
     openRouteReview(state.routeData[kof].route);
   }
 
+  function getRouteNumbers() {
+    const nums = new Set();
+    for (const kof of state.routeOrder) {
+      const m = (state.routeData[kof]?.route ?? '').match(/\d+/);
+      if (m) nums.add(m[0]);
+    }
+    return [...nums].sort((a, b) => Number(a) - Number(b));
+  }
+
+  function navigateRouteReview(dir) {
+    reviewRouteIdx = (reviewRouteIdx + dir + reviewRouteNums.length) % reviewRouteNums.length;
+    openRouteReview(`Rutt ${reviewRouteNums[reviewRouteIdx]}`);
+  }
+
+  function updateReviewNav() {
+    const show = reviewRouteNums.length > 1;
+    document.getElementById('reviewNavPrev').classList.toggle('hidden', !show);
+    document.getElementById('reviewNavNext').classList.toggle('hidden', !show);
+  }
+
   function openRouteReview(routeName) {
     // Normalize to route number so both "Rutt 4" and "S4" open the same combined view
     const routeNum = routeName.match(/\d+/)?.[0] ?? routeName;
     const mainKey  = `Rutt ${routeNum}`;
     const sKey     = `S${routeNum}`;
+
+    reviewRouteNums = getRouteNumbers();
+    reviewRouteIdx  = reviewRouteNums.indexOf(routeNum);
+    if (reviewRouteIdx === -1) reviewRouteIdx = 0;
 
     const makeStops = key => state.routeOrder
       .filter(kof => state.routeData[kof]?.route === key)
@@ -4580,6 +4635,7 @@ Rules:
     applyReviewImgTransform();
 
     setReviewView('routes');
+    updateReviewNav();
     document.getElementById('routeReviewModal').classList.remove('hidden');
   }
 
@@ -4646,6 +4702,7 @@ Rules:
   loadFromStorage();
   loadLang();
   updateStorageUI();
+  { const _t = new Date().toISOString().slice(0, 10); if (localStorage.getItem('rutt_verified_date') === _t) routesVerified = true; }
   loadFromSupabase();
   document.addEventListener('click', () => { if (seg.active) resetSegmentTimer(); });
   document.addEventListener('input', () => { if (seg.active) resetSegmentTimer(); });
@@ -4685,6 +4742,14 @@ Rules:
   });
   // Event delegation — comparison view KOF rows
   document.getElementById('reviewBody').addEventListener('click', e => {
+    const infoBtn = e.target.closest('.review-entry-info-btn');
+    if (infoBtn) {
+      e.stopPropagation();
+      const kof    = infoBtn.dataset.infoKof;
+      const detail = document.querySelector(`.review-entry-detail[data-detail-kof="${kof}"]`);
+      if (detail) detail.classList.toggle('hidden');
+      return;
+    }
     const moveBtn = e.target.closest('.review-move-btn');
     if (moveBtn) {
       e.stopPropagation();
