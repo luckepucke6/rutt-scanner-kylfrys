@@ -4589,45 +4589,60 @@ Rules:
   }
 
   function initReviewDivider() {
-    const divider  = document.getElementById('reviewDivider');
-    const leftCol  = document.getElementById('reviewLeftCol');
-    const twoCol   = divider.parentElement;
-    let startX = 0, startW = 0;
+    const divider = document.getElementById('reviewDivider');
+    const leftCol = document.getElementById('reviewLeftCol');
+    const twoCol  = divider.parentElement;
+    let dragging  = false, startX = 0, startW = 0;
 
     const getX = e => e.touches ? e.touches[0].clientX : e.clientX;
 
-    function onMove(e) {
-      e.preventDefault();
+    function applyDrag(e) {
       const dx  = getX(e) - startX;
       const cw  = twoCol.getBoundingClientRect().width;
       const newW = Math.max(80, Math.min(cw - 80, startW + dx));
       leftCol.style.flex = `0 0 ${newW}px`;
     }
 
-    function onEnd() {
-      divider.classList.remove('dragging');
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('mouseup', onEnd);
-      document.removeEventListener('touchend', onEnd);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    }
+    // ── Touch (iOS/Android): attach touchmove directly on the element so
+    //    passive:false is known before the gesture starts — otherwise iOS
+    //    ignores preventDefault and takes over with scroll.
+    divider.addEventListener('touchstart', e => {
+      dragging = true;
+      startX = getX(e);
+      startW = leftCol.getBoundingClientRect().width;
+      divider.classList.add('dragging');
+    }, { passive: true });
 
-    function onStart(e) {
+    divider.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      e.preventDefault();
+      applyDrag(e);
+    }, { passive: false });
+
+    divider.addEventListener('touchend', () => {
+      dragging = false;
+      divider.classList.remove('dragging');
+    });
+
+    // ── Mouse (desktop): track globally so drag works outside the element
+    divider.addEventListener('mousedown', e => {
       startX = getX(e);
       startW = leftCol.getBoundingClientRect().width;
       divider.classList.add('dragging');
       document.body.style.userSelect = 'none';
       document.body.style.cursor = 'col-resize';
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('touchmove', onMove, { passive: false });
-      document.addEventListener('mouseup', onEnd);
-      document.addEventListener('touchend', onEnd);
-    }
 
-    divider.addEventListener('mousedown', onStart);
-    divider.addEventListener('touchstart', onStart, { passive: true });
+      function onMouseMove(e) { applyDrag(e); }
+      function onMouseUp() {
+        divider.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
   }
 
   function getRouteNumbers() {
