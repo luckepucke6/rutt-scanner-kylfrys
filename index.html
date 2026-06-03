@@ -4445,11 +4445,9 @@ Rules:
     updateProcessButton();
   }
 
-  function openRouteReview(routeName) {
-    // Normalize to route number so both "Rutt 4" and "S4" open the same combined view
-    const routeNum = routeName.match(/\d+/)?.[0] ?? routeName;
-    const mainKey  = `Rutt ${routeNum}`;
-    const sKey     = `S${routeNum}`;
+  function refreshReviewBody(routeNum) {
+    const mainKey = `Rutt ${routeNum}`;
+    const sKey    = `S${routeNum}`;
 
     const makeStops = key => state.routeOrder
       .filter(kof => state.routeData[kof]?.route === key)
@@ -4457,23 +4455,6 @@ Rules:
     const mainStops = makeStops(mainKey);
     const sStops    = makeStops(sKey);
     const allStops  = [...mainStops, ...sStops];
-
-    const imgIds    = [...new Set(allStops.map(s => s.sourceImgId).filter(Boolean))];
-    let sourceImgs  = imgIds.map(id => state.images.find(i => i.id === id)).filter(Boolean);
-    if (sourceImgs.length === 0) {
-      const scanIds = [...new Set(allStops.map(s => s.scanImageId).filter(Boolean))];
-      sourceImgs = scanIds
-        .map(id => state.scanImages[id] ? { dataUrl: state.scanImages[id] } : null)
-        .filter(Boolean);
-    }
-
-    document.getElementById('reviewModalTitle').textContent = tf('reviewTitle', {route: mainKey});
-    const approveBtn = document.getElementById('reviewApproveBtn');
-    const flagBtn    = document.getElementById('reviewFlagBtn');
-    approveBtn.textContent = t('reviewApprove');
-    approveBtn.dataset.route = mainKey;
-    flagBtn.textContent = t('reviewFlag');
-    flagBtn.dataset.route = mainKey;
 
     const status = state.routeReview[mainKey];
     const bannerHtml = status === 'uncertain'
@@ -4503,6 +4484,37 @@ Rules:
       ${bannerHtml}
       <div class="review-section-label">${escHtml(t('reviewEntriesLabel'))} (${allStops.length})</div>
       <div class="review-entries">${entriesHtml}</div>`;
+  }
+
+  function openRouteReview(routeName) {
+    // Normalize to route number so both "Rutt 4" and "S4" open the same combined view
+    const routeNum = routeName.match(/\d+/)?.[0] ?? routeName;
+    const mainKey  = `Rutt ${routeNum}`;
+    const sKey     = `S${routeNum}`;
+
+    const makeStops = key => state.routeOrder
+      .filter(kof => state.routeData[kof]?.route === key)
+      .map(kof => ({ kof, ...state.routeData[kof] }));
+    const allStops = [...makeStops(mainKey), ...makeStops(sKey)];
+
+    const imgIds    = [...new Set(allStops.map(s => s.sourceImgId).filter(Boolean))];
+    let sourceImgs  = imgIds.map(id => state.images.find(i => i.id === id)).filter(Boolean);
+    if (sourceImgs.length === 0) {
+      const scanIds = [...new Set(allStops.map(s => s.scanImageId).filter(Boolean))];
+      sourceImgs = scanIds
+        .map(id => state.scanImages[id] ? { dataUrl: state.scanImages[id] } : null)
+        .filter(Boolean);
+    }
+
+    document.getElementById('reviewModalTitle').textContent = tf('reviewTitle', {route: mainKey});
+    const approveBtn = document.getElementById('reviewApproveBtn');
+    const flagBtn    = document.getElementById('reviewFlagBtn');
+    approveBtn.textContent = t('reviewApprove');
+    approveBtn.dataset.route = mainKey;
+    flagBtn.textContent = t('reviewFlag');
+    flagBtn.dataset.route = mainKey;
+
+    refreshReviewBody(routeNum);
 
     const imgSection = document.getElementById('reviewImageSection');
     const noImageMsg = document.getElementById('reviewNoImageMsg');
@@ -4633,7 +4645,7 @@ Rules:
       e.stopPropagation();
       const { kof, target, routenum } = moveBtn.dataset;
       changeInlineRoute(kof, target);
-      openRouteReview(`Rutt ${routenum}`);
+      refreshReviewBody(routenum);
       return;
     }
     const row = e.target.closest('.review-entry-row[data-kof]');
