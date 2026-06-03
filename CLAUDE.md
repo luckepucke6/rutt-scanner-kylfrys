@@ -12,9 +12,21 @@ python3 -m http.server 8080
 
 The app requires a real Anthropic API key entered via the in-app UI on first use (stored in `localStorage`).
 
+## Testing the Claude API integration
+
+Drop route sheet images (`.jpg`, `.png`) into `test-images/`, then run:
+
+```
+ANTHROPIC_API_KEY=sk-ant-... node test.js
+```
+
+The script calls the real Claude API for each image, validates the response (6-digit KOFs, route names present, no duplicates, document order preserved), and exits non-zero on failure.
+
 ## Architecture
 
-The entire application is a single file: `index.html`. It contains all HTML structure, CSS, and JavaScript with no dependencies, no bundler, and no framework.
+The entire application is a single file: `index.html`. It contains all HTML structure, CSS, and JavaScript. Two CDN scripts are loaded at runtime:
+- `@supabase/supabase-js@2` — multi-device sync and analytics
+- `pdf.js 3.11.174` — splits PDF files into per-page images before processing
 
 ### State model
 
@@ -26,6 +38,7 @@ state.images         // pending/processing image queue
 state.apiKey         // Anthropic key loaded from localStorage
 state.isProcessing
 state.abortController  // AbortController for in-flight callClaudeApi fetch; null when idle
+state.supabaseLoadedAt // timestamp when Supabase data was last fetched, or null
 ```
 
 `routeData[kof].units` is an integer — the sum of pall+bur+hlv for that entry, extracted by the AI and persisted to Supabase. Requires a `units integer DEFAULT 0` column on `route_entries` (run `ALTER TABLE route_entries ADD COLUMN IF NOT EXISTS units integer DEFAULT 0;`).
@@ -41,13 +54,17 @@ state.abortController  // AbortController for in-flight callClaudeApi fetch; nul
 
 ### Claude API usage
 
-Two distinct calls to `https://api.anthropic.com/v1/messages` using `claude-sonnet-4-6`:
+Four distinct calls to `https://api.anthropic.com/v1/messages` using `claude-sonnet-4-6`:
 
 1. **`callClaudeApi(dataUrl)`** — Sends a full route sheet image, returns structured JSON with `{ routeNumber, driver, entries[] }`. The prompt in `PROMPT` constant is critical: it defines how routes are split into "Rutt N" (main section) vs "SN" (S-routes, below a blank separator row) via the `isS` field.
 
-2. **`callClaudeForKof(dataUrl)`** — Sends a cropped camera frame, returns only the 6-digit KOF number or `NONE`. Uses `max_tokens: 20`.
+2. **`callClaudeJudge(dataUrl, result)`** — Runs **in parallel** with result display after `callClaudeApi`. Sends the same image plus the extracted JSON, and asks Claude to verify that the data matches the document. Returns `{ approved, confidence, issues[] }`. If `approved: false` or `confidence < 70`, the image gets a `'warning'` status with "save anyway" / "retry" / "review" buttons. Judge results are logged to the `judge_logs` Supabase table.
 
-Both calls include the `anthropic-dangerous-direct-browser-access: true` header (required for direct browser→API access without a proxy).
+3. **`detectRotation(dataUrl)`** — Called before `callClaudeApi` when the image is a photo (not PDF). Detects orientation so the image can be pre-rotated before OCR.
+
+4. **`callClaudeForKof(dataUrl)`** — Sends a cropped camera frame, returns only the 6-digit KOF number or `NONE`. Uses `max_tokens: 20`.
+
+All calls include the `anthropic-dangerous-direct-browser-access: true` header (required for direct browser→API access without a proxy).
 
 ### Route naming convention
 
@@ -56,6 +73,22 @@ Each route sheet has two sections separated by a blank row:
 - Rows below the blank → `isS: true` → stored as `"SN"` (e.g. `"S4"`)
 
 The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → routeNumber `"4"`, driver `"161 Xhulijo"`.
+
+### Supabase integration
+
+`sb` is a module-level Supabase client initialized in `initSupabase()`. All Supabase calls are fire-and-forget unless data is being loaded.
+
+**Tables:**
+- `route_entries` — primary data store, keyed on `kof`. Upserted by `saveToSupabase()` and `changeInlineRoute()`. Cleaned up after a time cutoff by `cleanupOldSupabaseData()`.
+- `scan_images` — base64 image data. Images are uploaded by `uploadScanImage()` and associated with entries via `scanImageId`. Only non-PDF images are uploaded.
+- `search_logs` — one row per search event, logged by `logSearch()`.
+- `scan_logs` — one row per completed scan batch, logged by `logScan()`.
+- `judge_logs` — one row per judge result, logged by `logJudge()`.
+- `session_segments` — analytics segments (10-minute inactivity cutoff), logged by `logSegment()`.
+
+**Sync flow:** On startup, `loadFromSupabase()` fetches all current `route_entries` and their associated `scan_images`, sets `state.supabaseLoadedAt`, and clears the `localStorage` cache. Realtime changes are subscribed via `initRealtimeSync()` (postgres_changes on `route_entries`); a polling fallback kicks in if realtime is unavailable. Remote changes trigger `onRemoteChange()` which debounces a full reload.
+
+Each device gets a stable UUID stored under `rutt_device_id` in `localStorage`.
 
 ### Language support
 
