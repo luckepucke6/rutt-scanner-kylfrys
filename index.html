@@ -321,6 +321,18 @@
     .review-entry-row[data-kof] { cursor: pointer; transition: background 0.12s; }
     .review-entry-row[data-kof]:active { background: var(--color-surface-2); }
     @media (hover: hover) { .review-entry-row[data-kof]:hover { background: var(--color-surface-2); } }
+    .review-move-btn {
+      margin-left: auto; flex-shrink: 0;
+      padding: 3px 8px;
+      border: 0.5px solid var(--color-border);
+      border-radius: 12px;
+      background: var(--color-surface-2);
+      font-size: 11px; font-weight: 600;
+      color: var(--color-text-secondary);
+      cursor: pointer; white-space: nowrap;
+    }
+    .review-move-btn:active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+    @media (hover: hover) { .review-move-btn:hover { background: var(--color-accent); color: #fff; border-color: var(--color-accent); } }
     .review-section-separator {
       display: flex; align-items: center; gap: 8px;
       padding: 5px 10px;
@@ -4470,12 +4482,18 @@ Rules:
       ? `<div class="review-status-banner ok">${escHtml(t('reviewApprovedBanner'))}</div>`
       : '';
 
-    const buildRows = stops => stops.map(s => `
+    const buildRows = stops => stops.map(s => {
+      const isMain   = s.route === mainKey;
+      const target   = isMain ? sKey : mainKey;
+      const btnLabel = isMain ? `↓ ${sKey}` : `↑ ${mainKey}`;
+      return `
       <div class="review-entry-row" data-kof="${escHtml(s.kof)}">
         <span class="review-entry-kof">${escHtml(s.kof)}</span>
         <span class="review-entry-store">${escHtml(s.store)}</span>
         ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
-      </div>`).join('');
+        <button class="review-move-btn" data-kof="${escHtml(s.kof)}" data-target="${escHtml(target)}" data-routenum="${escHtml(routeNum)}">${escHtml(btnLabel)}</button>
+      </div>`;
+    }).join('');
 
     const separator = (mainStops.length > 0 && sStops.length > 0)
       ? `<div class="review-section-separator">${escHtml(sKey)}</div>` : '';
@@ -4610,6 +4628,14 @@ Rules:
   });
   // Event delegation — comparison view KOF rows
   document.getElementById('reviewBody').addEventListener('click', e => {
+    const moveBtn = e.target.closest('.review-move-btn');
+    if (moveBtn) {
+      e.stopPropagation();
+      const { kof, target, routenum } = moveBtn.dataset;
+      changeInlineRoute(kof, target);
+      openRouteReview(`Rutt ${routenum}`);
+      return;
+    }
     const row = e.target.closest('.review-entry-row[data-kof]');
     if (!row) return;
     const kof = row.dataset.kof;
