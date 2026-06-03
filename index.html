@@ -2080,20 +2080,24 @@
 
   let searchStartTime = 0;
 
+  const RESPONSE_TIME_MAX_MS = 60000; // > 60 s = övergiven sökning, logga som null
+
   const SEGMENT_INACTIVITY_MS = 10 * 60 * 1000; // 10 min inaktivitet avslutar segment
 
   let seg = {
-    active:      false,
-    startTime:   null,
-    searchCount: 0,
-    timer:       null,
+    active:       false,
+    startTime:    null,
+    lastActivity: null,
+    searchCount:  0,
+    timer:        null,
   };
 
   function startSegment() {
     if (seg.active) return;
-    seg.active      = true;
-    seg.startTime   = new Date();
-    seg.searchCount = 0;
+    seg.active       = true;
+    seg.startTime    = new Date();
+    seg.lastActivity = seg.startTime;
+    seg.searchCount  = 0;
     resetSegmentTimer();
   }
 
@@ -2101,13 +2105,16 @@
     if (!seg.active) return;
     clearTimeout(seg.timer);
     seg.active = false;
-    const end             = new Date();
-    const durationMinutes = (end - seg.startTime) / 60000;
+    // Använd sista faktiska aktiviteten som sluttid, inte när inaktivitetstimern
+    // löser ut — annars får varje segment upp till SEGMENT_INACTIVITY_MS spök-idle.
+    const end             = seg.lastActivity || new Date();
+    const durationMinutes = Math.max(0, (end - seg.startTime) / 60000);
     logSegment(seg.startTime, end, durationMinutes, seg.searchCount);
   }
 
   function resetSegmentTimer() {
     clearTimeout(seg.timer);
+    seg.lastActivity = new Date();
     seg.timer = setTimeout(endSegment, SEGMENT_INACTIVITY_MS);
   }
 
@@ -2152,6 +2159,10 @@
     }).then(({ error }) => { if (error) console.warn('Supabase judge-logg fel:', error); });
   }
 
+  // Konservativ uppskattning: manuellt uppslag av en KOF i pappersbunt ~30 s
+  // (försvarbar baslinje för besparingskalkylen, jämförs mot uppmätt response_time_ms).
+  const MANUAL_BASELINE_MS = 30000;
+
   function logSearch(kof, data, responseTimeMs = null) {
     if (!sb) return;
     sb.from('search_logs').insert({
@@ -2162,7 +2173,7 @@
       searched_at:        new Date().toISOString(),
       response_time_ms:   responseTimeMs,
       session_id:         getSessionId(),
-      manual_baseline_ms: 30000,
+      manual_baseline_ms: MANUAL_BASELINE_MS,
     }).then(({ error }) => { if (error) console.warn('Supabase logg-fel:', error); });
   }
 
@@ -4001,7 +4012,8 @@ Rules:
     if (!raw) return;
     const kof6  = raw.padStart(6, '0');
     const data  = state.routeData[raw] ?? state.routeData[kof6];
-    const responseTime = searchStartTime > 0 ? Date.now() - searchStartTime : null;
+    let responseTime = searchStartTime > 0 ? Date.now() - searchStartTime : null;
+    if (responseTime !== null && responseTime > RESPONSE_TIME_MAX_MS) responseTime = null;
     searchStartTime = 0;
     logSearch(raw, data ?? null, responseTime);
     recordSearchInSegment();
