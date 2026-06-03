@@ -279,15 +279,18 @@
       overflow: hidden; min-width: 0;
     }
     .review-divider {
-      width: 18px; flex-shrink: 0;
+      width: 20px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       cursor: col-resize; touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      background: var(--color-surface-2);
+      border-left: 0.5px solid var(--color-border);
+      border-right: 0.5px solid var(--color-border);
     }
     .review-divider::after {
       content: ''; display: block;
-      width: 3px; height: 36px;
-      background: var(--color-border-strong);
+      width: 4px; height: 40px;
+      background: var(--color-text-tertiary);
       border-radius: 2px;
       transition: background 0.15s;
     }
