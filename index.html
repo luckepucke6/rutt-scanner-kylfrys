@@ -1985,6 +1985,7 @@
         state.savedAt     = null;
         state.scanImages  = {};
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(ROUTE_REVIEW_KEY);
         syncRoutesMeta();
         renderRoutesTab();
         renderSearchUI();
@@ -2824,8 +2825,26 @@
   /* ═══════════════════════════════════════════════
      LOCALSTORAGE
   ═══════════════════════════════════════════════ */
-  const STORAGE_KEY  = 'rutt_scanner_v1';
-  const EXPIRY_HOURS = 8;
+  const STORAGE_KEY       = 'rutt_scanner_v1';
+  const ROUTE_REVIEW_KEY  = 'rutt_route_review';
+  const EXPIRY_HOURS      = 8;
+
+  // routeReview lagras separat eftersom loadFromSupabase() rensar STORAGE_KEY —
+  // annars nollställs ⚠-markeringarna vid varje omladdning.
+  function saveRouteReview() {
+    try { localStorage.setItem(ROUTE_REVIEW_KEY, JSON.stringify(state.routeReview)); } catch (_) {}
+  }
+
+  function loadRouteReview() {
+    try {
+      const raw = localStorage.getItem(ROUTE_REVIEW_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') {
+        state.routeReview = { ...saved, ...state.routeReview };
+      }
+    } catch (_) {}
+  }
 
   function saveToStorage() {
     try {
@@ -2861,21 +2880,24 @@
 
   async function syncToCloud() {
     if (!sb) { addLog(t('logSyncFailed'), 'err'); return; }
+    // Ofarlig upsert — raderar ALDRIG befintliga rader i molnet. Raderingar
+    // propageras separat via deleteKof/deleteRoute, och normalt sparas data
+    // automatiskt via saveToSupabase(). Den här knappen är en manuell "tryck-igen"
+    // som är idempotent: den kan inte skriva över andras data med tom lokal data.
+    const rows = Object.entries(state.routeData).map(([kof, d]) => ({
+      kof,
+      route:         d.route,
+      store_name:    d.store,
+      units:         d.units ?? 0,
+      sort_order:    d.sortOrder ?? 0,
+      scan_image_id: d.scanImageId ?? null,
+    }));
+    if (rows.length === 0) { addLog(t('logSyncFailed'), 'err'); return; }
     addLog(t('logSyncing'), 'info');
     state.isSyncing = true;
     try {
-      await sb.from('route_entries').delete().not('kof', 'is', null);
-      const rows = Object.entries(state.routeData).map(([kof, d]) => ({
-        kof,
-        route:         d.route,
-        store_name:    d.store,
-        units:         d.units ?? 0,
-        scan_image_id: d.scanImageId ?? null,
-      }));
-      if (rows.length) {
-        const { error } = await sb.from('route_entries').insert(rows);
-        if (error) throw error;
-      }
+      const { error } = await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
+      if (error) throw error;
       addLog(t('logSynced'), 'ok');
     } catch (err) {
       console.warn('Sync error:', err);
@@ -2893,6 +2915,7 @@
     state.routeReview = {};
     state.savedAt    = null;
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ROUTE_REVIEW_KEY);
     updateStorageUI();
     renderSearchUI();
     renderRoutesTab();
@@ -3976,7 +3999,10 @@ Rules:
     const routeNum = raw.match(/\b(\d{1,2})\b/)?.[1] ?? raw.match(/(\d+)/)?.[1] ?? '?';
     let count = 0;
     const invalid = [];
-    ;(parsed.entries ?? []).forEach((entry, entryIndex) => {
+    // Monotont ökande sortOrder över hela datasetet — startar inte om på 0 per ark,
+    // så flera scannade ark inte kolliderar. Poster kommer i dokumentordning.
+    let maxSort = Object.values(state.routeData).reduce((m, d) => Math.max(m, d.sortOrder ?? 0), -1);
+    ;(parsed.entries ?? []).forEach((entry) => {
       const kof = String(entry.kof ?? '').trim();
       if (!kof) return;
       const route = entry.route ?? (entry.isS ? `S${routeNum}` : `Rutt ${routeNum}`);
@@ -3985,7 +4011,10 @@ Rules:
         invalid.push(normalized);
         return;
       }
-      if (!state.routeData[kof]) state.routeOrder.push(kof);
+      const existing = state.routeData[kof];
+      if (!existing) state.routeOrder.push(kof);
+      // Behåll befintlig ordning vid re-scan/edit, annars nästa lediga sortOrder.
+      const sortOrder = existing?.sortOrder ?? ++maxSort;
       state.routeData[kof] = {
         route,
         driver:      String(parsed.driver ?? '').trim(),
@@ -3996,7 +4025,7 @@ Rules:
         units:       parseInt(entry.units ?? 0) || 0,
         confidence:  entry.confidence ?? 'high',
         sourceImgId: imgId,
-        sortOrder:   entryIndex,
+        sortOrder,
       };
       count++;
     });
@@ -4738,6 +4767,7 @@ Rules:
   function approveRoute(routeName) {
     state.routeReview[routeName] = 'ok';
     saveToStorage();
+    saveRouteReview();
     renderRoutesTab();
     closeRouteReview();
     showToast(t('toastSaved'));
@@ -4746,6 +4776,7 @@ Rules:
   function flagRouteUncertain(routeName) {
     state.routeReview[routeName] = 'uncertain';
     saveToStorage();
+    saveRouteReview();
     renderRoutesTab();
     closeRouteReview();
   }
@@ -4791,7 +4822,8 @@ Rules:
   loadLang();
   updateStorageUI();
   { const _t = new Date().toISOString().slice(0, 10); if (localStorage.getItem('rutt_verified_date') === _t) routesVerified = true; }
-  loadFromSupabase();
+  loadFromSupabase().then(loadRouteReview);
+  loadRouteReview();
   document.addEventListener('click', () => { if (seg.active) resetSegmentTimer(); });
   document.addEventListener('input', () => { if (seg.active) resetSegmentTimer(); });
   window.addEventListener('beforeunload', endSegment);
