@@ -87,10 +87,9 @@ For **photo uploads** (non-PDF):
 ```
 File selected
   → [toJpeg] (resize to max 1600px, q=0.88, corrects all 8 EXIF orientations)
-  → [detectRotation] (Haiku, 400px preview image, returns 0/90/180/270)
-  → [applyRotation] (canvas rotation if needed)
   → [callClaudeApi] (Opus, PROMPT constant, max_tokens 3000)
-      returns: { routeNumber, driver, entries[{ kof, store, pall, bur, hlv, units, route, confidence }] }
+      returns: { routeNumber, driver, rotation, entries[{ kof, store, pall, bur, hlv, units, route, confidence }] }
+  → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
   → [validateEntry] (filters out invalid entries)
   → [showObligReview] (always shown — user must confirm data before it is saved)
   → [runJudge] (runs in parallel via callClaudeJudge, Haiku, JUDGE_PROMPT, max_tokens 200)
@@ -105,7 +104,9 @@ File selected
       [logJudge] → judge_logs.insert
 ```
 
-For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above, skipping the rotation detection step.
+For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
+
+**Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi` (Opus reads the sheet at any angle and reports how many degrees clockwise it must rotate to be upright). There is no separate rotation-detection API call. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately, so other devices see it upright after reload) are **permanent**, not display-only.
 
 **Two review modals — do not confuse them:**
 - `showObligReview` — shown for every scan regardless of judge result; user confirms the extracted data before it is committed
@@ -113,17 +114,16 @@ For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scal
 
 ### Claude API usage
 
-Three active calls to `https://api.anthropic.com/v1/messages`:
+Two active calls to `https://api.anthropic.com/v1/messages`:
 
 | Function | Purpose | Model | max_tokens |
 |---|---|---|---|
-| `callClaudeApi(dataUrl)` | Route sheet extraction | `claude-opus-4-8` | 3000 |
+| `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`) | `claude-opus-4-8` | 3000 |
 | `callClaudeJudge(dataUrl, result)` | Quality verification | `claude-haiku-4-5-20251001` | 200 |
-| `detectRotation(dataUrl)` | Photo orientation | `claude-haiku-4-5-20251001` | 10 |
 
 All calls include the `anthropic-dangerous-direct-browser-access: true` header (required for direct browser→API access without a proxy).
 
-**`callClaudeApi`** uses the `PROMPT` constant which is critical — it defines exactly how the blank-row separator splits entries into "Rutt N" vs "SN" sections via the `isS` / `route` field.
+**`callClaudeApi`** uses the `PROMPT` constant which is critical — it defines exactly how the blank-row separator splits entries into "Rutt N" vs "SN" sections via the `isS` / `route` field, and returns a `rotation` field (0/90/180/270) used to auto-orient the stored image.
 
 **`callClaudeJudge`** uses the `JUDGE_PROMPT` constant. It verifies KOF digits match the image and that route assignments are correct. Failsafe: if the API call itself fails, it returns `{ approved: true, confidence: 100, issues: [] }` to avoid blocking the user.
 

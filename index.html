@@ -2727,6 +2727,9 @@
   let reviewRouteIdx     = 0;
 
   const reviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
+  // Identitet för den bild som visas i jämförelsevyn, så rotera-knappen kan
+  // baka in vridningen permanent (molnrad + lokala cacher).
+  let reviewImageRef = null;
   let _reviewDrag = null;
   let _reviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
 
@@ -3123,10 +3126,15 @@
     img.retrying = true;
     updateImageItem(id, 'loading', t('statusAnalyzing'));
     try {
-      const apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
+      let apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
       state.abortController = new AbortController();
       const result = await callClaudeApi(apiUrl);
       state.abortController = null;
+      const rot = parseInt(result.rotation);
+      if (!apiUrl.startsWith('data:application/pdf') && [90, 180, 270].includes(rot)) {
+        apiUrl = await applyRotation(apiUrl, rot);
+        img.dataUrl = apiUrl;
+      }
       const { count, invalid } = storeEntries(result, id);
       for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
       if (count === 0) {
@@ -3200,12 +3208,15 @@
     try {
       let apiUrl = img.dataUrl.startsWith('data:application/pdf')
         ? img.dataUrl : await toJpeg(img.dataUrl);
-      if (!img.dataUrl.startsWith('data:application/pdf')) {
-        const rot = await detectRotation(apiUrl);
-        if (rot) { apiUrl = await applyRotation(apiUrl, rot); img.dataUrl = apiUrl; }
-      }
       addLog(tf('logSending', { n: idx }));
       const result = await callClaudeApi(apiUrl);
+      // Opus läser arket oavsett vinkel och rapporterar rotationen — baka in den i
+      // den lagrade bilden så den visas rätt vänd överallt (gransknings-/jämförelsevy).
+      const rot = parseInt(result.rotation);
+      if (!apiUrl.startsWith('data:application/pdf') && [90, 180, 270].includes(rot)) {
+        apiUrl = await applyRotation(apiUrl, rot);
+        img.dataUrl = apiUrl;
+      }
       const valid  = (result.entries ?? []).filter(validateEntry);
       if (valid.length === 0) {
         const errMsg = tf('errNoKof', { n: idx });
@@ -3347,7 +3358,7 @@
   ═══════════════════════════════════════════════ */
   const PROMPT = `CRITICAL: Respond with ONLY a raw JSON object. Do NOT use markdown code blocks. Do NOT write backticks. Do NOT write the word "json". Start your response with { and end with }.
 
-Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else.
+Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation, and ALSO report how it is rotated via the "rotation" field. Return ONLY valid JSON, nothing else.
 
 Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
 Return ONLY rows that are actually visible in the image. Do not invent numbers, fill gaps, or guess. Return rows in the exact order they appear top-to-bottom.
@@ -3360,9 +3371,10 @@ DOCUMENT STRUCTURE — each page has this exact layout:
 Steps 3 and 4 may be absent if the page has only one section.
 CRITICAL: Do NOT stop extracting when you hit the empty rows. They are a visual separator, not end-of-page. Always continue reading below them and include ALL entries from the S-block. Omitting S-block entries is an extraction error.
 
-{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
+{"routeNumber":"4","driver":"161 Xhulijo","rotation":0,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
 Rules:
+- rotation: how many degrees CLOCKWISE the image must be rotated to be upright with text readable normally. One of 0, 90, 180, 270. If the sheet is already upright, use 0. If the text runs bottom-to-top (you had to tilt your head left), use 90. If upside down, use 180. If text runs top-to-bottom (tilt head right), use 270.
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
 - driver: Text after the dash in the header. Strip trailing ":)" or emoji. Use "" if not found.
 - kof: the 6-digit number in the leftmost data column (skip header rows). Do NOT invent or guess digits — only include what is clearly visible.
@@ -3387,36 +3399,6 @@ Rules:
 - confidence: 0-100. Use <70 if uncertain even if approved is true.
 - issues: list specific discrepancies, empty array if none.
 - IMPORTANT: The image may be rotated or photographed at an angle. Do NOT flag image orientation/rotation as an issue and do NOT lower confidence or set approved=false solely because the image looks rotated. Claude can read rotated images. Only reject if you can clearly see that extracted KOF numbers or addresses do NOT match the document content.`;
-
-  async function detectRotation(dataUrl) {
-    try {
-      const small = await toJpeg(dataUrl, 400, 0.65);
-      const match = small.match(/^data:([^;]+);base64,(.+)$/);
-      if (!match) return 0;
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        signal: AbortSignal.timeout(15_000),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': state.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 5,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } },
-            { type: 'text', text: 'How many degrees clockwise must this document image be rotated to be right-side up with text readable normally? Reply with ONLY one number: 0, 90, 180, or 270.' },
-          ]}],
-        }),
-      });
-      if (!resp.ok) return 0;
-      const d = await resp.json();
-      const n = parseInt(d.content?.[0]?.text?.trim() ?? '0');
-      return [0, 90, 180, 270].includes(n) ? n : 0;
-    } catch { return 0; }
-  }
 
   function applyRotation(dataUrl, degrees) {
     if (!degrees) return Promise.resolve(dataUrl);
@@ -3960,9 +3942,16 @@ Rules:
     const btn = document.getElementById('obligReviewSaveBtn');
     btn.disabled = true;
     btn.textContent = 'Sparar…';
-    const { img, apiUrl, result, entries } = state.pendingReview;
+    let { img, apiUrl, result, entries } = state.pendingReview;
     result.entries = entries;
     const { count } = storeEntries(result, img.id);
+    // Baka in en eventuell manuell rotering så bilden sparas rätt vänd i molnet
+    // och visas rätt i jämförelsevyn / på andra enheter.
+    const manualRot = obligReviewImgState.rotation % 360;
+    if (manualRot && !apiUrl.startsWith('data:application/pdf')) {
+      apiUrl = await applyRotation(apiUrl, manualRot);
+      img.dataUrl = apiUrl;
+    }
     const scanImageId = await uploadScanImage(apiUrl, img.id);
     if (scanImageId) state.scanImages[scanImageId] = apiUrl;
     updateImageItem(img.id, 'done', tf('logResult', { route: result.routeNumber, count }));
@@ -4717,7 +4706,7 @@ Rules:
     if (sourceImgs.length === 0) {
       const scanIds = [...new Set(allStops.map(s => s.scanImageId).filter(Boolean))];
       sourceImgs = scanIds
-        .map(id => state.scanImages[id] ? { dataUrl: state.scanImages[id] } : null)
+        .map(id => state.scanImages[id] ? { dataUrl: state.scanImages[id], scanImageId: id } : null)
         .filter(Boolean);
     }
 
@@ -4734,6 +4723,10 @@ Rules:
     const imgSection = document.getElementById('reviewImageSection');
     const noImageMsg = document.getElementById('reviewNoImageMsg');
     const validImg   = sourceImgs.find(i => !i.dataUrl.startsWith('data:application/pdf'));
+    reviewImageRef = validImg
+      ? { scanImageId: validImg.supabaseImageId ?? validImg.scanImageId ?? null,
+          sourceImgId: validImg.id ?? null }
+      : null;
     if (validImg) {
       document.getElementById('reviewSourceImg').src = validImg.dataUrl;
       document.getElementById('reviewImageSectionLabel').textContent = t('reviewImageLabel');
@@ -5000,11 +4993,43 @@ Rules:
     if (e.currentTarget.dataset.route) flagRouteUncertain(e.currentTarget.dataset.route);
   });
 
-  // Review image — rotate button
-  document.getElementById('reviewRotateBtn').addEventListener('click', () => {
-    reviewImgState.rotation = (reviewImgState.rotation + 90) % 360;
-    reviewImgState.panX = 0; reviewImgState.panY = 0;
-    applyReviewImgTransform();
+  // Review image — rotate button: permanent 90° som bakas in i den sparade bilden
+  // (molnrad + lokala cacher) så alla enheter ser den rätt vänd efter omladdning.
+  let _reviewRotating = false;
+  document.getElementById('reviewRotateBtn').addEventListener('click', async () => {
+    if (_reviewRotating) return;
+    const imgEl = document.getElementById('reviewSourceImg');
+    const src   = imgEl.src;
+    if (!src || src.startsWith('data:application/pdf')) return;
+    _reviewRotating = true;
+    try {
+      const rotated = await applyRotation(src, 90);
+      imgEl.src = rotated;
+      reviewImgState.scale = 1; reviewImgState.rotation = 0;
+      reviewImgState.panX = 0; reviewImgState.panY = 0;
+      applyReviewImgTransform();
+
+      const ref = reviewImageRef ?? {};
+      // Uppdatera lokala cacher så vyn (och re-renders denna session) är rätt.
+      if (ref.scanImageId) state.scanImages[ref.scanImageId] = rotated;
+      for (const im of state.images) {
+        if ((ref.sourceImgId != null && im.id === ref.sourceImgId) ||
+            (ref.scanImageId && im.supabaseImageId === ref.scanImageId)) {
+          im.dataUrl = rotated;
+        }
+      }
+      // Skriv om molnbilden så andra enheter ser den rätt efter omladdning.
+      if (sb && ref.scanImageId) {
+        const { error } = await sb.from('scan_images')
+          .update({ image_data: rotated }).eq('id', ref.scanImageId);
+        if (error) console.warn('scan_images rotation update-fel:', error);
+      }
+      showToast(t('toastSaved'));
+    } catch (err) {
+      console.warn('Rotation misslyckades:', err);
+    } finally {
+      _reviewRotating = false;
+    }
   });
 
   // Review image — desktop: scroll to zoom
