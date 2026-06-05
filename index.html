@@ -1456,26 +1456,8 @@
   <!-- ════ SCAN TAB ════ -->
   <div id="pane-scan" class="content flex-col hidden">
 
-    <!-- API-nyckel setup (visas tills nyckel är sparad) -->
-    <div class="api-setup-card" id="apiSetupCard">
-      <div class="api-setup-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-        </svg>
-        <span data-i18n="apiSetupTitle">Ange API-nyckel</span>
-      </div>
-      <div class="api-setup-sub" data-i18n="apiSetupSub">Klistras in en gång — sparas i telefonen, syns aldrig i koden.</div>
-      <div class="api-setup-row">
-        <input type="password" class="api-setup-input" id="apiSetupInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
-        <button class="api-save-btn" onclick="saveApiKey()" data-i18n="apiSave">Spara</button>
-      </div>
-    </div>
-
-    <!-- Nyckel sparad-rad (visas när nyckel finns) -->
-    <div class="api-saved-row hidden" id="apiSavedRow">
-      <span class="api-saved-text" data-i18n="apiSavedText">🔑 API-nyckel sparad</span>
-      <button class="api-change-btn" onclick="changeApiKey()" data-i18n="apiChange">Byt nyckel</button>
-    </div>
+    <!-- API-nyckeln hanteras serverside av Supabase Edge Function (claude-proxy);
+         personalen behöver inte mata in någon nyckel. -->
 
     <div class="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
       <div class="upload-zone-icon">📷</div>
@@ -1947,6 +1929,10 @@
   const SUPABASE_URL      = 'https://sblqelvbomnmgiojpppp.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNibHFlbHZib21ubWdpb2pwcHBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MzIyNzIsImV4cCI6MjA5NTQwODI3Mn0.2G1TQbm4J1GtyT64Ry7QA_a5RxnZwbW8qUK1loMhojg';
 
+  // Anthropic-anrop går via Supabase Edge Function (claude-proxy) — nyckeln ligger
+  // serverside, aldrig i den publika klientkoden. Se supabase/functions/claude-proxy.
+  const CLAUDE_PROXY_URL  = SUPABASE_URL + '/functions/v1/claude-proxy';
+
   let sb = null;
 
   function initSupabase() {
@@ -2307,7 +2293,7 @@
       stopCount: '{n} stopp', imageN: 'Bild {n}',
       queueTitle: 'Bildkö', clearQueueBtn: 'Rensa kö',
       statusPreparingPdf: 'Förbereder PDF…',
-      statusPending: 'Väntar…', statusAnalyzing: 'Analyserar…',
+      statusPending: 'Väntar…', statusAnalyzing: 'Analyserar…', statusDiscarded: 'Kasserad',
       judgeWarning: 'Osäker avläsning — kontrollera manuellt',
       saveAnywayBtn: 'Spara ändå',
       scanReviewTitle: 'Granska skanningsresultat',
@@ -2384,6 +2370,14 @@
       verifyBannerBtn: 'Jag har kontrollerat ✓',
       reviewToggleRoutes: 'Rutter',
       reviewToggleDocs: 'Dokument',
+      obligTitle: 'Rutt {route} — {count} rader',
+      obligTitleNoRoute: '{count} rader',
+      obligSubtitle: 'Jämför med pappret. Tryck → S-rutt / → Huvudrutt för att flytta rad.',
+      obligMoveToMain: 'Huvud&shy;rutt', obligMoveToS: 'S-rutt',
+      obligSaving: 'Sparar…', obligSaveBtn: '✓ Ser bra ut — spara',
+      obligDiscardBtn: '↺ Börja om',
+      statusAwaitingReview: 'Väntar på granskning…',
+      showInRoutes: 'Visa i ruttlistan →',
     },
     en: {
       tabRoutes: 'Routes', tabSearch: 'Search KOF', tabScan: 'Scan', tabGuide: 'Guide',
@@ -2435,7 +2429,7 @@
       stopCount: '{n} stops', imageN: 'Image {n}',
       queueTitle: 'Image queue', clearQueueBtn: 'Clear queue',
       statusPreparingPdf: 'Preparing PDF…',
-      statusPending: 'Waiting…', statusAnalyzing: 'Analyzing…',
+      statusPending: 'Waiting…', statusAnalyzing: 'Analyzing…', statusDiscarded: 'Discarded',
       judgeWarning: 'Uncertain reading — check manually',
       saveAnywayBtn: 'Save anyway',
       scanReviewTitle: 'Review scan result',
@@ -2512,6 +2506,14 @@
       verifyBannerBtn: 'I have checked ✓',
       reviewToggleRoutes: 'Routes',
       reviewToggleDocs: 'Document',
+      obligTitle: 'Route {route} — {count} rows',
+      obligTitleNoRoute: '{count} rows',
+      obligSubtitle: 'Compare with the paper. Tap → S-route / → Main route to move a row.',
+      obligMoveToMain: 'Main route', obligMoveToS: 'S-route',
+      obligSaving: 'Saving…', obligSaveBtn: '✓ Looks good — save',
+      obligDiscardBtn: '↺ Start over',
+      statusAwaitingReview: 'Awaiting review…',
+      showInRoutes: 'Show in route list →',
     },
     ru: {
       tabRoutes: 'Маршруты', tabSearch: 'Поиск КОФ', tabScan: 'Сканер', tabGuide: 'Гид',
@@ -2562,7 +2564,7 @@
       stopCount: '{n} остановок', imageN: 'Изображение {n}',
       queueTitle: 'Очередь', clearQueueBtn: 'Очистить очередь',
       statusPreparingPdf: 'Подготовка PDF…',
-      statusPending: 'Ожидание…', statusAnalyzing: 'Анализ…',
+      statusPending: 'Ожидание…', statusAnalyzing: 'Анализ…', statusDiscarded: 'Отклонено',
       judgeWarning: 'Неточное считывание — проверьте вручную',
       saveAnywayBtn: 'Сохранить всё равно',
       scanReviewTitle: 'Проверка результата сканирования',
@@ -2639,6 +2641,14 @@
       verifyBannerBtn: 'Я проверил ✓',
       reviewToggleRoutes: 'Маршруты',
       reviewToggleDocs: 'Документ',
+      obligTitle: 'Маршрут {route} — {count} строк',
+      obligTitleNoRoute: '{count} строк',
+      obligSubtitle: 'Сравните с бумагой. Нажмите → S-маршрут / → Главный, чтобы переместить строку.',
+      obligMoveToMain: 'Главный', obligMoveToS: 'S-маршрут',
+      obligSaving: 'Сохранение…', obligSaveBtn: '✓ Выглядит хорошо — сохранить',
+      obligDiscardBtn: '↺ Начать заново',
+      statusAwaitingReview: 'Ожидание проверки…',
+      showInRoutes: 'Показать в списке →',
     },
   };
 
@@ -2704,7 +2714,6 @@
     processingInterrupted: false,
     resumeImageIds: [],
     abortController: null,
-    apiKey: '',
     nextId: 1,
     savedAt: null,
     supabaseLoadedAt: null,
@@ -2716,6 +2725,7 @@
     },
     scanImages: {},
     pendingReview: null,
+    reviewQueue: [],
   };
 
   /* Session-only UI state — not persisted to localStorage */
@@ -2790,39 +2800,6 @@
     if (!img) return;
     const { scale, rotation, panX, panY } = reviewImgState;
     img.style.transform = `translate(${panX}px,${panY}px) rotate(${rotation}deg) scale(${scale})`;
-  }
-
-  /* ═══════════════════════════════════════════════
-     API-NYCKEL — sparas i localStorage
-  ═══════════════════════════════════════════════ */
-  const API_KEY_STORAGE = 'rutt_api_key';
-
-  function loadApiKey() {
-    const key = localStorage.getItem(API_KEY_STORAGE) || '';
-    state.apiKey = key;
-    updateApiKeyUI();
-  }
-
-  function saveApiKey() {
-    const input = document.getElementById('apiSetupInput');
-    const key = (input.value || '').trim();
-    if (!key || key.length < 20) { alert(t('apiKeyInvalid')); return; }
-    localStorage.setItem(API_KEY_STORAGE, key);
-    state.apiKey = key;
-    input.value = '';
-    updateApiKeyUI();
-  }
-
-  function changeApiKey() {
-    localStorage.removeItem(API_KEY_STORAGE);
-    state.apiKey = '';
-    updateApiKeyUI();
-  }
-
-  function updateApiKeyUI() {
-    const hasKey = !!state.apiKey;
-    document.getElementById('apiSetupCard').classList.toggle('hidden', hasKey);
-    document.getElementById('apiSavedRow').classList.toggle('hidden', !hasKey);
   }
 
   /* ═══════════════════════════════════════════════
@@ -3121,7 +3098,6 @@
   async function retryImage(id) {
     const img = state.images.find(i => i.id === id);
     if (!img || img.retrying || state.isProcessing) return;
-    if (!state.apiKey) { alert(t('apiKeyInvalid')); return; }
     const idx = state.images.indexOf(img) + 1;
     img.retrying = true;
     updateImageItem(id, 'loading', t('statusAnalyzing'));
@@ -3190,62 +3166,70 @@
   /* ═══════════════════════════════════════════════
      MAIN PROCESSING PIPELINE
   ═══════════════════════════════════════════════ */
+  // Visa nästa köade granskning — men bara om ingen modal redan är öppen.
+  function maybeShowNextReview() {
+    if (state.pendingReview || state.scanReview.active) return;
+    const next = state.reviewQueue.shift();
+    if (!next) return;
+    if (next.type === 'oblig') showObligReview(next.img, next.apiUrl, next.result);
+    else showScanReview(next.img, null, null);
+  }
+
+  // Bakgrundsloop: extraherar bilderna en i taget och köar resultaten för
+  // granskning. Loopen pausar INTE medan en granskningsmodal är öppen — nästa
+  // bild skickas direkt så att granskningarna kan staplas i kön.
   async function processImages() {
     if (state.isProcessing) return;
-    const pending = state.images.filter(i => i.status === 'pending');
-    if (pending.length === 0) return;
-    if (!state.apiKey) { alert(t('apiKeyInvalid')); return; }
+    if (!state.images.some(i => i.status === 'pending')) return;
 
     state.isProcessing = true;
     updateProcessButton();
     document.getElementById('summaryBox').classList.add('hidden');
 
-    const img = pending[0];
-    const idx = state.images.indexOf(img) + 1;
-    addLog(tf('logPrep', { n: idx }), 'info');
-    updateImageItem(img.id, 'loading', t('statusAnalyzing'));
-
-    try {
-      let apiUrl = img.dataUrl.startsWith('data:application/pdf')
-        ? img.dataUrl : await toJpeg(img.dataUrl);
-      addLog(tf('logSending', { n: idx }));
-      const result = await callClaudeApi(apiUrl);
-      // Opus läser arket oavsett vinkel och rapporterar rotationen — baka in den i
-      // den lagrade bilden så den visas rätt vänd överallt (gransknings-/jämförelsevy).
-      const rot = parseInt(result.rotation);
-      if (!apiUrl.startsWith('data:application/pdf') && [90, 180, 270].includes(rot)) {
-        apiUrl = await applyRotation(apiUrl, rot);
-        img.dataUrl = apiUrl;
-      }
-      const valid  = (result.entries ?? []).filter(validateEntry);
-      if (valid.length === 0) {
-        const errMsg = tf('errNoKof', { n: idx });
-        updateImageItem(img.id, 'error', errMsg);
-        addLog(errMsg, 'err');
-        state.isProcessing = false;
-        updateProcessButton();
-        saveToStorage();
-        renderImageList();
-        processImages();
-        return;
-      }
-      addLog(tf('logResult', { route: result.routeNumber, count: valid.length }), 'ok');
-      updateImageItem(img.id, 'loading', 'Väntar på granskning…');
-      state.isProcessing = false;
-      updateProcessButton();
-      showObligReview(img, apiUrl, result);
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        updateImageItem(img.id, 'error', t('logCancelled'));
-      } else {
+    while (state.isProcessing) {                       // isProcessing=false bryter (cancel)
+      const img = state.images.find(i => i.status === 'pending');
+      if (!img) break;
+      const idx = state.images.indexOf(img) + 1;
+      addLog(tf('logPrep', { n: idx }), 'info');
+      updateImageItem(img.id, 'loading', t('statusAnalyzing'));
+      try {
+        let apiUrl = img.dataUrl.startsWith('data:application/pdf')
+          ? img.dataUrl : await toJpeg(img.dataUrl);
+        addLog(tf('logSending', { n: idx }));
+        const result = await callClaudeApi(apiUrl);    // ett anrop åt gången
+        // Opus läser arket oavsett vinkel och rapporterar rotationen — baka in den i
+        // den lagrade bilden så den visas rätt vänd överallt (gransknings-/jämförelsevy).
+        const rot = parseInt(result.rotation);
+        if (!apiUrl.startsWith('data:application/pdf') && [90, 180, 270].includes(rot)) {
+          apiUrl = await applyRotation(apiUrl, rot);
+          img.dataUrl = apiUrl;
+        }
+        const valid = (result.entries ?? []).filter(validateEntry);
+        if (valid.length === 0) {
+          const errMsg = tf('errNoKof', { n: idx });
+          updateImageItem(img.id, 'error', errMsg);
+          addLog(errMsg, 'err');
+          continue;                                    // gå vidare, stoppa inte batchen
+        }
+        addLog(tf('logResult', { route: result.routeNumber, count: valid.length }), 'ok');
+        updateImageItem(img.id, 'loading', t('statusAwaitingReview'));
+        state.reviewQueue.push({ type: 'oblig', img, apiUrl, result });
+        maybeShowNextReview();                          // visa direkt om ingen modal är öppen
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          updateImageItem(img.id, 'error', t('logCancelled'));
+          break;                                        // cancel/bakgrund — avbryt loopen
+        }
         const errMsg = String(err.message || err).slice(0, 160);
         updateImageItem(img.id, 'error', errMsg);
         addLog(tf('logError', { n: idx, msg: errMsg }), 'err');
-        if (!state.scanReview.active) showScanReview(img, null, null);
+        state.reviewQueue.push({ type: 'error', img });
+        maybeShowNextReview();
+        continue;
       }
-      state.isProcessing = false;
-      updateProcessButton();
     }
+    state.isProcessing = false;
+    updateProcessButton();
   }
 
   /* ═══════════════════════════════════════════════
@@ -3429,14 +3413,13 @@ Rules:
     const _fetchSig = typeof AbortSignal.any === 'function'
       ? AbortSignal.any([state.abortController.signal, _timeoutSig])
       : state.abortController.signal;
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(CLAUDE_PROXY_URL, {
       method: 'POST',
       signal: _fetchSig,
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': state.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
         model: 'claude-opus-4-8',
@@ -3484,14 +3467,13 @@ Rules:
     });
     const text = `Extracted data:\n${summary}\n\n${JUDGE_PROMPT}`;
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch(CLAUDE_PROXY_URL, {
         method: 'POST',
         signal: AbortSignal.timeout(30_000),
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': state.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
@@ -3530,16 +3512,11 @@ Rules:
       const j = await callClaudeJudge(dataUrl, result);
       const img = state.images.find(i => i.id === imgId);
       if (!img) return;
-      logJudge(
-        result.routeNumber ?? null,
-        j.approved,
-        j.confidence,
-        j.issues ?? [],
-        result.entries?.length ?? 0,
-      );
       const onlyOrientationIssues = j.issues?.length > 0 &&
         j.issues.every(s => /rotat|orient|upside|inverted|tilted/i.test(s));
       if ((!j.approved || j.confidence < 70) && !onlyOrientationIssues) {
+        // Flaggad scan: granskningsmodalen loggar med användarens val
+        // (approve/reject/retry), så vi loggar inte här — undviker dubbletter.
         revertEntries(result);
         img.pendingResult = result;
         const issueNote = j.issues?.length ? ` (${j.issues.slice(0, 2).join('; ')})` : '';
@@ -3547,6 +3524,16 @@ Rules:
         addLog(tf('logJudgeFail', {n: imgId, issues: j.issues?.join(', ') || '–'}), 'err');
         if (!state.scanReview.active) showScanReview(img, result, j);
       } else {
+        // Auto-godkänd: ingen användarinteraktion — logga som 'auto'.
+        logJudge(
+          result.routeNumber ?? null,
+          j.approved,
+          j.confidence,
+          j.issues ?? [],
+          result.entries?.length ?? 0,
+          'auto',
+          null,
+        );
         addLog(tf('logJudgeOk', {n: imgId}), 'ok');
       }
     } catch (_) { /* fail open */ }
@@ -3588,6 +3575,7 @@ Rules:
     scanReviewImgState.scale = 1; scanReviewImgState.rotation = 0;
     scanReviewImgState.panX  = 0; scanReviewImgState.panY     = 0;
     applyScanReviewImgTransform();
+    maybeShowNextReview();
   }
 
   function renderScanReview() {
@@ -3889,11 +3877,12 @@ Rules:
     obligReviewImgState.scale = 1;
     obligReviewImgState.rotation = 0;
     const routeLabel = result.routeNumber
-      ? `Rutt ${result.routeNumber} — ${entries.length} rader`
-      : `${entries.length} rader`;
+      ? tf('obligTitle', { route: result.routeNumber, count: entries.length })
+      : tf('obligTitleNoRoute', { count: entries.length });
     document.getElementById('obligReviewTitle').textContent = routeLabel;
-    document.getElementById('obligReviewSubtitle').textContent =
-      'Jämför med pappret. Tryck → S-rutt / → Huvudrutt för att flytta rad.';
+    document.getElementById('obligReviewSubtitle').textContent = t('obligSubtitle');
+    document.getElementById('obligReviewSaveBtn').textContent = t('obligSaveBtn');
+    document.getElementById('obligReviewDiscardBtn').textContent = t('obligDiscardBtn');
     const imgEl = document.getElementById('obligReviewSourceImg');
     const vp    = document.getElementById('obligReviewImgViewport');
     const isPdf = apiUrl?.startsWith('data:application/pdf');
@@ -3924,7 +3913,7 @@ Rules:
           <div class="oblig-review-store">${escHtml(e.store)}</div>
           <div class="oblig-review-est">${e.units || ''}</div>
           <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
-                  data-kof="${escHtml(e.kof)}">→ ${isS ? 'Huvud&shy;rutt' : 'S-rutt'}</button>
+                  data-kof="${escHtml(e.kof)}">→ ${isS ? t('obligMoveToMain') : t('obligMoveToS')}</button>
         </div>`).join('');
       return `<div><div class="oblig-review-route-label">${escHtml(route)}</div>${rows}</div>`;
     }).join('');
@@ -3941,7 +3930,7 @@ Rules:
   async function confirmObligReview() {
     const btn = document.getElementById('obligReviewSaveBtn');
     btn.disabled = true;
-    btn.textContent = 'Sparar…';
+    btn.textContent = t('obligSaving');
     let { img, apiUrl, result, entries } = state.pendingReview;
     result.entries = entries;
     const { count } = storeEntries(result, img.id);
@@ -3966,21 +3955,20 @@ Rules:
     state.pendingReview = null;
     document.getElementById('obligReviewOverlay').classList.add('hidden');
     btn.disabled = false;
-    btn.textContent = '✓ Ser bra ut — spara';
+    btn.textContent = t('obligSaveBtn');
     renderRoutesTab();
     renderImageList();
     showToast(t('toastSaved'));
-    processImages();
+    maybeShowNextReview();
   }
 
   function discardObligReview() {
     const { img } = state.pendingReview;
-    updateImageItem(img.id, 'pending', t('statusPending'));
+    updateImageItem(img.id, 'error', t('statusDiscarded'));
     state.pendingReview = null;
-    state.isProcessing = false;
     document.getElementById('obligReviewOverlay').classList.add('hidden');
-    updateProcessButton();
     renderImageList();
+    maybeShowNextReview();
   }
 
   function storeEntries(parsed, imgId = null) {
@@ -4033,9 +4021,6 @@ Rules:
     return { count, invalid };
   }
 
-  /* ═══════════════════════════════════════════════
-     KAMERA-SCANNER
-  ═══════════════════════════════════════════════ */
   /* ═══════════════════════════════════════════════
      SEARCH TAB
   ═══════════════════════════════════════════════ */
@@ -4132,7 +4117,7 @@ Rules:
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.units ? `<div class="result-estimate">${escHtml(tf('estimate', {n: data.units}))}</div>` : ''}
             ${(data.confidence === 'low' || data.confidence === 'medium') ? `<div class="result-warn">⚠️ ${escHtml(t('uncertainWarning'))}</div>` : ''}
-            <button class="show-in-routes-btn" data-kof="${escHtml(foundKof)}">Visa i ruttlistan →</button>
+            <button class="show-in-routes-btn" data-kof="${escHtml(foundKof)}">${escHtml(t('showInRoutes'))}</button>
           </div>
         </div>`;
     } else {
@@ -4553,6 +4538,7 @@ Rules:
 
   function removeImage(id) {
     state.images = state.images.filter(i => i.id !== id);
+    state.reviewQueue = state.reviewQueue.filter(r => r.img?.id !== id);
     renderImageList();
     updateProcessButton();
   }
@@ -4810,7 +4796,6 @@ Rules:
   initReviewDivider();
   cleanupOldSupabaseData();
   getDeviceId();
-  loadApiKey();
   loadFromStorage();
   loadLang();
   updateStorageUI();
@@ -5181,7 +5166,12 @@ Rules:
       state.isProcessing = false;
       state.abortController = null;
       setTimeout(() => {
+        // Köade granskningsresultat blir inaktuella när bilderna körs om — töm kön
+        // (men rör inte en granskning som redan är öppen i en modal).
+        state.reviewQueue = [];
+        const openReviewId = state.pendingReview?.img?.id;
         for (const img of state.images) {
+          if (img.id === openReviewId) continue;
           if (state.resumeImageIds.includes(img.id) || img.status === 'loading') {
             img.status = 'pending';
             img.statusMsg = t('statusPending');

@@ -1,5 +1,0 @@
-Lägg till en LLM judge som verifierar att Claude API:ts tolkningsresultat stämmer mot originaldokumentet. Så här ska det fungera:
-Efter att det första API-anropet returnerat JSON med KOF-nummer och rutter, gör ett andra API-anrop med samma bild/dokument plus det tolkade resultatet. Judge-prompten ska vara ungefär:
-"You are a quality checker. You have been given an image of a route document and the data that was extracted from it. Check if the extracted data matches what is visible in the document. Respond with only a JSON object: { "approved": true/false, "confidence": 0-100, "issues": ["list any discrepancies"] }"
-Om judge returnerar approved: false eller confidence under 70 — markera bilden med en varningsikon och texten "Osäker avläsning — kontrollera manuellt" istället för att spara datan automatiskt. Låt användaren välja att spara ändå eller försöka igen.
-Judge-anropet ska inte blockera flödet — kör det parallellt med att resultatet visas, och uppdatera statusen när judge-svaret kommer in.
