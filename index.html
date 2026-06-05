@@ -304,6 +304,7 @@
       .review-entry-kof { font-size: 12px; min-width: unset; }
       .review-entry-store, .review-entry-units { display: none; }
       .review-move-btn { font-size: 10px; padding: 2px 5px; margin-left: 0; }
+      .review-split-btn { font-size: 10px; padding: 2px 5px; }
     }
     .review-body {
       padding: 14px 16px 14px;
@@ -709,6 +710,52 @@
       font-family: var(--font);
     }
     .oblig-review-toggle-btn.is-s-route { border-color: #5856d6; color: #5856d6; }
+    .split-here-btn {
+      flex-shrink: 0; padding: 3px 8px;
+      background: none; border: 0.5px dashed var(--color-text-secondary);
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+      color: var(--color-text-secondary); cursor: pointer;
+      white-space: nowrap; -webkit-tap-highlight-color: transparent;
+      font-family: var(--font);
+    }
+    .split-here-btn:active { background: #5856d6; color: #fff; border-color: #5856d6; border-style: solid; }
+    @media (hover: hover) { .split-here-btn:hover { border-color: #5856d6; color: #5856d6; } }
+    .oblig-review-entry-row.has-conflict {
+      border-color: #5856d6; background: rgba(88,86,214,0.06);
+    }
+    .oblig-split-divider {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin: 4px 0; padding: 3px 0;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      color: #5856d6; text-transform: uppercase;
+    }
+    .oblig-split-divider::before, .oblig-split-divider::after {
+      content: ''; flex: 1; height: 1px; background: rgba(88,86,214,0.35);
+    }
+    .oblig-digit-conflict {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 6px 8px; margin-top: -2px;
+      background: rgba(88,86,214,0.06);
+      border: 0.5px solid #5856d6; border-radius: var(--radius-xs);
+    }
+    .oblig-digit-q { font-size: 11px; font-weight: 600; color: var(--color-text-secondary); }
+    .oblig-digit-choice {
+      flex-shrink: 0; padding: 6px 12px;
+      background: var(--color-surface); border: 0.5px solid #5856d6;
+      border-radius: 16px; font-size: 13px; font-weight: 700;
+      font-family: 'SF Mono','Fira Code',monospace; letter-spacing: 0.5px;
+      color: #5856d6; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .oblig-digit-choice:active { background: #5856d6; color: #fff; }
+    @media (hover: hover) { .oblig-digit-choice:hover { background: rgba(88,86,214,0.12); } }
+    .review-split-btn {
+      flex-shrink: 0; padding: 3px 8px;
+      border: 0.5px dashed var(--color-text-secondary); border-radius: 12px;
+      background: var(--color-surface-2); font-size: 11px; font-weight: 600;
+      color: var(--color-text-secondary); cursor: pointer; white-space: nowrap;
+    }
+    .review-split-btn:active { background: #5856d6; color: #fff; border-color: #5856d6; border-style: solid; }
+    @media (hover: hover) { .review-split-btn:hover { border-color: #5856d6; color: #5856d6; } }
     .oblig-review-actions {
       display: flex; gap: 10px; padding: 12px 14px 44px;
       border-top: 0.5px solid var(--color-border); flex-shrink: 0;
@@ -1892,33 +1939,6 @@
   </div>
 </div>
 
-<!-- Scan Review Overlay -->
-<div class="scan-review-overlay hidden" id="scanReviewOverlay">
-  <div class="scan-review-sheet">
-    <div class="scan-review-header">
-      <div class="scan-review-title" id="scanReviewTitle"></div>
-      <div class="scan-review-subtitle" id="scanReviewSubtitle"></div>
-    </div>
-    <div class="scan-review-body">
-      <div class="scan-review-left" id="scanReviewLeft"></div>
-      <div class="scan-review-right">
-        <div class="scan-review-img-toolbar">
-          <span class="review-section-label" id="scanReviewImgLabel"></span>
-          <button class="review-rotate-btn" id="scanReviewRotateBtn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
-            Rotera
-          </button>
-        </div>
-        <div class="scan-review-img-viewport" id="scanReviewImgViewport">
-          <img class="scan-review-source-img" id="scanReviewSourceImg" alt="">
-        </div>
-        <div class="scan-review-no-img hidden" id="scanReviewNoImg"></div>
-      </div>
-    </div>
-    <div class="scan-review-actions" id="scanReviewActions"></div>
-  </div>
-</div>
-
 <!-- Toast -->
 <div id="toast" class="toast hidden"></div>
 
@@ -2376,6 +2396,13 @@
       obligMoveToMain: 'Huvud&shy;rutt', obligMoveToS: 'S-rutt',
       obligSaving: 'Sparar…', obligSaveBtn: '✓ Ser bra ut — spara',
       obligDiscardBtn: '↺ Börja om',
+      splitHereBtn: 'Dela här',
+      splitBoundaryLabel: 'S{route} börjar här',
+      reconcileBoundaryTitle: 'Var börjar S-rutten? — Rutt {route}',
+      reconcileBoundarySubtitle: 'Tryck "Dela här" på första raden som hör till S-rutten.',
+      reconcileDigitTitle: 'Kontrollera siffrorna — Rutt {route}',
+      reconcileDigitSubtitle: 'Två avläsningar är oense om en rad. Välj rätt KOF-nummer.',
+      reconcileDigitChoose: 'Välj rätt:',
       statusAwaitingReview: 'Väntar på granskning…',
       showInRoutes: 'Visa i ruttlistan →',
     },
@@ -2512,6 +2539,13 @@
       obligMoveToMain: 'Main route', obligMoveToS: 'S-route',
       obligSaving: 'Saving…', obligSaveBtn: '✓ Looks good — save',
       obligDiscardBtn: '↺ Start over',
+      splitHereBtn: 'Split here',
+      splitBoundaryLabel: 'S{route} starts here',
+      reconcileBoundaryTitle: 'Where does the S-route start? — Route {route}',
+      reconcileBoundarySubtitle: 'Tap "Split here" on the first row that belongs to the S-route.',
+      reconcileDigitTitle: 'Check the digits — Route {route}',
+      reconcileDigitSubtitle: 'Two readings disagree on a row. Pick the correct KOF number.',
+      reconcileDigitChoose: 'Pick correct:',
       statusAwaitingReview: 'Awaiting review…',
       showInRoutes: 'Show in route list →',
     },
@@ -2647,6 +2681,13 @@
       obligMoveToMain: 'Главный', obligMoveToS: 'S-маршрут',
       obligSaving: 'Сохранение…', obligSaveBtn: '✓ Выглядит хорошо — сохранить',
       obligDiscardBtn: '↺ Начать заново',
+      splitHereBtn: 'Разделить здесь',
+      splitBoundaryLabel: 'S{route} начинается здесь',
+      reconcileBoundaryTitle: 'Где начинается S-маршрут? — Маршрут {route}',
+      reconcileBoundarySubtitle: 'Нажмите «Разделить здесь» на первой строке S-маршрута.',
+      reconcileDigitTitle: 'Проверьте цифры — Маршрут {route}',
+      reconcileDigitSubtitle: 'Два считывания расходятся в одной строке. Выберите правильный номер КОФ.',
+      reconcileDigitChoose: 'Выберите верный:',
       statusAwaitingReview: 'Ожидание проверки…',
       showInRoutes: 'Показать в списке →',
     },
@@ -2719,10 +2760,6 @@
     supabaseLoadedAt: null,
     isLoadingSupabase: false,
     isSyncing: false,
-    scanReview: {
-      active: false, img: null, result: null, judgeResult: null,
-      editMode: false, editEntries: [],
-    },
     scanImages: {},
     pendingReview: null,
     reviewQueue: [],
@@ -2743,9 +2780,6 @@
   let _reviewDrag = null;
   let _reviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
 
-  const scanReviewImgState = { scale: 1, rotation: 0, panX: 0, panY: 0 };
-  let _scanReviewDrag = null;
-  let _scanReviewTouch = { lastDist: 0, lastX: 0, lastY: 0 };
 
   const obligReviewImgState = { scale: 1, rotation: 0 };
   function applyObligReviewImgTransform() {
@@ -2788,11 +2822,39 @@
     }
   }
 
-  function applyScanReviewImgTransform() {
-    const img = document.getElementById('scanReviewSourceImg');
-    if (!img) return;
-    const { scale, rotation, panX, panY } = scanReviewImgState;
-    img.style.transform = `translate(${panX}px,${panY}px) rotate(${rotation}deg) scale(${scale})`;
+  // "Dela här" i jämförelsevyn — sätt gränsen vid splitKof i ETT tryck:
+  // splitKof och allt nedanför (dokumentordning) → SN, allt ovanför → Rutt N.
+  // Persisterar alla ändrade rader i en enda upsert (en toast, inte 30).
+  async function splitHerePersisted(routeNum, splitKof) {
+    const mainKey = `Rutt ${routeNum}`;
+    const sKey    = `S${routeNum}`;
+    const kofs = state.routeOrder.filter(k => {
+      const r = state.routeData[k]?.route;
+      return r === mainKey || r === sKey;
+    });
+    const splitIdx = kofs.indexOf(splitKof);
+    if (splitIdx === -1) { refreshReviewBody(routeNum); return; }
+    const changed = [];
+    kofs.forEach((k, i) => {
+      const want = i >= splitIdx ? sKey : mainKey;
+      if (state.routeData[k].route !== want) { state.routeData[k].route = want; changed.push(k); }
+    });
+    refreshReviewBody(routeNum);
+    if (!changed.length) return;
+    saveToStorage();
+    renderRoutesTab();
+    showToast(t('toastSaved'));
+    if (sb) {
+      try {
+        await sb.from('route_entries').upsert(
+          changed.map(k => ({
+            kof: k, route: state.routeData[k].route,
+            store_name: state.routeData[k].store ?? '', units: parseInt(state.routeData[k].units) || 0,
+          })),
+          { onConflict: 'kof' }
+        );
+      } catch (err) { console.warn('Supabase split upsert failed', err); }
+    }
   }
 
   function applyReviewImgTransform() {
@@ -3055,7 +3117,6 @@
           <div class="image-name">${escHtml(tf('imageN', {n: img.id}))}</div>
           <div class="image-status">${escHtml(img.statusMsg)}</div>
           ${img.status === 'error' && !img.retrying ? `<button class="image-retry-btn" data-id="${img.id}">${escHtml(t('retryBtn'))}</button>` : ''}
-          ${img.status === 'warning' ? `<div class="image-judge-actions"><button class="image-save-anyway-btn" data-id="${img.id}">${escHtml(t('saveAnywayBtn'))}</button><button class="image-retry-btn" data-id="${img.id}">${escHtml(t('retryBtn'))}</button><button class="image-review-btn" data-id="${img.id}">${escHtml(t('scanReviewBtnReview'))}</button></div>` : ''}
         </div>
         <div class="image-status-icon">${statusIcon(img.status)}</div>
         ${img.status !== 'loading' ? `<button class="image-remove-btn" data-id="${img.id}">×</button>` : ''}
@@ -3103,34 +3164,32 @@
     updateImageItem(id, 'loading', t('statusAnalyzing'));
     try {
       let apiUrl = img.dataUrl.startsWith('data:application/pdf') ? img.dataUrl : await toJpeg(img.dataUrl);
-      state.abortController = new AbortController();
-      const result = await callClaudeApi(apiUrl);
+      const [result, judge] = await Promise.all([
+        callClaudeApi(apiUrl),
+        callClaudeJudge(apiUrl).catch(() => ({ failed: true })),
+      ]);
       state.abortController = null;
       const rot = parseInt(result.rotation);
       if (!apiUrl.startsWith('data:application/pdf') && [90, 180, 270].includes(rot)) {
         apiUrl = await applyRotation(apiUrl, rot);
         img.dataUrl = apiUrl;
       }
-      const { count, invalid } = storeEntries(result, id);
-      for (const e of invalid) addLog(`❌ Kunde inte tolka ${e.kof || '?'} — kontrollera manuellt`, 'err');
-      if (count === 0) {
+      const decision = reconcileReadings(result, judge);
+      if (decision.entries.length === 0) {
         img.retrying = false;
         updateImageItem(id, 'error', tf('errNoKof', {n: idx}));
         return;
       }
       img.retrying = false;
-      const invalidNote = invalid.length ? ` (${invalid.length} ogiltiga)` : '';
-      const msg = tf('logResult', {route: result.routeNumber, count}) + invalidNote;
-      updateImageItem(id, 'done', msg);
-      addLog(tf('logDone', {n: idx, msg}), 'ok');
-      const _ve2 = (result.entries ?? []).filter(validateEntry);
-      logScan(new Set(_ve2.map(e => e.route)).size, _ve2.reduce((s, e) => s + (parseInt(e.units) || 0), 0));
-      await runJudge(id, apiUrl, result);
-      if (state.images.find(i => i.id === id)?.status === 'warning') return;
-      state.savedAt = Date.now();
-      saveToStorage();
-      saveToSupabase();
-      renderRoutesTab();
+      if (decision.verdict === 'silent') {
+        await commitScan(img, apiUrl, result, decision.entries, 'auto', null);
+        addLog(tf('logDone', {n: idx, msg: tf('logResult', {route: result.routeNumber, count: decision.entries.length})}), 'ok');
+      } else {
+        updateImageItem(id, 'loading', t('statusAwaitingReview'));
+        state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
+        maybeShowNextReview();
+        return;
+      }
       // Update summary icon/title if all are now done
       const remaining = state.images.filter(i => i.status === 'error').length;
       if (remaining === 0) {
@@ -3167,12 +3226,12 @@
      MAIN PROCESSING PIPELINE
   ═══════════════════════════════════════════════ */
   // Visa nästa köade granskning — men bara om ingen modal redan är öppen.
+  // Bara scans där de två avläsningarna är oense köas; allt annat sparas tyst.
   function maybeShowNextReview() {
-    if (state.pendingReview || state.scanReview.active) return;
+    if (state.pendingReview) return;
     const next = state.reviewQueue.shift();
     if (!next) return;
-    if (next.type === 'oblig') showObligReview(next.img, next.apiUrl, next.result);
-    else showScanReview(next.img, null, null);
+    if (next.type === 'review') showObligReview(next.img, next.apiUrl, next.result, next.decision);
   }
 
   // Bakgrundsloop: extraherar bilderna en i taget och köar resultaten för
@@ -3196,7 +3255,12 @@
         let apiUrl = img.dataUrl.startsWith('data:application/pdf')
           ? img.dataUrl : await toJpeg(img.dataUrl);
         addLog(tf('logSending', { n: idx }));
-        const result = await callClaudeApi(apiUrl);    // ett anrop åt gången
+        // Opus-extraktion + oberoende andra-avläsning (Haiku) parallellt — judge
+        // är oberoende av Opus svar, så ingen extra väntan. Judge fail-open.
+        const [result, judge] = await Promise.all([
+          callClaudeApi(apiUrl),
+          callClaudeJudge(apiUrl).catch(() => ({ failed: true })),
+        ]);
         // Opus läser arket oavsett vinkel och rapporterar rotationen — baka in den i
         // den lagrade bilden så den visas rätt vänd överallt (gransknings-/jämförelsevy).
         const rot = parseInt(result.rotation);
@@ -3204,17 +3268,23 @@
           apiUrl = await applyRotation(apiUrl, rot);
           img.dataUrl = apiUrl;
         }
-        const valid = (result.entries ?? []).filter(validateEntry);
-        if (valid.length === 0) {
+        const decision = reconcileReadings(result, judge);
+        if (decision.entries.length === 0) {
           const errMsg = tf('errNoKof', { n: idx });
           updateImageItem(img.id, 'error', errMsg);
           addLog(errMsg, 'err');
           continue;                                    // gå vidare, stoppa inte batchen
         }
-        addLog(tf('logResult', { route: result.routeNumber, count: valid.length }), 'ok');
-        updateImageItem(img.id, 'loading', t('statusAwaitingReview'));
-        state.reviewQueue.push({ type: 'oblig', img, apiUrl, result });
-        maybeShowNextReview();                          // visa direkt om ingen modal är öppen
+        addLog(tf('logResult', { route: result.routeNumber, count: decision.entries.length }), 'ok');
+        if (decision.verdict === 'silent') {
+          // Avläsningarna är eniga → spara tyst, ingen modal.
+          await commitScan(img, apiUrl, result, decision.entries, 'auto', null);
+        } else {
+          // Oense om gräns eller en KOF-siffra → köa en lugn granskning.
+          updateImageItem(img.id, 'loading', t('statusAwaitingReview'));
+          state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
+          maybeShowNextReview();                        // visa direkt om ingen modal är öppen
+        }
       } catch (err) {
         if (err.name === 'AbortError') {
           updateImageItem(img.id, 'error', t('logCancelled'));
@@ -3223,8 +3293,6 @@
         const errMsg = String(err.message || err).slice(0, 160);
         updateImageItem(img.id, 'error', errMsg);
         addLog(tf('logError', { n: idx, msg: errMsg }), 'err');
-        state.reviewQueue.push({ type: 'error', img });
-        maybeShowNextReview();
         continue;
       }
     }
@@ -3355,7 +3423,7 @@ DOCUMENT STRUCTURE — each page has this exact layout:
 Steps 3 and 4 may be absent if the page has only one section.
 CRITICAL: Do NOT stop extracting when you hit the empty rows. They are a visual separator, not end-of-page. Always continue reading below them and include ALL entries from the S-block. Omitting S-block entries is an extraction error.
 
-{"routeNumber":"4","driver":"161 Xhulijo","rotation":0,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
+{"routeNumber":"4","driver":"161 Xhulijo","rotation":0,"splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
 Rules:
 - rotation: how many degrees CLOCKWISE the image must be rotated to be upright with text readable normally. One of 0, 90, 180, 270. If the sheet is already upright, use 0. If the text runs bottom-to-top (you had to tilt your head left), use 90. If upside down, use 180. If text runs top-to-bottom (tilt head right), use 270.
@@ -3365,24 +3433,25 @@ Rules:
 - store: the full text from the middle column — includes store name, address, and any customer/account number visible in that column (e.g. "COOP CITY STHLM 4512" where 4512 is a customer number).
 - pall/bur/hlv: value in that column, empty string if blank.
 - units: integer. This is the EST value — the number in the narrow column immediately to the right of the store name. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
-- route: CRITICAL — assign "Rutt N" or "SN" (where N = routeNumber) based solely on position relative to the first empty row.
-  Above the first empty row → "Rutt N". Below the first empty row → "SN". No empty row → all "Rutt N".
-  Double-check every entry's route value before returning. This is the most important field.
+- splitIndex: CRITICAL — the 0-based index into the "entries" array of the FIRST entry that belongs to the S-block (the first KOF row AFTER the empty-row gap). If the page has only one section (no empty-row gap, no S-block), return null. This is a SINGLE explicit boundary decision: every entry with index < splitIndex is "Rutt N", every entry with index >= splitIndex is "SN". Decide the gap ONCE, then derive splitIndex from it.
+- route: assign "Rutt N" or "SN" (where N = routeNumber) and KEEP IT CONSISTENT with splitIndex — index < splitIndex → "Rutt N", index >= splitIndex → "SN". If splitIndex is null, all entries are "Rutt N".
+  Double-check that every entry's route value matches splitIndex before returning. This is the most important field.
 - confidence: "high" = all 6 KOF digits clearly readable; "medium" = partially obscured or uncertain; "low" = blurry, cut-off, or hard to read.
 - Include ALL rows with a 6-digit KOF number. Do NOT invent KOF numbers or fill gaps.`;
 
-  const JUDGE_PROMPT = `CRITICAL: Respond with ONLY a raw JSON object. Start with { and end with }.
-You are a quality checker for logistics data extraction. You have been given an image of a Swedish route document and the data extracted from it.
-Check if the KOF numbers, route assignments (Rutt N / SN), and unit counts match what is visible in the document.
-{"approved":true,"confidence":85,"issues":[]}
-Each page belongs to the route stated in the page header (e.g. 'Rutt 1 - 162 George / David A'). A page may have one or two sections. If there is only one section, all entries belong to 'Rutt X'. If there are two sections, they are separated by one or more completely empty rows (no KOF number, no address) — all entries ABOVE the first empty row belong to 'Rutt X', and all entries BELOW the first empty row belong to 'SX' (same number, e.g. S1). Additional empty rows may appear within the SX section but do not change the assignment — everything after the first gap is always SX. Never assign entries after the first gap to Rutt X.
-Do NOT flag SX entries as incorrect. The Rutt X / SX split is determined by the first empty row gap in the table and is always correct. Only verify that KOF numbers and addresses match what is visible in the document.
-When evaluating route assignments, trust the extraction model's Rutt X vs SX split. If the extracted data assigns an entry to SX, assume there was a visible empty row gap in the original document even if you cannot clearly see it. Do NOT flag SX assignments as incorrect. Only flag if a Rutt X entry and an SX entry have swapped KOF numbers or addresses that clearly don't match the document.
+  const JUDGE_PROMPT = `CRITICAL: Respond with ONLY a raw JSON object. Do NOT use markdown code blocks or backticks. Start with { and end with }.
+You are reading a Swedish logistics route sheet INDEPENDENTLY. You are NOT given any prior extraction — read the document yourself from scratch.
+Your job: read the leftmost data column (the 6-digit KOF numbers) top-to-bottom, and report where the Rutt/S-split is.
+Read the image regardless of rotation — it may be sideways or upside down. Claude can read rotated images.
+
+Each page belongs to the route in the header. A page may have one or two sections. If there is only one section, there is no S-block. If there are two sections, they are separated by one or more COMPLETELY empty rows (no KOF number, no address). The first empty-row gap is the split: rows above belong to the main route, rows below belong to the S-route. Additional empty rows inside the S-block do not matter — everything after the FIRST gap is S.
+
+Return JSON in this exact shape:
+{"kofs":["369321","123456","457001"],"splitIndex":1}
 Rules:
-- approved: true if the extraction looks correct, false if there are clear errors.
-- confidence: 0-100. Use <70 if uncertain even if approved is true.
-- issues: list specific discrepancies, empty array if none.
-- IMPORTANT: The image may be rotated or photographed at an angle. Do NOT flag image orientation/rotation as an issue and do NOT lower confidence or set approved=false solely because the image looks rotated. Claude can read rotated images. Only reject if you can clearly see that extracted KOF numbers or addresses do NOT match the document content.`;
+- kofs: array of every clearly visible 6-digit KOF number, in document order, top-to-bottom, including the S-block. One string per row. Skip header rows. Do NOT invent or guess digits — only include what is clearly readable. Read each digit carefully; this is a cross-check of the digits.
+- splitIndex: 0-based index into your "kofs" array of the FIRST KOF that is below the first empty-row gap (the first S-block row). If there is only one section / no empty-row gap, return null.
+- Output ONLY these two fields. No prose, no "approved", no "confidence".`;
 
   function applyRotation(dataUrl, degrees) {
     if (!degrees) return Promise.resolve(dataUrl);
@@ -3457,19 +3526,16 @@ Rules:
   /* ═══════════════════════════════════════════════
      LLM JUDGE — kvalitetskontroll
   ═══════════════════════════════════════════════ */
-  async function callClaudeJudge(dataUrl, result) {
+  // Oberoende andra-avläsning (Haiku) — läser KOF-kolumnen och gränsen från
+  // grunden UTAN att se Opus svar. Resultatet jämförs sedan i reconcileReadings.
+  // Fail-open: vid fel returneras { failed:true } så användaren aldrig blockeras.
+  async function callClaudeJudge(dataUrl) {
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!match) return { approved: true, confidence: 100, issues: [] };
-    const summary = JSON.stringify({
-      routeNumber: result.routeNumber,
-      driver: result.driver,
-      entries: (result.entries ?? []).slice(0, 30).map(e => ({ kof: e.kof, route: e.route, units: e.units })),
-    });
-    const text = `Extracted data:\n${summary}\n\n${JUDGE_PROMPT}`;
+    if (!match) return { failed: true };
     try {
       const resp = await fetch(CLAUDE_PROXY_URL, {
         method: 'POST',
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(40_000),
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
@@ -3477,384 +3543,128 @@ Rules:
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
+          max_tokens: 1500,
           messages: [{ role: 'user', content: [
             { type: match[1] === 'application/pdf' ? 'document' : 'image',
               source: { type: 'base64', media_type: match[1], data: match[2] } },
-            { type: 'text', text },
+            { type: 'text', text: JUDGE_PROMPT },
           ]}],
         }),
       });
-      if (!resp.ok) return { approved: true, confidence: 100, issues: [] };
+      if (!resp.ok) return { failed: true };
       const d = await resp.json();
       const raw = d.content?.[0]?.text?.trim() ?? '';
       const fm = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const obj = JSON.parse(fm ? fm[1].trim() : raw);
-      if (typeof obj.approved === 'boolean' && typeof obj.confidence === 'number') return obj;
+      let obj;
+      try { obj = JSON.parse(fm ? fm[1].trim() : raw); }
+      catch (_) { const m = raw.match(/\{[\s\S]*\}/); obj = m ? JSON.parse(m[0]) : null; }
+      if (obj && Array.isArray(obj.kofs)) {
+        const kofs = obj.kofs.map(k => String(k).replace(/\D/g, ''));
+        const splitIndex = Number.isInteger(obj.splitIndex) ? obj.splitIndex : null;
+        return { kofs, splitIndex, failed: false };
+      }
     } catch (_) {}
-    return { approved: true, confidence: 100, issues: [] };
+    return { failed: true };
   }
 
-  function revertEntries(result) {
-    for (const e of (result.entries ?? [])) {
-      const kof = String(e.kof ?? '').trim();
-      if (!kof || !state.routeData[kof]) continue;
-      delete state.routeData[kof];
-      state.routeOrder = state.routeOrder.filter(k => k !== kof);
+  // ─────────────────────────────
+  //  RECONCILE — jämför Opus-extraktionen mot den oberoende andra-avläsningen
+  // ─────────────────────────────
+  //  verdict 'silent'   → eniga → spara direkt utan modal
+  //  verdict 'boundary' → oense om var Rutt/S-gränsen går → be användaren dela
+  //  verdict 'digit'    → ense om gränsen men oense om en KOF-siffra → be om koll
+  function reconcileReadings(result, judge) {
+    const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
+
+    // Härled gränsen på RÅA arrayen (splitIndex indexerar den, inte den filtrerade)
+    const raw = result.entries ?? [];
+    let rawSplit = Number.isInteger(result.splitIndex) ? result.splitIndex : null;
+    if (rawSplit === null) {
+      const i = raw.findIndex(e => String(e.route ?? '').startsWith('S'));
+      rawSplit = i === -1 ? null : i;
     }
-    syncRoutesMeta();
-    renderRoutesTab();
-    renderSearchUI();
-  }
+    if (rawSplit !== null && (rawSplit < 0 || rawSplit > raw.length)) rawSplit = null;
 
-  async function runJudge(imgId, dataUrl, result) {
-    try {
-      const j = await callClaudeJudge(dataUrl, result);
-      const img = state.images.find(i => i.id === imgId);
-      if (!img) return;
-      const onlyOrientationIssues = j.issues?.length > 0 &&
-        j.issues.every(s => /rotat|orient|upside|inverted|tilted/i.test(s));
-      if ((!j.approved || j.confidence < 70) && !onlyOrientationIssues) {
-        // Flaggad scan: granskningsmodalen loggar med användarens val
-        // (approve/reject/retry), så vi loggar inte här — undviker dubbletter.
-        revertEntries(result);
-        img.pendingResult = result;
-        const issueNote = j.issues?.length ? ` (${j.issues.slice(0, 2).join('; ')})` : '';
-        updateImageItem(imgId, 'warning', t('judgeWarning') + issueNote);
-        addLog(tf('logJudgeFail', {n: imgId, issues: j.issues?.join(', ') || '–'}), 'err');
-        if (!state.scanReview.active) showScanReview(img, result, j);
-      } else {
-        // Auto-godkänd: ingen användarinteraktion — logga som 'auto'.
-        logJudge(
-          result.routeNumber ?? null,
-          j.approved,
-          j.confidence,
-          j.issues ?? [],
-          result.entries?.length ?? 0,
-          'auto',
-          null,
-        );
-        addLog(tf('logJudgeOk', {n: imgId}), 'ok');
-      }
-    } catch (_) { /* fail open */ }
-  }
+    // Sätt route ur gränsen FÖRE filtrering, filtrera sedan till 6-siffriga KOF.
+    // Härled opusSplit som index i den filtrerade listan (för divider + jämförelse).
+    let entries = raw
+      .map((e, i) => ({ ...e, kof: String(e.kof ?? '').trim(),
+        route: (rawSplit !== null && i >= rawSplit) ? `S${rn}` : `Rutt ${rn}` }))
+      .filter(e => /^\d{6}$/.test(e.kof));
+    let opusSplit = entries.findIndex(e => String(e.route).startsWith('S'));
+    opusSplit = opusSplit === -1 ? null : opusSplit;
 
-  function saveJudgedResult(imgId) {
-    const img = state.images.find(i => i.id === imgId);
-    if (!img?.pendingResult) return;
-    const result = img.pendingResult;
-    img.pendingResult = null;
-    const { count } = storeEntries(result, imgId);
-    updateImageItem(imgId, 'done', tf('logResult', {route: result.routeNumber, count}));
-    saveToStorage();
-    saveToSupabase();
-    renderRoutesTab();
-    renderSearchUI();
-    showToast(t('toastSaved'));
-  }
-
-  /* ═══════════════════════════════════════════════
-     SCAN REVIEW OVERLAY
-  ═══════════════════════════════════════════════ */
-  function showScanReview(img, result, judgeResult) {
-    state.scanReview = {
-      active: true, img, result, judgeResult,
-      editMode: false, editEntries: [],
-    };
-    scanReviewImgState.scale = 1; scanReviewImgState.rotation = 0;
-    scanReviewImgState.panX  = 0; scanReviewImgState.panY     = 0;
-    applyScanReviewImgTransform();
-    renderScanReview();
-    document.getElementById('scanReviewOverlay').classList.remove('hidden');
-  }
-
-  function closeScanReview() {
-    state.scanReview.active = false;
-    document.getElementById('scanReviewOverlay').classList.add('hidden');
-    document.getElementById('scanReviewSourceImg').src = '';
-    scanReviewImgState.scale = 1; scanReviewImgState.rotation = 0;
-    scanReviewImgState.panX  = 0; scanReviewImgState.panY     = 0;
-    applyScanReviewImgTransform();
-    maybeShowNextReview();
-  }
-
-  function renderScanReview() {
-    const sr = state.scanReview;
-    const j  = sr.judgeResult;
-    const r  = sr.result;
-
-    const titleEl    = document.getElementById('scanReviewTitle');
-    const subtitleEl = document.getElementById('scanReviewSubtitle');
-    titleEl.textContent = t('scanReviewTitle');
-    if (!r) {
-      subtitleEl.textContent = sr.img?.statusMsg ?? t('scanReviewErrorTitle');
-      subtitleEl.className = 'scan-review-subtitle error';
-    } else if (j && (!j.approved || j.confidence < 70)) {
-      subtitleEl.textContent = (j.issues ?? []).join(' · ') || '';
-      subtitleEl.className = 'scan-review-subtitle';
-    } else {
-      subtitleEl.textContent = '';
-      subtitleEl.className = 'scan-review-subtitle';
+    // Fail-open: kunde inte verifiera → spara tyst
+    if (!judge || judge.failed) {
+      return { verdict: 'silent', entries, splitIndex: opusSplit, judgeSplitIndex: null, digitConflicts: [] };
     }
 
-    const imgViewport = document.getElementById('scanReviewImgViewport');
-    const noImgEl     = document.getElementById('scanReviewNoImg');
-    const sourceImg   = document.getElementById('scanReviewSourceImg');
-    document.getElementById('scanReviewImgLabel').textContent = t('scanReviewImageLabel');
-    const imgSrc = sr.img?.dataUrl && !sr.img.dataUrl.startsWith('data:application/pdf')
-      ? sr.img.dataUrl : null;
-    if (imgSrc) {
-      sourceImg.src = imgSrc;
-      imgViewport.classList.remove('hidden');
-      noImgEl.classList.add('hidden');
-    } else {
-      noImgEl.textContent = t('scanReviewNoImage');
-      imgViewport.classList.add('hidden');
-      noImgEl.classList.remove('hidden');
-    }
+    const judgeSplit = Number.isInteger(judge.splitIndex) ? judge.splitIndex
+      : (judge.splitIndex === null ? null : undefined);
+    const jkofs = Array.isArray(judge.kofs)
+      ? judge.kofs.map(k => String(k).replace(/\D/g, '')).filter(k => k.length === 6)
+      : null;
 
-    const leftEl = document.getElementById('scanReviewLeft');
-    if (!r || !(r.entries ?? []).length) {
-      leftEl.innerHTML = `<div style="color:var(--color-text-secondary);font-size:13px;padding:8px 0;">${escHtml(t('scanReviewNoImage'))}</div>`;
-    } else if (sr.editMode) {
-      leftEl.innerHTML = _renderScanReviewEditRows(sr.editEntries, r.routeNumber);
-      _attachScanReviewDragHandlers();
-    } else {
-      leftEl.innerHTML = _renderScanReviewReadOnlyRows(r.entries, r.routeNumber);
-    }
-
-    const actionsEl = document.getElementById('scanReviewActions');
-    if (sr.editMode) {
-      actionsEl.innerHTML = `
-        <button class="scan-review-btn-save" onclick="saveScanReviewEdits()">${escHtml(t('scanReviewSaveEdits'))}</button>
-        <button class="scan-review-btn-secondary" onclick="cancelScanReviewEdit()">${escHtml(t('scanReviewCancelEdit'))}</button>`;
-    } else {
-      const hasResult = !!(r && (r.entries ?? []).length);
-      actionsEl.innerHTML = `
-        ${hasResult ? `<button class="scan-review-btn-approve" onclick="approveScanReview()">${escHtml(t('scanReviewApprove'))}</button>` : ''}
-        <button class="scan-review-btn-reject" onclick="rejectScanReview()">${escHtml(t('scanReviewReject'))}</button>
-        ${hasResult ? `<button class="scan-review-btn-secondary" onclick="enterScanReviewEditMode()">${escHtml(t('scanReviewFix'))}</button>` : ''}
-        <button class="scan-review-btn-secondary" onclick="retryScanReview()">${escHtml(t('scanReviewRetry'))}</button>`;
-    }
-  }
-
-  function _renderScanReviewReadOnlyRows(entries, routeNumber) {
-    const rn = String(routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-    const mainEntries = entries.filter(e => !String(e.route ?? '').startsWith('S'));
-    const sEntries    = entries.filter(e =>  String(e.route ?? '').startsWith('S'));
-    const buildRows = list => list.map(e => `
-      <div class="scan-review-entry-row">
-        <span class="scan-review-entry-kof">${escHtml(e.kof)}</span>
-        <span class="scan-review-entry-store">${escHtml(e.store ?? '')}</span>
-        ${e.units ? `<span class="scan-review-entry-units">${escHtml(String(e.units))}</span>` : ''}
-      </div>`).join('');
-    let html = '';
-    if (mainEntries.length) {
-      html += `<div class="scan-review-section-label">Rutt ${escHtml(rn)} (${mainEntries.length})</div>
-               <div class="scan-review-entries">${buildRows(mainEntries)}</div>`;
-    }
-    if (sEntries.length) {
-      html += `<div class="scan-review-section-label" style="margin-top:6px">S${escHtml(rn)} (${sEntries.length})</div>
-               <div class="scan-review-entries">${buildRows(sEntries)}</div>`;
-    }
-    return html;
-  }
-
-  function _renderScanReviewEditRows(editEntries, routeNumber) {
-    const rn = String(routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-    const rows = editEntries.map((e, i) => {
-      const isS   = String(e.route ?? '').startsWith('S');
-      const label = isS ? `S${rn}` : `Rutt ${rn}`;
-      return `
-        <div class="scan-review-edit-row" draggable="true" data-idx="${i}">
-          <span class="scan-review-drag-handle" aria-hidden="true">⠿</span>
-          <input class="scan-review-kof-input" type="text" inputmode="numeric"
-                 maxlength="6" value="${escHtml(e.kof)}" data-idx="${i}">
-          <span class="scan-review-store-display">${escHtml(e.store ?? '')}</span>
-          <button class="scan-review-route-toggle" data-idx="${i}">${escHtml(label)}</button>
-          <button class="scan-review-del-btn" data-idx="${i}" aria-label="Ta bort">×</button>
-        </div>`;
-    }).join('');
-    return `<div class="scan-review-entries" id="scanReviewEditList">${rows}</div>`;
-  }
-
-  function _attachScanReviewDragHandlers() {
-    const list = document.getElementById('scanReviewEditList');
-    if (!list) return;
-    let dragSrcIdx = null;
-
-    list.querySelectorAll('.scan-review-edit-row').forEach(row => {
-      row.addEventListener('dragstart', e => {
-        dragSrcIdx = parseInt(row.dataset.idx);
-        e.dataTransfer.effectAllowed = 'move';
+    // Jämför KOF positionellt — bara om båda läste samma antal rader
+    const digitConflicts = [];
+    let lengthMismatch = false;
+    if (jkofs && jkofs.length === entries.length) {
+      entries.forEach((e, i) => {
+        if (jkofs[i] && jkofs[i] !== e.kof) digitConflicts.push({ index: i, opusKof: e.kof, judgeKof: jkofs[i] });
       });
-      row.addEventListener('dragover', e => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        list.querySelectorAll('.scan-review-edit-row').forEach(r => r.classList.remove('drag-over'));
-        row.classList.add('drag-over');
-      });
-      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-      row.addEventListener('drop', e => {
-        e.preventDefault();
-        row.classList.remove('drag-over');
-        const targetIdx = parseInt(row.dataset.idx);
-        if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
-        const arr = state.scanReview.editEntries;
-        const [moved] = arr.splice(dragSrcIdx, 1);
-        arr.splice(targetIdx, 0, moved);
-        dragSrcIdx = null;
-        renderScanReview();
-      });
-    });
+    } else if (jkofs && jkofs.length) {
+      lengthMismatch = true;
+    }
 
-    list.addEventListener('click', e => {
-      const toggleBtn = e.target.closest('.scan-review-route-toggle');
-      const delBtn    = e.target.closest('.scan-review-del-btn');
-      if (toggleBtn) {
-        const idx   = parseInt(toggleBtn.dataset.idx);
-        const entry = state.scanReview.editEntries[idx];
-        const rn    = String(state.scanReview.result?.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-        const isS   = String(entry.route ?? '').startsWith('S');
-        entry.route = isS ? `Rutt ${rn}` : `S${rn}`;
-        renderScanReview();
-      }
-      if (delBtn) {
-        const idx = parseInt(delBtn.dataset.idx);
-        state.scanReview.editEntries.splice(idx, 1);
-        renderScanReview();
-      }
-    });
+    const boundaryDisagree = judgeSplit !== undefined && judgeSplit !== opusSplit;
 
-    list.addEventListener('change', e => {
-      const input = e.target.closest('.scan-review-kof-input');
-      if (!input) return;
-      const idx = parseInt(input.dataset.idx);
-      if (state.scanReview.editEntries[idx]) {
-        state.scanReview.editEntries[idx].kof = input.value.replace(/\D/g, '').slice(0, 6);
-      }
+    if (boundaryDisagree || lengthMismatch) {
+      return { verdict: 'boundary', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts };
+    }
+    if (digitConflicts.length) {
+      return { verdict: 'digit', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts };
+    }
+    return { verdict: 'silent', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts: [] };
+  }
+
+  // Sätter route för alla poster utifrån dokumentposition relativt splitKof:
+  // splitKof och allt nedanför → SN, allt ovanför → Rutt N. Muterar arrayen.
+  function applySplitAt(entries, routeNum, splitKof) {
+    const rn = String(routeNum ?? '').match(/\d+/)?.[0] ?? '?';
+    const idx = entries.findIndex(e => e.kof === splitKof);
+    entries.forEach((e, i) => {
+      e.route = (idx !== -1 && i >= idx) ? `S${rn}` : `Rutt ${rn}`;
     });
   }
 
-  function enterScanReviewEditMode() {
-    const sr = state.scanReview;
-    if (!sr.result) return;
-    sr.editEntries = (sr.result.entries ?? []).map(e => ({ ...e }));
-    sr.editMode = true;
-    renderScanReview();
-  }
-
-  function cancelScanReviewEdit() {
-    state.scanReview.editMode = false;
-    state.scanReview.editEntries = [];
-    renderScanReview();
-  }
-
-  function approveScanReview() {
-    const { img, result, judgeResult } = state.scanReview;
-    if (!result) { rejectScanReview(); return; }
-    storeEntries(result, img.id);
+  // Sparar en färdig scan: lagrar poster, laddar upp bilden, loggar och synkar.
+  // Används både av det tysta flödet och efter manuell granskning.
+  async function commitScan(img, apiUrl, result, entries, userAction, manualChanges) {
+    result.entries = entries;
+    const { count } = storeEntries(result, img.id);
+    const scanImageId = await uploadScanImage(apiUrl, img.id);
+    if (scanImageId) state.scanImages[scanImageId] = apiUrl;
+    updateImageItem(img.id, 'done', tf('logResult', { route: result.routeNumber, count }));
+    logScan(
+      new Set(entries.map(e => e.route)).size,
+      entries.reduce((s, e) => s + (parseInt(e.units) || 0), 0)
+    );
     logJudge(
       result.routeNumber ?? null,
-      judgeResult?.approved ?? false,
-      judgeResult?.confidence ?? 0,
-      judgeResult?.issues ?? [],
-      result.entries?.length ?? 0,
-      'approved',
-      null,
+      userAction === 'auto',
+      100,
+      [],
+      entries.length,
+      userAction,
+      manualChanges ?? null,
     );
-    img.pendingResult = null;
-    updateImageItem(img.id, 'done', tf('logResult', {route: result.routeNumber, count: result.entries?.length ?? 0}));
     state.savedAt = Date.now();
     saveToStorage();
-    saveToSupabase();
+    const synced = await saveToSupabase();
+    if (synced === false) addLog(t('logSyncFailed'), 'err');
     renderRoutesTab();
     renderSearchUI();
     showToast(t('toastSaved'));
-    closeScanReview();
-  }
-
-  function rejectScanReview() {
-    const { img, result, judgeResult } = state.scanReview;
-    logJudge(
-      result?.routeNumber ?? null,
-      judgeResult?.approved ?? false,
-      judgeResult?.confidence ?? 0,
-      judgeResult?.issues ?? [],
-      result?.entries?.length ?? 0,
-      'rejected',
-      null,
-    );
-    if (img) {
-      img.pendingResult = null;
-      updateImageItem(img.id, 'error', t('judgeWarning'));
-    }
-    closeScanReview();
-  }
-
-  function retryScanReview() {
-    const { img, result, judgeResult } = state.scanReview;
-    logJudge(
-      result?.routeNumber ?? null,
-      judgeResult?.approved ?? false,
-      judgeResult?.confidence ?? 0,
-      judgeResult?.issues ?? [],
-      result?.entries?.length ?? 0,
-      'retry',
-      null,
-    );
-    closeScanReview();
-    if (img) retryImage(img.id);
-  }
-
-  function saveScanReviewEdits() {
-    const sr = state.scanReview;
-    const { img, result, judgeResult } = sr;
-    if (!result) return;
-
-    // Flush any unsaved KOF input values
-    document.querySelectorAll('.scan-review-kof-input').forEach(inp => {
-      const idx = parseInt(inp.dataset.idx);
-      if (sr.editEntries[idx]) {
-        sr.editEntries[idx].kof = inp.value.replace(/\D/g, '').slice(0, 6);
-      }
-    });
-
-    if (sr.editEntries.length === 0) { rejectScanReview(); return; }
-
-    const original    = result.entries ?? [];
-    const origByKof   = Object.fromEntries(original.map(e => [e.kof, e]));
-    const editByKof   = Object.fromEntries(sr.editEntries.map(e => [e.kof, e]));
-    const manualChanges = { added: [], removed: [], changed: [] };
-    for (const e of sr.editEntries) {
-      const o = origByKof[e.kof];
-      if (!o) { manualChanges.added.push(e.kof); }
-      else if (o.route !== e.route) { manualChanges.changed.push({ kof: e.kof, from: o.route, to: e.route }); }
-    }
-    for (const o of original) {
-      if (!editByKof[o.kof]) manualChanges.removed.push(o.kof);
-    }
-
-    const editedResult = { ...result, entries: sr.editEntries };
-    storeEntries(editedResult, img.id);
-    logJudge(
-      result.routeNumber ?? null,
-      judgeResult?.approved ?? false,
-      judgeResult?.confidence ?? 0,
-      judgeResult?.issues ?? [],
-      sr.editEntries.length,
-      'manual_fix',
-      manualChanges,
-    );
-    img.pendingResult = null;
-    updateImageItem(img.id, 'done', tf('logResult', {route: result.routeNumber, count: sr.editEntries.length}));
-    state.savedAt = Date.now();
-    saveToStorage();
-    saveToSupabase();
-    renderRoutesTab();
-    renderSearchUI();
-    showToast(t('toastSaved'));
-    closeScanReview();
   }
 
   /* ═══════════════════════════════════════════════
@@ -3869,18 +3679,20 @@ Rules:
   /* ═══════════════════════════════════════════════
      OBLIGATORISK GRANSKNING
   ═══════════════════════════════════════════════ */
-  function showObligReview(img, apiUrl, result) {
-    const entries = (result.entries ?? [])
-      .filter(e => /^\d{6}$/.test((e.kof ?? '').trim()))
-      .map(e => ({ ...e, kof: e.kof.trim() }));
-    state.pendingReview = { img, apiUrl, result, entries };
+  // Lugn, villkorlig granskning. Visas BARA när de två avläsningarna är oense
+  // (decision.verdict 'boundary' eller 'digit'). Inga varningar — bara en blick.
+  function showObligReview(img, apiUrl, result, decision) {
+    const entries = decision.entries.map(e => ({ ...e }));
+    state.pendingReview = { img, apiUrl, result, entries, decision };
     obligReviewImgState.scale = 1;
     obligReviewImgState.rotation = 0;
-    const routeLabel = result.routeNumber
-      ? tf('obligTitle', { route: result.routeNumber, count: entries.length })
-      : tf('obligTitleNoRoute', { count: entries.length });
-    document.getElementById('obligReviewTitle').textContent = routeLabel;
-    document.getElementById('obligReviewSubtitle').textContent = t('obligSubtitle');
+    const rn = result.routeNumber ?? '?';
+    const isDigit = decision.verdict === 'digit';
+    document.getElementById('obligReviewTitle').textContent = isDigit
+      ? tf('reconcileDigitTitle', { route: rn, count: entries.length })
+      : tf('reconcileBoundaryTitle', { route: rn, count: entries.length });
+    document.getElementById('obligReviewSubtitle').textContent = isDigit
+      ? t('reconcileDigitSubtitle') : t('reconcileBoundarySubtitle');
     document.getElementById('obligReviewSaveBtn').textContent = t('obligSaveBtn');
     document.getElementById('obligReviewDiscardBtn').textContent = t('obligDiscardBtn');
     const imgEl = document.getElementById('obligReviewSourceImg');
@@ -3893,37 +3705,59 @@ Rules:
     document.getElementById('obligReviewOverlay').classList.remove('hidden');
   }
 
+  // Rader i DOKUMENTORDNING (inte grupperat) så gränsen syns. Varje rad har en
+  // "Dela här"-knapp (sätt gränsen i ett tryck) + den gamla flytta-en-knappen.
   function renderObligReviewEntries() {
-    const { entries } = state.pendingReview;
-    const groups = {};
-    for (const e of entries) {
-      if (!groups[e.route]) groups[e.route] = [];
-      groups[e.route].push(e);
-    }
-    const sorted = Object.keys(groups).sort((a, b) => {
-      const aS = a.startsWith('S'), bS = b.startsWith('S');
-      if (aS !== bS) return aS ? 1 : -1;
-      return (parseInt(a.match(/\d+/)?.[0]) || 0) - (parseInt(b.match(/\d+/)?.[0]) || 0);
-    });
-    document.getElementById('obligReviewEntries').innerHTML = sorted.map(route => {
-      const isS = route.startsWith('S');
-      const rows = groups[route].map(e => `
-        <div class="oblig-review-entry-row">
+    const { entries, decision, result } = state.pendingReview;
+    const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
+    const conflicts = decision?.digitConflicts ?? [];
+    const firstSIdx = entries.findIndex(e => String(e.route ?? '').startsWith('S'));
+    const html = entries.map((e, i) => {
+      const isS = String(e.route ?? '').startsWith('S');
+      const divider = (i === firstSIdx && firstSIdx > 0)
+        ? `<div class="oblig-split-divider">${escHtml(tf('splitBoundaryLabel', { route: rn }))}</div>` : '';
+      const conflict = conflicts.find(c => c.index === i && !c.resolved);
+      const conflictBlock = conflict ? `
+        <div class="oblig-digit-conflict" data-detail-for="${escHtml(e.kof)}">
+          <span class="oblig-digit-q">${escHtml(t('reconcileDigitChoose'))}</span>
+          <button class="oblig-digit-choice" data-idx="${i}" data-kof="${escHtml(conflict.opusKof)}">${escHtml(conflict.opusKof)}</button>
+          <button class="oblig-digit-choice" data-idx="${i}" data-kof="${escHtml(conflict.judgeKof)}">${escHtml(conflict.judgeKof)}</button>
+        </div>` : '';
+      return `${divider}
+        <div class="oblig-review-entry-row${conflict ? ' has-conflict' : ''}" data-kof="${escHtml(e.kof)}" data-idx="${i}">
           <div class="oblig-review-kof">${escHtml(e.kof)}</div>
-          <div class="oblig-review-store">${escHtml(e.store)}</div>
+          <div class="oblig-review-store">${escHtml(e.store ?? '')}</div>
           <div class="oblig-review-est">${e.units || ''}</div>
+          <button class="split-here-btn" data-kof="${escHtml(e.kof)}">${escHtml(t('splitHereBtn'))}</button>
           <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
                   data-kof="${escHtml(e.kof)}">→ ${isS ? t('obligMoveToMain') : t('obligMoveToS')}</button>
-        </div>`).join('');
-      return `<div><div class="oblig-review-route-label">${escHtml(route)}</div>${rows}</div>`;
+        </div>${conflictBlock}`;
     }).join('');
+    document.getElementById('obligReviewEntries').innerHTML = html;
   }
 
+  // Flytta EN KOF mellan huvudrutt/S-rutt (finlir).
   function toggleObligReviewRoute(kof) {
     const e = state.pendingReview.entries.find(x => x.kof === kof);
     if (!e) return;
-    const n = state.pendingReview.result.routeNumber;
+    const n = String(state.pendingReview.result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
     e.route = e.route.startsWith('S') ? `Rutt ${n}` : `S${n}`;
+    renderObligReviewEntries();
+  }
+
+  // "Dela här" — sätt gränsen vid en rad: den + allt nedanför blir SN.
+  function splitHereObligReview(kof) {
+    const { entries, result } = state.pendingReview;
+    applySplitAt(entries, result.routeNumber, kof);
+    renderObligReviewEntries();
+  }
+
+  // Användaren valde rätt siffersträng för en flaggad KOF.
+  function chooseObligDigit(idx, kof) {
+    const { entries, decision } = state.pendingReview;
+    if (entries[idx]) entries[idx].kof = kof;
+    const c = (decision?.digitConflicts ?? []).find(x => x.index === idx);
+    if (c) c.resolved = true;
     renderObligReviewEntries();
   }
 
@@ -3931,9 +3765,7 @@ Rules:
     const btn = document.getElementById('obligReviewSaveBtn');
     btn.disabled = true;
     btn.textContent = t('obligSaving');
-    let { img, apiUrl, result, entries } = state.pendingReview;
-    result.entries = entries;
-    const { count } = storeEntries(result, img.id);
+    let { img, apiUrl, result, entries, decision } = state.pendingReview;
     // Baka in en eventuell manuell rotering så bilden sparas rätt vänd i molnet
     // och visas rätt i jämförelsevyn / på andra enheter.
     const manualRot = obligReviewImgState.rotation % 360;
@@ -3941,24 +3773,12 @@ Rules:
       apiUrl = await applyRotation(apiUrl, manualRot);
       img.dataUrl = apiUrl;
     }
-    const scanImageId = await uploadScanImage(apiUrl, img.id);
-    if (scanImageId) state.scanImages[scanImageId] = apiUrl;
-    updateImageItem(img.id, 'done', tf('logResult', { route: result.routeNumber, count }));
-    logScan(
-      new Set(entries.map(e => e.route)).size,
-      entries.reduce((s, e) => s + (parseInt(e.units) || 0), 0)
-    );
-    state.savedAt = Date.now();
-    saveToStorage();
-    const synced = await saveToSupabase();
-    if (synced === false) addLog(t('logSyncFailed'), 'err');
+    await commitScan(img, apiUrl, result, entries, 'reviewed', { verdict: decision?.verdict ?? null });
     state.pendingReview = null;
     document.getElementById('obligReviewOverlay').classList.add('hidden');
     btn.disabled = false;
     btn.textContent = t('obligSaveBtn');
-    renderRoutesTab();
     renderImageList();
-    showToast(t('toastSaved'));
     maybeShowNextReview();
   }
 
@@ -4572,6 +4392,7 @@ Rules:
         <span class="review-entry-store">${escHtml(s.store)}</span>
         ${s.units ? `<span class="review-entry-units">${s.units}</span>` : ''}
         <button class="review-entry-info-btn" data-info-kof="${escHtml(s.kof)}">ⓘ</button>
+        <button class="review-split-btn" data-kof="${escHtml(s.kof)}" data-routenum="${escHtml(routeNum)}">${escHtml(t('splitHereBtn'))}</button>
         <button class="review-move-btn" data-kof="${escHtml(s.kof)}" data-target="${escHtml(target)}" data-routenum="${escHtml(routeNum)}">${escHtml(btnLabel)}</button>
       </div>
       <div class="review-entry-detail hidden" data-detail-kof="${escHtml(s.kof)}">${escHtml(detail)}</div>`;
@@ -4810,17 +4631,8 @@ Rules:
   document.getElementById('imageList').addEventListener('click', e => {
     const thumbBtn = e.target.closest('.image-thumb-btn');
     if (thumbBtn) { openImagePreview(parseInt(thumbBtn.dataset.previewId)); return; }
-    const saveAnywayBtn = e.target.closest('.image-save-anyway-btn');
-    if (saveAnywayBtn) { saveJudgedResult(parseInt(saveAnywayBtn.dataset.id)); return; }
     const retryBtn = e.target.closest('.image-retry-btn');
     if (retryBtn) { retryImage(parseInt(retryBtn.dataset.id)); return; }
-    const reviewBtn = e.target.closest('.image-review-btn');
-    if (reviewBtn) {
-      const id  = parseInt(reviewBtn.dataset.id);
-      const img = state.images.find(i => i.id === id);
-      if (img?.pendingResult) showScanReview(img, img.pendingResult, null);
-      return;
-    }
     const removeBtn = e.target.closest('.image-remove-btn');
     if (removeBtn) { removeImage(parseInt(removeBtn.dataset.id)); return; }
   });
@@ -4846,6 +4658,12 @@ Rules:
       const kof    = infoBtn.dataset.infoKof;
       const detail = document.querySelector(`.review-entry-detail[data-detail-kof="${kof}"]`);
       if (detail) detail.classList.toggle('hidden');
+      return;
+    }
+    const splitBtn = e.target.closest('.review-split-btn');
+    if (splitBtn) {
+      e.stopPropagation();
+      splitHerePersisted(splitBtn.dataset.routenum, splitBtn.dataset.kof);
       return;
     }
     const moveBtn = e.target.closest('.review-move-btn');
@@ -4945,6 +4763,10 @@ Rules:
   document.getElementById('obligReviewDiscardBtn').addEventListener('click', discardObligReview);
   // S-rutt-toggle (delegerat)
   document.getElementById('obligReviewEntries').addEventListener('click', e => {
+    const splitBtn = e.target.closest('.split-here-btn');
+    if (splitBtn) { splitHereObligReview(splitBtn.dataset.kof); return; }
+    const digitBtn = e.target.closest('.oblig-digit-choice');
+    if (digitBtn) { chooseObligDigit(parseInt(digitBtn.dataset.idx), digitBtn.dataset.kof); return; }
     const btn = e.target.closest('.oblig-review-toggle-btn');
     if (btn) toggleObligReviewRoute(btn.dataset.kof);
   });
@@ -5075,72 +4897,6 @@ Rules:
       applyReviewImgTransform();
     }
   });
-  // Scan review image — rotate
-  document.getElementById('scanReviewRotateBtn').addEventListener('click', () => {
-    scanReviewImgState.rotation = (scanReviewImgState.rotation + 90) % 360;
-    scanReviewImgState.panX = 0; scanReviewImgState.panY = 0;
-    applyScanReviewImgTransform();
-  });
-
-  // Scan review image — scroll to zoom
-  document.getElementById('scanReviewImgViewport').addEventListener('wheel', e => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.12 : 0.9;
-    scanReviewImgState.scale = Math.max(1, Math.min(6, scanReviewImgState.scale * factor));
-    if (scanReviewImgState.scale === 1) { scanReviewImgState.panX = 0; scanReviewImgState.panY = 0; }
-    applyScanReviewImgTransform();
-  }, { passive: false });
-
-  // Scan review image — desktop click+drag to pan
-  document.getElementById('scanReviewImgViewport').addEventListener('mousedown', e => {
-    if (scanReviewImgState.scale <= 1) return;
-    e.preventDefault();
-    _scanReviewDrag = { sx: e.clientX - scanReviewImgState.panX, sy: e.clientY - scanReviewImgState.panY };
-  });
-  document.addEventListener('mousemove', e => {
-    if (!_scanReviewDrag) return;
-    scanReviewImgState.panX = e.clientX - _scanReviewDrag.sx;
-    scanReviewImgState.panY = e.clientY - _scanReviewDrag.sy;
-    applyScanReviewImgTransform();
-  });
-  document.addEventListener('mouseup', () => { _scanReviewDrag = null; });
-
-  // Scan review image — mobile pinch to zoom + single-finger pan
-  const _srvp = document.getElementById('scanReviewImgViewport');
-  _srvp.addEventListener('touchstart', e => {
-    e.preventDefault();
-    if (e.touches.length === 2) {
-      _scanReviewTouch.lastDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY);
-    } else if (e.touches.length === 1) {
-      _scanReviewTouch.lastX = e.touches[0].clientX;
-      _scanReviewTouch.lastY = e.touches[0].clientY;
-    }
-  }, { passive: false });
-  _srvp.addEventListener('touchmove', e => {
-    e.preventDefault();
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY);
-      scanReviewImgState.scale = Math.max(1, Math.min(6, scanReviewImgState.scale * (dist / _scanReviewTouch.lastDist)));
-      _scanReviewTouch.lastDist = dist;
-    } else if (e.touches.length === 1 && scanReviewImgState.scale > 1) {
-      scanReviewImgState.panX += e.touches[0].clientX - _scanReviewTouch.lastX;
-      scanReviewImgState.panY += e.touches[0].clientY - _scanReviewTouch.lastY;
-      _scanReviewTouch.lastX = e.touches[0].clientX;
-      _scanReviewTouch.lastY = e.touches[0].clientY;
-    }
-    applyScanReviewImgTransform();
-  }, { passive: false });
-  _srvp.addEventListener('touchend', () => {
-    if (scanReviewImgState.scale <= 1) {
-      scanReviewImgState.panX = 0; scanReviewImgState.panY = 0;
-      applyScanReviewImgTransform();
-    }
-  });
-
   // Modal delete buttons
   document.getElementById('kofDeleteBtn').addEventListener('click', () => {
     const kof = document.getElementById('editModal').dataset.editingKof;

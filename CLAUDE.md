@@ -46,7 +46,7 @@ The script calls the real Claude API for each image, validates the response (6-d
 
 **Mobile-first, cold-warehouse UX** — no hover-only primary interactions. Touch targets minimum 44×44 px. Assume the user has gloves on and is using one hand in a cold environment.
 
-**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content).
+**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content). Each row also has a `.review-split-btn` ("Dela här") that sets the whole boundary in one tap (that row and everything below → SN); keep both buttons.
 
 ---
 
@@ -74,9 +74,8 @@ state.abortController  // AbortController for in-flight callClaudeApi fetch; nul
 state.savedAt          // timestamp of last localStorage write
 state.supabaseLoadedAt // timestamp when Supabase data was last fetched, or null
 state.isLoadingSupabase, state.isSyncing // load/sync guards
-state.scanReview       // showScanReview modal state (active, img, result, judgeResult, editMode, editEntries)
 state.scanImages       // { [imgId]: dataUrl } in-memory scan image cache
-state.pendingReview, state.reviewQueue // review modals are shown one at a time (see Scan pipeline)
+state.pendingReview, state.reviewQueue // conditional review shown one at a time (see Scan pipeline)
 ```
 
 There is **no** `state.apiKey` — the Anthropic key lives server-side in the Edge Function, not in the client.
@@ -99,49 +98,48 @@ For **photo uploads** (non-PDF):
 ```
 File selected
   → [toJpeg] (resize to max 1600px, q=0.88, corrects all 8 EXIF orientations)
-  → [callClaudeApi] (Opus, PROMPT constant, max_tokens 3000)
-      returns: { routeNumber, driver, rotation, entries[{ kof, store, pall, bur, hlv, units, route, confidence }] }
+  → Promise.all([ callClaudeApi, callClaudeJudge ])   (run in parallel — judge is independent)
+      [callClaudeApi]  (Opus, PROMPT, max_tokens 3000)
+        returns: { routeNumber, driver, rotation, splitIndex, entries[{ kof, store, …, units, route, confidence }] }
+      [callClaudeJudge] (Haiku, JUDGE_PROMPT, max_tokens 1500) — INDEPENDENT second read of the image
+        returns: { kofs[], splitIndex } (or { failed:true } — fail-open)
   → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
-  → [validateEntry] (filters out invalid entries)
-  → [showObligReview] (always shown — user must confirm data before it is saved)
-  → [runJudge] (runs in parallel via callClaudeJudge, Haiku, JUDGE_PROMPT, max_tokens 200)
-      returns: { approved, confidence, issues[] }
-      → If (approved=false OR confidence<70) AND issues are not orientation-only:
-          [revertEntries] → [showScanReview] (user must approve / edit / reject / retry)
-      (orientation-only issues — rotated/tilted/upside-down — are ignored here,
-       since the rotation field already handles orientation)
-  → On user approval (either flow):
+  → [reconcileReadings] — compares the two readings, normalizes route from splitIndex, returns a verdict:
+        'silent'   → readings agree on boundary + every KOF → SAVE DIRECTLY, no modal
+        'boundary' → disagree on where the Rutt/S-split is → show the calm review in boundary mode
+        'digit'    → agree on boundary but disagree on a KOF's digits → show the calm review in digit mode
+  → 'silent':  [commitScan] immediately
+     'boundary'/'digit': queue { type:'review', decision } → [showObligReview] (calm, conditional)
+  → [commitScan] (silent path, or on review save):
       [storeEntries] → state.routeData
-      [saveToStorage] → localStorage
-      [saveToSupabase] → route_entries.upsert
       [uploadScanImage] → scan_images.insert (gets UUID, back-fills scanImageId on KOFs)
-      [logJudge] → judge_logs.insert
+      [logScan] → scan_logs ; [logJudge] → judge_logs ; [saveToStorage] ; [saveToSupabase] → route_entries.upsert
 ```
 
 For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
 
-**Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi` (Opus reads the sheet at any angle and reports how many degrees clockwise it must rotate to be upright). There is no separate rotation-detection API call. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately, so other devices see it upright after reload) are **permanent**, not display-only.
+**Split stability:** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image. `PROMPT` therefore asks Opus for an explicit `splitIndex` (the entry index where the S-block starts, or `null`), and `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`. If they disagree the user is asked to point at the boundary with the **"Dela här" (split-here)** button — one tap sets the split at that row (everything from it down → SN). Split-here lives in both `showObligReview` (`splitHereObligReview`, unsaved) and the comparison view (`splitHerePersisted`, batched upsert). The per-KOF move buttons remain for fine adjustment.
 
-**Two review modals — do not confuse them:**
-- `showObligReview` — shown for every scan regardless of judge result; user confirms the extracted data before it is committed
-- `showScanReview` — shown only when the judge flags a problem (`approved=false` or `confidence<70`, excluding orientation-only issues); lets user approve, edit entries manually, reject, or re-run extraction
+**Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi`. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately) are **permanent**, not display-only.
 
-**Review queuing:** when several images are scanned in one batch their reviews are not shown all at once — they are queued in `state.reviewQueue` and surfaced one at a time via `state.pendingReview`, so the user clears one review before the next appears.
+**One conditional review modal:** `showObligReview` is **not** shown for every scan — only when `reconcileReadings` returns `'boundary'` or `'digit'`. When the two readings agree, the scan is committed silently (no modal, just a toast). The modal uses deliberately calm language (no "warning"/red alarms) because non-technical staff also scan. The old `showScanReview` warning modal has been removed.
+
+**Review queuing:** when several images in a batch each need review, they are queued in `state.reviewQueue` (type `'review'`, carrying the `decision`) and surfaced one at a time via `state.pendingReview`.
 
 ### Claude API usage
 
-Two active calls, both POSTed to the Edge Function proxy at `CLAUDE_PROXY_URL` (`SUPABASE_URL + '/functions/v1/claude-proxy'`) — **not** directly to `api.anthropic.com`:
+Two active calls, both POSTed to the Edge Function proxy at `CLAUDE_PROXY_URL` (`SUPABASE_URL + '/functions/v1/claude-proxy'`) — **not** directly to `api.anthropic.com`. They run **in parallel** (`Promise.all`) because the judge reads the image independently and does not need the extraction result:
 
 | Function | Purpose | Model | max_tokens | timeout |
 |---|---|---|---|---|
-| `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`) | `claude-opus-4-8` | 3000 | 90 s |
-| `callClaudeJudge(dataUrl, result)` | Quality verification | `claude-haiku-4-5-20251001` | 200 | 30 s |
+| `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`, `splitIndex`) | `claude-opus-4-8` | 3000 | 90 s |
+| `callClaudeJudge(dataUrl)` | Independent second read (KOF digits + split) | `claude-haiku-4-5-20251001` | 1500 | 40 s |
 
-Both calls authenticate to the proxy with `apikey` and `Authorization: Bearer <SUPABASE_ANON_KEY>` headers. The Anthropic key (`x-api-key`) and the `anthropic-version` header are added **server-side** by the Edge Function — the client never sees them. `callClaudeApi` also wires `state.abortController` into the fetch signal (alongside the 90 s timeout) so `cancelProcessing()` can abort an in-flight extraction.
+Both calls authenticate to the proxy with `apikey` and `Authorization: Bearer <SUPABASE_ANON_KEY>` headers. The Anthropic key and `anthropic-version` are added **server-side**. `callClaudeApi` wires `state.abortController` into the fetch signal so `cancelProcessing()` can abort an in-flight extraction.
 
-**`callClaudeApi`** uses the `PROMPT` constant which is critical — it defines exactly how the blank-row separator splits entries into "Rutt N" vs "SN" sections via the `isS` / `route` field, and returns a `rotation` field (0/90/180/270) used to auto-orient the stored image.
+**`callClaudeApi`** uses the `PROMPT` constant — it defines how the blank-row separator splits entries into "Rutt N" vs "SN", returns an explicit `splitIndex` (the boundary decision), a per-entry `route` field (kept consistent with `splitIndex`), and a `rotation` field (0/90/180/270).
 
-**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant. It verifies KOF digits match the image and that route assignments are correct. Failsafe: if the API call itself fails, it returns `{ approved: true, confidence: 100, issues: [] }` to avoid blocking the user.
+**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant and re-reads the sheet **from scratch, without seeing the extraction** (so it cannot just echo it). It returns `{ kofs[], splitIndex }`. `reconcileReadings` then compares the two readings digit-by-digit and on the split point. Failsafe: any failure returns `{ failed: true }`, which `reconcileReadings` treats as `'silent'` — never block the user.
 
 #### Server-side proxy (claude-proxy)
 
