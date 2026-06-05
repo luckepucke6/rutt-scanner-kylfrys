@@ -12,9 +12,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_DIR = path.join(__dirname, 'test-images');
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
+const JUDGE_MODEL = 'claude-haiku-4-5-20251001';
 
 const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"4","driver":"161 Xhulijo","entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
+{"routeNumber":"4","driver":"161 Xhulijo","splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
 
 Rules:
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
@@ -23,28 +24,34 @@ Rules:
 - store: store name and address from the Startplats column.
 - pall/bur/hlv: value in that column, empty string if blank.
 - units: integer. Sum of pall + bur + hlv for this row (treat blank as 0). Example: pall=1, bur=2, hlv=0 → units: 3.
-- route: CRITICAL — each entry must get either "Rutt N" or "SN" (where N = routeNumber).
-  Step 1: Scan the table top-to-bottom and find the ONE completely blank row — a row with no KOF number and no store name. This blank row is the separator between the two sections.
-  Step 2: Every KOF row ABOVE the blank separator row → route: "Rutt N" (example: "Rutt 4").
-  Step 3: Every KOF row BELOW the blank separator row → route: "SN" (example: "S4").
-  Step 4: If there is NO blank separator row anywhere in the table → all entries get route: "Rutt N".
-  Double-check every entry's route value before returning. This is the most important field.
+- splitIndex: CRITICAL — the 0-based index into "entries" of the FIRST entry below the completely blank separator row (the first S-block row). If there is no blank separator row / no S-block, return null. Every entry with index < splitIndex is "Rutt N", every entry with index >= splitIndex is "SN".
+- route: each entry gets "Rutt N" or "SN" (where N = routeNumber), CONSISTENT with splitIndex — index < splitIndex → "Rutt N", index >= splitIndex → "SN". If splitIndex is null, all are "Rutt N".
+  Double-check that every entry's route matches splitIndex before returning. This is the most important field.
 - Include ALL rows with a 6-digit KOF number from both sections.
 Return only the JSON object, no markdown fences, no explanation.`;
+
+// Oberoende andra-avläsning (spegel av appens JUDGE_PROMPT) — läser KOF-kolumnen
+// och gränsen från grunden, utan att se extraktionen. Används för korskontroll.
+const JUDGE_PROMPT = `You are reading a Swedish logistics route sheet INDEPENDENTLY, from scratch. Read the leftmost data column (the 6-digit KOF numbers) top-to-bottom, and report where the Rutt/S-split is. Read regardless of rotation.
+A page may have one or two sections, separated by one or more COMPLETELY empty rows (no KOF, no address). The first empty-row gap is the split: rows above = main route, rows below = S-route.
+Return ONLY raw JSON in this exact shape, no markdown fences:
+{"kofs":["369321","123456","457001"],"splitIndex":1}
+- kofs: every clearly visible 6-digit KOF, in document order, top-to-bottom, including the S-block. Do NOT invent digits.
+- splitIndex: 0-based index into "kofs" of the FIRST KOF below the first empty-row gap. null if there is no gap / single section.`;
 
 function ok(msg)  { console.log(`  ✅ OK: ${msg}`); }
 function fail(msg) { console.log(`  ❌ FEL: ${msg}`); return msg; }
 
-function callApi(base64Data, mediaType) {
+function callApi(base64Data, mediaType, model = MODEL, prompt = PROMPT, maxTokens = 2048) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: MODEL,
-      max_tokens: 2048,
+      model,
+      max_tokens: maxTokens,
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
-          { type: 'text', text: PROMPT },
+          { type: 'text', text: prompt },
         ],
       }],
     });
@@ -137,7 +144,51 @@ function validateResult(parsed, filename) {
     errors.push(fail('KOF-numren verkar vara i numerisk ordning (kan vara fel — kontrollera manuellt)'));
   }
 
+  // Kontroll 5: route stämmer med splitIndex
+  const si = parsed.splitIndex;
+  if (si === undefined) {
+    errors.push(fail('splitIndex saknas i svaret'));
+  } else if (si !== null && (!Number.isInteger(si) || si < 0 || si > entries.length)) {
+    errors.push(fail(`splitIndex ${si} är utanför giltigt intervall (0–${entries.length})`));
+  } else {
+    const bad = entries.filter((e, i) => {
+      const wantS = si !== null && i >= si;
+      const isS = String(e.route ?? '').startsWith('S');
+      return wantS !== isS;
+    });
+    if (bad.length === 0) {
+      ok(`route stämmer med splitIndex (${si === null ? 'ingen S-del' : 'S börjar vid index ' + si})`);
+    } else {
+      bad.forEach(e => errors.push(fail(`KOF "${e.kof}" route "${e.route}" stämmer inte med splitIndex ${si}`)));
+    }
+  }
+
   return errors;
+}
+
+// Korskontroll: jämför extraktionen mot den oberoende andra-avläsningen (judge).
+// Skriver ut oenigheter om gräns och KOF-siffror — samma logik som appens reconcile.
+function crossCheck(parsed, judge) {
+  const entries = (parsed.entries ?? []).filter(e => /^\d{6}$/.test(String(e.kof ?? '')));
+  let opusSplit = Number.isInteger(parsed.splitIndex) ? parsed.splitIndex : null;
+  if (opusSplit === null) {
+    const i = entries.findIndex(e => String(e.route ?? '').startsWith('S'));
+    opusSplit = i === -1 ? null : i;
+  }
+  const jkofs = Array.isArray(judge.kofs) ? judge.kofs.map(k => String(k).replace(/\D/g, '')) : [];
+  const jSplit = Number.isInteger(judge.splitIndex) ? judge.splitIndex : null;
+
+  if (jSplit === opusSplit) ok(`Gräns: avläsningarna eniga (splitIndex ${jSplit})`);
+  else fail(`Gräns: OENSE — extraktion splitIndex ${opusSplit}, andra-avläsning ${jSplit} → appen skulle be om "Dela här"`);
+
+  if (jkofs.length !== entries.length) {
+    fail(`KOF: olika antal rader (extraktion ${entries.length}, andra-avläsning ${jkofs.length}) → appen skulle granska`);
+    return;
+  }
+  const diffs = [];
+  entries.forEach((e, i) => { if (jkofs[i] && jkofs[i] !== e.kof) diffs.push(`#${i}: ${e.kof} vs ${jkofs[i]}`); });
+  if (diffs.length === 0) ok(`KOF: alla ${entries.length} siffror eniga`);
+  else diffs.forEach(d => fail(`KOF OENSE ${d} → appen skulle be om kontroll`));
 }
 
 async function main() {
@@ -173,11 +224,18 @@ async function main() {
 
     console.log(`─── ${filename} ───`);
 
-    let parsed;
+    let parsed, judge = null;
     try {
       const base64 = fs.readFileSync(filepath).toString('base64');
-      parsed = await callApi(base64, mediaType);
-      console.log(`  📄 Svar: Rutt ${parsed.routeNumber}, förare: "${parsed.driver}", ${(parsed.entries ?? []).length} poster`);
+      // Extraktion + oberoende andra-avläsning parallellt (som i appen)
+      [parsed, judge] = await Promise.all([
+        callApi(base64, mediaType),
+        callApi(base64, mediaType, JUDGE_MODEL, JUDGE_PROMPT, 1500).catch(err => {
+          console.log(`  ⚠️  Andra-avläsning misslyckades — ${err.message}`);
+          return null;
+        }),
+      ]);
+      console.log(`  📄 Svar: Rutt ${parsed.routeNumber}, förare: "${parsed.driver}", ${(parsed.entries ?? []).length} poster, splitIndex ${parsed.splitIndex}`);
     } catch (err) {
       console.log(`  ❌ FEL: API-anrop misslyckades — ${err.message}`);
       totalErrors++;
@@ -185,6 +243,7 @@ async function main() {
     }
 
     const errors = validateResult(parsed, filename);
+    if (judge) crossCheck(parsed, judge);
     totalErrors += errors.length;
     totalKofs += (parsed.entries ?? []).filter(e => /^\d{6}$/.test(String(e.kof ?? ''))).length;
     console.log('');

@@ -24,7 +24,7 @@ No build step — open `index.html` directly in a browser, or serve it with any 
 python3 -m http.server 8080
 ```
 
-The app requires a real Anthropic API key entered via the in-app UI on first use (stored in `localStorage`).
+No API key is entered in the app. The Anthropic key is held **server-side** by a Supabase Edge Function (`claude-proxy`), so the app works out of the box against the deployed proxy with no client configuration. The proxy reads its key from the Supabase secret `ANTHROPIC_API_KEY` (set under Project Settings → Edge Functions → Secrets). See [Server-side proxy](#server-side-proxy-claude-proxy) below.
 
 ## Testing the Claude API integration
 
@@ -40,21 +40,23 @@ The script calls the real Claude API for each image, validates the response (6-d
 
 **Never use mock data** — no stubs, fakes, or hardcoded test data. All tests run against the real Claude API and real Supabase. Use `test.js` with a real key.
 
-**Everything stays in `index.html`** — never split into separate JS or CSS files. The project is intentionally single-file for simple GitHub Pages deployment.
+**Everything stays in `index.html`** — never split into separate JS or CSS files. The project is intentionally single-file for simple GitHub Pages deployment. The **only** exception is the server-side Edge Function (`supabase/functions/claude-proxy/index.ts`), which cannot live in the public client because it holds the Anthropic key.
 
 **i18n for all UI text** — new visible strings must be added to the `LANGS` object (sv/en/ru) and accessed via `t()` or `tf()`. Never hardcode Swedish strings directly in HTML.
 
 **Mobile-first, cold-warehouse UX** — no hover-only primary interactions. Touch targets minimum 44×44 px. Assume the user has gloves on and is using one hand in a cold environment.
 
-**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content).
+**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content). Each row also has a `.review-split-btn` ("Dela här") that sets the whole boundary in one tap (that row and everything below → SN); keep both buttons.
 
 ---
 
 ## Architecture
 
-The entire application is a single file: `index.html`. It contains all HTML structure, CSS, and JavaScript. Two CDN scripts are loaded at runtime:
+The client application is a single file: `index.html`. It contains all HTML structure, CSS, and JavaScript. Two CDN scripts are loaded at runtime:
 - `@supabase/supabase-js@2` — multi-device sync and analytics
 - `pdf.js 3.11.174` — splits PDF files into per-page images before processing
+
+The one piece of code outside `index.html` is the Supabase Edge Function `supabase/functions/claude-proxy/index.ts`, a thin server-side proxy that adds the Anthropic key to every Claude call (see [Server-side proxy](#server-side-proxy-claude-proxy)).
 
 ### State model
 
@@ -62,16 +64,25 @@ A single `state` object is the source of truth:
 
 ```js
 state.routeData      // { [kof: string]: { route, driver, store, pall, bur, hlv, units } }
+state.routeOrder     // [kof] — document order, drives sort_order
+state.routes         // { [routeName]: meta } derived route grouping
+state.routeReview    // { [routeName]: bool } ⚠ review flags (persisted separately)
 state.images         // pending/processing image queue
-state.apiKey         // Anthropic key loaded from localStorage
 state.isProcessing
+state.processingInterrupted, state.resumeImageIds // resume scans interrupted by tab backgrounding
 state.abortController  // AbortController for in-flight callClaudeApi fetch; null when idle
+state.savedAt          // timestamp of last localStorage write
 state.supabaseLoadedAt // timestamp when Supabase data was last fetched, or null
+state.isLoadingSupabase, state.isSyncing // load/sync guards
+state.scanImages       // { [imgId]: dataUrl } in-memory scan image cache
+state.pendingReview, state.reviewQueue // conditional review shown one at a time (see Scan pipeline)
 ```
+
+There is **no** `state.apiKey` — the Anthropic key lives server-side in the Edge Function, not in the client.
 
 `routeData[kof].units` is an integer — the sum of pall+bur+hlv for that entry. Note: `driver`, `pall`, `bur`, `hlv`, and `confidence` are kept in memory only and are **not** synced to Supabase.
 
-`routeData` is persisted to `localStorage` under key `rutt_scanner_v1` with an 8-hour expiry. The API key is stored separately under `rutt_api_key`.
+`routeData` is persisted to `localStorage` under key `rutt_scanner_v1` (`STORAGE_KEY`) with an 8-hour expiry; this snapshot also includes `routes` and `routeReview`. `routeReview` is **additionally** persisted under `rutt_route_review` (`ROUTE_REVIEW_KEY`) on its own, because `loadFromSupabase()` clears `STORAGE_KEY` on startup and the ⚠ review flags must survive that. Other `localStorage` keys: `rutt_device_id`, `rutt_lang`, and `rutt_verified_date` (see [Session UI state](#session-only-ui-state)).
 
 ### Four-tab UI
 
@@ -87,45 +98,59 @@ For **photo uploads** (non-PDF):
 ```
 File selected
   → [toJpeg] (resize to max 1600px, q=0.88, corrects all 8 EXIF orientations)
-  → [callClaudeApi] (Opus, PROMPT constant, max_tokens 3000)
-      returns: { routeNumber, driver, rotation, entries[{ kof, store, pall, bur, hlv, units, route, confidence }] }
+  → Promise.all([ callClaudeApi, callClaudeJudge ])   (run in parallel — judge is independent)
+      [callClaudeApi]  (Opus, PROMPT, max_tokens 3000)
+        returns: { routeNumber, driver, rotation, splitIndex, entries[{ kof, store, …, units, route, confidence }] }
+      [callClaudeJudge] (Haiku, JUDGE_PROMPT, max_tokens 1500) — INDEPENDENT second read of the image
+        returns: { kofs[], splitIndex } (or { failed:true } — fail-open)
   → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
-  → [validateEntry] (filters out invalid entries)
-  → [showObligReview] (always shown — user must confirm data before it is saved)
-  → [runJudge] (runs in parallel via callClaudeJudge, Haiku, JUDGE_PROMPT, max_tokens 200)
-      returns: { approved, confidence, issues[] }
-      → If approved=false OR confidence<70:
-          [revertEntries] → [showScanReview] (user must approve / edit / reject / retry)
-  → On user approval (either flow):
+  → [reconcileReadings] — compares the two readings, normalizes route from splitIndex, returns a verdict:
+        'silent'   → readings agree on boundary + every KOF → SAVE DIRECTLY, no modal
+        'boundary' → disagree on where the Rutt/S-split is → show the calm review in boundary mode
+        'digit'    → agree on boundary but disagree on a KOF's digits → show the calm review in digit mode
+  → 'silent':  [commitScan] immediately
+     'boundary'/'digit': queue { type:'review', decision } → [showObligReview] (calm, conditional)
+  → [commitScan] (silent path, or on review save):
       [storeEntries] → state.routeData
-      [saveToStorage] → localStorage
-      [saveToSupabase] → route_entries.upsert
       [uploadScanImage] → scan_images.insert (gets UUID, back-fills scanImageId on KOFs)
-      [logJudge] → judge_logs.insert
+      [logScan] → scan_logs ; [logJudge] → judge_logs ; [saveToStorage] ; [saveToSupabase] → route_entries.upsert
 ```
 
 For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
 
-**Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi` (Opus reads the sheet at any angle and reports how many degrees clockwise it must rotate to be upright). There is no separate rotation-detection API call. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately, so other devices see it upright after reload) are **permanent**, not display-only.
+**Split stability:** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image. `PROMPT` therefore asks Opus for an explicit `splitIndex` (the entry index where the S-block starts, or `null`), and `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`. If they disagree the user is asked to point at the boundary with the **"Dela här" (split-here)** button — one tap sets the split at that row (everything from it down → SN). Split-here lives in both `showObligReview` (`splitHereObligReview`, unsaved) and the comparison view (`splitHerePersisted`, batched upsert). The per-KOF move buttons remain for fine adjustment.
 
-**Two review modals — do not confuse them:**
-- `showObligReview` — shown for every scan regardless of judge result; user confirms the extracted data before it is committed
-- `showScanReview` — shown only when the judge flags a problem (`approved=false` or `confidence<70`); lets user approve, edit entries manually, reject, or re-run extraction
+**Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi`. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately) are **permanent**, not display-only.
+
+**One conditional review modal:** `showObligReview` is **not** shown for every scan — only when `reconcileReadings` returns `'boundary'` or `'digit'`. When the two readings agree, the scan is committed silently (no modal, just a toast). The modal uses deliberately calm language (no "warning"/red alarms) because non-technical staff also scan. The old `showScanReview` warning modal has been removed.
+
+**Review queuing:** when several images in a batch each need review, they are queued in `state.reviewQueue` (type `'review'`, carrying the `decision`) and surfaced one at a time via `state.pendingReview`.
 
 ### Claude API usage
 
-Two active calls to `https://api.anthropic.com/v1/messages`:
+Two active calls, both POSTed to the Edge Function proxy at `CLAUDE_PROXY_URL` (`SUPABASE_URL + '/functions/v1/claude-proxy'`) — **not** directly to `api.anthropic.com`. They run **in parallel** (`Promise.all`) because the judge reads the image independently and does not need the extraction result:
 
-| Function | Purpose | Model | max_tokens |
-|---|---|---|---|
-| `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`) | `claude-opus-4-8` | 3000 |
-| `callClaudeJudge(dataUrl, result)` | Quality verification | `claude-haiku-4-5-20251001` | 200 |
+| Function | Purpose | Model | max_tokens | timeout |
+|---|---|---|---|---|
+| `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`, `splitIndex`) | `claude-opus-4-8` | 3000 | 90 s |
+| `callClaudeJudge(dataUrl)` | Independent second read (KOF digits + split) | `claude-haiku-4-5-20251001` | 1500 | 40 s |
 
-All calls include the `anthropic-dangerous-direct-browser-access: true` header (required for direct browser→API access without a proxy).
+Both calls authenticate to the proxy with `apikey` and `Authorization: Bearer <SUPABASE_ANON_KEY>` headers. The Anthropic key and `anthropic-version` are added **server-side**. `callClaudeApi` wires `state.abortController` into the fetch signal so `cancelProcessing()` can abort an in-flight extraction.
 
-**`callClaudeApi`** uses the `PROMPT` constant which is critical — it defines exactly how the blank-row separator splits entries into "Rutt N" vs "SN" sections via the `isS` / `route` field, and returns a `rotation` field (0/90/180/270) used to auto-orient the stored image.
+**`callClaudeApi`** uses the `PROMPT` constant — it defines how the blank-row separator splits entries into "Rutt N" vs "SN", returns an explicit `splitIndex` (the boundary decision), a per-entry `route` field (kept consistent with `splitIndex`), and a `rotation` field (0/90/180/270).
 
-**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant. It verifies KOF digits match the image and that route assignments are correct. Failsafe: if the API call itself fails, it returns `{ approved: true, confidence: 100, issues: [] }` to avoid blocking the user.
+**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant and re-reads the sheet **from scratch, without seeing the extraction** (so it cannot just echo it). It returns `{ kofs[], splitIndex }`. `reconcileReadings` then compares the two readings digit-by-digit and on the split point. Failsafe: any failure returns `{ failed: true }`, which `reconcileReadings` treats as `'silent'` — never block the user.
+
+#### Server-side proxy (claude-proxy)
+
+`supabase/functions/claude-proxy/index.ts` is a thin Deno Edge Function that exists because the app is hosted on a **public** GitHub Pages repo — an Anthropic key in `index.html` would be visible to everyone, auto-revoked by secret scanning, and abusable. The proxy:
+
+- reads the key from the Supabase secret `ANTHROPIC_API_KEY`,
+- forwards the app's request body **unchanged** to `https://api.anthropic.com/v1/messages`, adding `x-api-key` and `anthropic-version: 2023-06-01` server-side,
+- returns Anthropic's response **verbatim** (same JSON shape and status codes), so the app's existing parsing and error handling are unaffected,
+- handles CORS preflight (`OPTIONS`).
+
+Limit the key with a spend/rate cap in the Anthropic Console.
 
 ### Route naming convention
 
@@ -165,7 +190,7 @@ The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → route
 `session_segments` — analytics (10-minute inactivity cutoff):
 - `segment_start`, `segment_end`, `duration_minutes`, `search_count`, `session_date`, `device_id`
 
-**Sync flow:** On startup, `loadFromSupabase()` fetches all current `route_entries` and their associated `scan_images`, sets `state.supabaseLoadedAt`, and clears the `localStorage` cache. Realtime changes are subscribed via `initRealtimeSync()` (postgres_changes on `route_entries`); a polling fallback kicks in if realtime is unavailable. Remote changes trigger `onRemoteChange()` which debounces a full reload.
+**Sync flow:** On startup, `loadFromSupabase()` fetches all current `route_entries` and their associated `scan_images`, sets `state.supabaseLoadedAt`, and clears the `localStorage` cache. `initRealtimeSync()` subscribes the `route-realtime` channel to three things: `postgres_changes` on `route_entries` (→ `onRemoteChange()`, which debounces a full reload), and two `broadcast` events — `routes_verified` (another device tapped the verify banner) and `data_cleared` (another device wiped the data). A polling fallback kicks in if realtime is unavailable.
 
 Each device gets a stable UUID stored under `rutt_device_id` in `localStorage`.
 
@@ -175,11 +200,12 @@ Each device gets a stable UUID stored under `rutt_device_id` in `localStorage`.
 
 ### Session-only UI state
 
-Four module-level `let` variables track transient UI state that resets on every page load (intentionally **not** in `state` and **not** persisted):
+Module-level `let` variables track transient UI state that is intentionally **not** in `state` and (mostly) **not** persisted:
 
-- `routesVerified` — set to `true` when user taps the "Jag har kontrollerat ✓" button in the Routes tab verification banner. The banner is shown whenever there are routes and this is `false`. Reset by `dismissRoutesVerify()`.
+- `routesVerified` — set to `true` when the user taps the "Jag har kontrollerat ✓" button in the Routes tab verification banner. The banner is shown whenever there are routes and this is `false`. `dismissRoutesVerify()` sets it, persists today's date under `rutt_verified_date` (so it stays verified for the rest of the day even across reloads), and broadcasts `routes_verified` to other devices. On startup it is set back to `true` if `rutt_verified_date` matches today. So unlike the others, it is **not** purely session-only.
 - `inlineEditKof` — the KOF number whose row is currently expanded for inline route-switching in the Routes tab table. Tapping a row sets it; tapping again or outside `#routesList` clears it. Saved by `changeInlineRoute(kof, newRoute)` which upserts to Supabase.
 - `reviewViewMode` — `'routes'` or `'docs'`; controls which column is visible in the comparison view modal on narrow screens (<400 px). Updated by `setReviewView(mode)`.
+- `reviewRouteNums`, `reviewRouteIdx` — the ordered list of route numbers and the current index, used by the comparison view to step between routes (prev/next navigation).
 - `editModalAfterClose` — optional `() => void` callback invoked when `editModal` closes (both save and cancel). Used to return to the route modal or comparison view when a KOF row is tapped from those contexts. Cleared immediately after being called.
 
 ### Comparison view (eye button)
