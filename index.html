@@ -1436,7 +1436,7 @@
       </svg>
     </div>
     <div>
-      <div class="header-title" id="headerTitle">Rutt-scanner</div>
+      <div class="header-title">Rutt-scanner</div>
       <div class="header-sub">Kyl &amp; Frys Expressen</div>
     </div>
     <select id="lang-select" class="lang-select" onchange="setLang(this.value)">
@@ -1523,6 +1523,15 @@
     </div>
 
     <div id="savedBadge" class="saved-badge hidden"></div>
+    <button class="clear-data-btn hidden" id="clearDataBtn" onclick="clearAllData()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      <span data-i18n="clearDataBtn">Rensa all inläst data</span>
+    </button>
 
     <div class="easter-egg-ru hidden" id="easterEggRu">
       <div class="easter-egg-title">Программа для Томаса</div>
@@ -2913,9 +2922,12 @@
   function updateStorageUI() {
     const total  = Object.keys(state.routeData).length;
     const badge  = document.getElementById('savedBadge');
+    const clearBtn = document.getElementById('clearDataBtn');
     if (total === 0 && !state.isLoadingSupabase) {
       badge.classList.add('hidden');
+      clearBtn.classList.add('hidden');
     } else if (total > 0) {
+      clearBtn.classList.remove('hidden');
       if (state.savedAt) {
         const saved   = new Date(state.savedAt);
         const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
@@ -4647,27 +4659,6 @@ Rules:
     const btn = e.target.closest('.show-in-routes-btn');
     if (btn) showKofInRoutes(btn.dataset.kof);
   });
-
-  // Dold admin-gest: long-press (~1,5 s) på titeln "Rutt-scanner" → bekräfta →
-  // rensa all inläst data. Knappen är borttagen ur personalens vy så den inte
-  // trycks av misstag; den här gesten är till för arbetsledaren.
-  (function() {
-    const title = document.getElementById('headerTitle');
-    if (!title) return;
-    let timer = null;
-    const start = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => { clearAllData(); }, 1500);  // clearAllData() bekräftar själv
-    };
-    const cancel = () => clearTimeout(timer);
-    title.addEventListener('touchstart', start, { passive: true });
-    title.addEventListener('touchend', cancel);
-    title.addEventListener('touchmove', cancel, { passive: true });
-    title.addEventListener('touchcancel', cancel);
-    title.addEventListener('mousedown', start);
-    title.addEventListener('mouseup', cancel);
-    title.addEventListener('mouseleave', cancel);
-  })();
 
   // Obligatorisk granskning — knappar
   document.getElementById('obligReviewRotateBtn').addEventListener('click', () => {

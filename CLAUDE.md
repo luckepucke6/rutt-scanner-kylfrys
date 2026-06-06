@@ -127,7 +127,7 @@ For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scal
 
 **Logs:** the in-app live log box has been removed from the Scan tab (staff don't see logs). `addLog()` is now a safe no-op (calls left in place). Analytics are still written to Supabase (`scan_logs`, `judge_logs`, `search_logs`, `session_segments`) for the owner to inspect there.
 
-**Admin gesture:** the "Synka till molnet" and "Rensa all inläst data" buttons were removed from the Scan tab. Sync happens automatically on save; **clearing all data** is now behind a hidden long-press (~1.5 s) on the header title `#headerTitle` → `clearAllData()` (which still confirms via `t('confirmClear')`).
+**Scan tab buttons:** the "Synka till molnet" button was removed — sync happens automatically on save. The "Rensa all inläst data" button (`#clearDataBtn` → `clearAllData()`, confirms via `t('confirmClear')`) remains and is shown only when there is loaded data; `updateStorageUI()` toggles its `hidden` class alongside `#savedBadge`.
 
 ### Claude API usage
 
