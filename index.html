@@ -720,8 +720,20 @@
     }
     .split-here-btn:active { background: #5856d6; color: #fff; border-color: #5856d6; border-style: solid; }
     @media (hover: hover) { .split-here-btn:hover { border-color: #5856d6; color: #5856d6; } }
-    .oblig-review-entry-row.has-conflict {
-      border-color: #5856d6; background: rgba(88,86,214,0.06);
+    .oblig-review-splitbar {
+      flex-shrink: 0; padding: 10px 14px 0;
+    }
+    .oblig-nosplit-btn {
+      width: 100%; padding: 12px;
+      background: var(--color-surface-2);
+      border: 0.5px solid var(--color-border); border-radius: var(--radius);
+      font-size: 15px; font-weight: 700; font-family: var(--font);
+      color: var(--color-text-secondary); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .oblig-nosplit-btn:active { opacity: 0.85; }
+    .oblig-nosplit-btn.is-active {
+      background: rgba(88,86,214,0.10); border-color: #5856d6; color: #5856d6;
     }
     .oblig-split-divider {
       display: flex; align-items: center; justify-content: center;
@@ -732,22 +744,6 @@
     .oblig-split-divider::before, .oblig-split-divider::after {
       content: ''; flex: 1; height: 1px; background: rgba(88,86,214,0.35);
     }
-    .oblig-digit-conflict {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 6px 8px; margin-top: -2px;
-      background: rgba(88,86,214,0.06);
-      border: 0.5px solid #5856d6; border-radius: var(--radius-xs);
-    }
-    .oblig-digit-q { font-size: 11px; font-weight: 600; color: var(--color-text-secondary); }
-    .oblig-digit-choice {
-      flex-shrink: 0; padding: 6px 12px;
-      background: var(--color-surface); border: 0.5px solid #5856d6;
-      border-radius: 16px; font-size: 13px; font-weight: 700;
-      font-family: 'SF Mono','Fira Code',monospace; letter-spacing: 0.5px;
-      color: #5856d6; cursor: pointer; -webkit-tap-highlight-color: transparent;
-    }
-    .oblig-digit-choice:active { background: #5856d6; color: #fff; }
-    @media (hover: hover) { .oblig-digit-choice:hover { background: rgba(88,86,214,0.12); } }
     .review-split-btn {
       flex-shrink: 0; padding: 3px 8px;
       border: 0.5px dashed var(--color-text-secondary); border-radius: 12px;
@@ -865,25 +861,6 @@
     .process-btn:disabled { opacity: 0.38; cursor: not-allowed; }
     .process-btn:not(:disabled):active { opacity: 0.82; }
 
-    .log-box {
-      background: var(--color-surface);
-      border: 0.5px solid var(--color-border-strong);
-      border-radius: var(--radius);
-      padding: 10px 12px; height: 130px; overflow-y: auto;
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-      font-size: 11.5px; line-height: 1.6;
-      color: var(--color-text-secondary);
-      scroll-behavior: smooth;
-    }
-
-    .log-box:empty::before {
-      content: attr(data-placeholder);
-      color: var(--color-text-tertiary); font-style: italic;
-    }
-
-    .log-line.ok { color: var(--color-success); }
-    .log-line.err { color: var(--color-error); }
-    .log-line.info { color: var(--color-accent); }
 
     .summary-box {
       background: var(--color-success-bg);
@@ -1459,7 +1436,7 @@
       </svg>
     </div>
     <div>
-      <div class="header-title">Rutt-scanner</div>
+      <div class="header-title" id="headerTitle">Rutt-scanner</div>
       <div class="header-sub">Kyl &amp; Frys Expressen</div>
     </div>
     <select id="lang-select" class="lang-select" onchange="setLang(this.value)">
@@ -1536,8 +1513,6 @@
       <button class="cancel-btn" onclick="cancelProcessing()" data-i18n="scanCancel">Avbryt</button>
     </div>
 
-    <div class="log-box" id="logBox" data-placeholder="Loggar visas här under bearbetning…"></div>
-
     <div class="summary-box hidden" id="summaryBox">
       <div class="summary-icon">✅</div>
       <div>
@@ -1548,25 +1523,6 @@
     </div>
 
     <div id="savedBadge" class="saved-badge hidden"></div>
-    <div class="btn-row hidden" id="btnRow">
-      <button class="sync-btn" id="syncBtn" onclick="syncToCloud()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <polyline points="1 20 1 14 7 14"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-        <span data-i18n="syncBtn">Synka till molnet</span>
-      </button>
-      <button class="clear-data-btn" id="clearDataBtn" onclick="clearAllData()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-        <span data-i18n="clearDataBtn">Rensa all inläst data</span>
-      </button>
-    </div>
 
     <div class="easter-egg-ru hidden" id="easterEggRu">
       <div class="easter-egg-title">Программа для Томаса</div>
@@ -1869,9 +1825,12 @@
     <div class="oblig-review-img-viewport" id="obligReviewImgViewport">
       <img class="oblig-review-source-img" id="obligReviewSourceImg" alt="">
     </div>
+    <div class="oblig-review-splitbar">
+      <button class="oblig-nosplit-btn" id="obligNoSplitBtn">Ingen S-rutt</button>
+    </div>
     <div class="oblig-review-entries" id="obligReviewEntries"></div>
     <div class="oblig-review-actions">
-      <button class="oblig-review-save-btn" id="obligReviewSaveBtn">✓ Ser bra ut — spara</button>
+      <button class="oblig-review-save-btn" id="obligReviewSaveBtn">Gå vidare</button>
       <button class="oblig-review-discard-btn" id="obligReviewDiscardBtn">↺ Börja om</button>
     </div>
   </div>
@@ -2269,7 +2228,6 @@
       uploadTitle: 'Välj eller fotografera papper',
       uploadSub: 'Dra och släpp filer här, eller klicka för att välja — JPG, PNG, PDF',
       processBtnStem: 'Läs in {n} bild', processBtnPlural: 'er',
-      logPlaceholder: 'Loggar visas här under bearbetning…',
       summarySub: 'Klart att använda', summaryLink: 'Öppna Sök KOF →',
       summaryTitle: '{total} KOF-nummer klara',
       summaryPartial: '✅ {ok} av {total} bilder lyckades — {failed} misslyckades',
@@ -2388,15 +2346,13 @@
       obligTitleNoRoute: '{count} rader',
       obligSubtitle: 'Jämför med pappret. Tryck → S-rutt / → Huvudrutt för att flytta rad.',
       obligMoveToMain: 'Huvud&shy;rutt', obligMoveToS: 'S-rutt',
-      obligSaving: 'Sparar…', obligSaveBtn: '✓ Ser bra ut — spara',
+      obligSaving: 'Sparar…', obligNextBtn: 'Gå vidare',
       obligDiscardBtn: '↺ Börja om',
+      noSplitBtn: 'Ingen S-rutt',
       splitHereBtn: 'Dela här',
       splitBoundaryLabel: 'S{route} börjar här',
       reconcileBoundaryTitle: 'Var börjar S-rutten? — Rutt {route}',
-      reconcileBoundarySubtitle: 'Tryck "Dela här" på första raden som hör till S-rutten.',
-      reconcileDigitTitle: 'Kontrollera siffrorna — Rutt {route}',
-      reconcileDigitSubtitle: 'Två avläsningar är oense om en rad. Välj rätt KOF-nummer.',
-      reconcileDigitChoose: 'Välj rätt:',
+      reconcileBoundarySubtitle: 'Markera var S-rutten börjar — finns ingen, tryck Ingen S-rutt.',
       statusAwaitingReview: 'Väntar på granskning…',
       showInRoutes: 'Visa i ruttlistan →',
     },
@@ -2409,7 +2365,6 @@
       uploadTitle: 'Choose or photograph paper',
       uploadSub: 'Drag and drop files here, or click to select — JPG, PNG, PDF',
       processBtnStem: 'Load {n} image', processBtnPlural: 's',
-      logPlaceholder: 'Logs will appear here during processing…',
       summarySub: 'Ready to use', summaryLink: 'Open Search KOF →',
       summaryTitle: '{total} KOF numbers ready',
       summaryPartial: '✅ {ok} of {total} images succeeded — {failed} failed',
@@ -2528,15 +2483,13 @@
       obligTitleNoRoute: '{count} rows',
       obligSubtitle: 'Compare with the paper. Tap → S-route / → Main route to move a row.',
       obligMoveToMain: 'Main route', obligMoveToS: 'S-route',
-      obligSaving: 'Saving…', obligSaveBtn: '✓ Looks good — save',
+      obligSaving: 'Saving…', obligNextBtn: 'Continue',
       obligDiscardBtn: '↺ Start over',
+      noSplitBtn: 'No S-route',
       splitHereBtn: 'Split here',
       splitBoundaryLabel: 'S{route} starts here',
       reconcileBoundaryTitle: 'Where does the S-route start? — Route {route}',
-      reconcileBoundarySubtitle: 'Tap "Split here" on the first row that belongs to the S-route.',
-      reconcileDigitTitle: 'Check the digits — Route {route}',
-      reconcileDigitSubtitle: 'Two readings disagree on a row. Pick the correct KOF number.',
-      reconcileDigitChoose: 'Pick correct:',
+      reconcileBoundarySubtitle: 'Mark where the S-route starts — if there is none, tap No S-route.',
       statusAwaitingReview: 'Awaiting review…',
       showInRoutes: 'Show in route list →',
     },
@@ -2549,7 +2502,6 @@
       uploadTitle: 'Выбрать или сфотографировать бумагу',
       uploadSub: 'Перетащите файлы сюда или нажмите для выбора — JPG, PNG, PDF',
       processBtnStem: 'Загрузить {n} изображени', processBtnPlural: 'е',
-      logPlaceholder: 'Журналы появятся здесь во время обработки…',
       summarySub: 'Готово к использованию', summaryLink: 'Открыть Поиск КОФ →',
       summaryTitle: '{total} КОФ-номеров готово',
       summaryPartial: '✅ {ok} из {total} изображений успешно — {failed} ошибок',
@@ -2667,15 +2619,13 @@
       obligTitleNoRoute: '{count} строк',
       obligSubtitle: 'Сравните с бумагой. Нажмите → S-маршрут / → Главный, чтобы переместить строку.',
       obligMoveToMain: 'Главный', obligMoveToS: 'S-маршрут',
-      obligSaving: 'Сохранение…', obligSaveBtn: '✓ Выглядит хорошо — сохранить',
+      obligSaving: 'Сохранение…', obligNextBtn: 'Далее',
       obligDiscardBtn: '↺ Начать заново',
+      noSplitBtn: 'Нет S-маршрута',
       splitHereBtn: 'Разделить здесь',
       splitBoundaryLabel: 'S{route} начинается здесь',
       reconcileBoundaryTitle: 'Где начинается S-маршрут? — Маршрут {route}',
-      reconcileBoundarySubtitle: 'Нажмите «Разделить здесь» на первой строке S-маршрута.',
-      reconcileDigitTitle: 'Проверьте цифры — Маршрут {route}',
-      reconcileDigitSubtitle: 'Два считывания расходятся в одной строке. Выберите правильный номер КОФ.',
-      reconcileDigitChoose: 'Выберите верный:',
+      reconcileBoundarySubtitle: 'Отметьте, где начинается S-маршрут — если его нет, нажмите «Нет S-маршрута».',
       statusAwaitingReview: 'Ожидание проверки…',
       showInRoutes: 'Показать в списке →',
     },
@@ -2703,7 +2653,6 @@
     document.querySelectorAll('[data-i18n]').forEach(el => {
       el.textContent = t(el.dataset.i18n);
     });
-    document.getElementById('logBox').dataset.placeholder = t('logPlaceholder');
     document.getElementById('lang-select').value = state.lang;
     const egg = document.getElementById('easterEggRu');
     if (egg) egg.classList.toggle('hidden', state.lang !== 'ru');
@@ -2964,12 +2913,9 @@
   function updateStorageUI() {
     const total  = Object.keys(state.routeData).length;
     const badge  = document.getElementById('savedBadge');
-    const btnRow = document.getElementById('btnRow');
     if (total === 0 && !state.isLoadingSupabase) {
       badge.classList.add('hidden');
-      btnRow.classList.add('hidden');
     } else if (total > 0) {
-      btnRow.classList.remove('hidden');
       if (state.savedAt) {
         const saved   = new Date(state.savedAt);
         const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
@@ -3169,24 +3115,10 @@
         return;
       }
       img.retrying = false;
-      if (decision.verdict === 'silent') {
-        await commitScan(img, apiUrl, result, decision.entries, 'auto', null);
-        addLog(tf('logDone', {n: idx, msg: tf('logResult', {route: result.routeNumber, count: decision.entries.length})}), 'ok');
-      } else {
-        updateImageItem(id, 'loading', t('statusAwaitingReview'));
-        state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
-        maybeShowNextReview();
-        return;
-      }
-      // Update summary icon/title if all are now done
-      const remaining = state.images.filter(i => i.status === 'error').length;
-      if (remaining === 0) {
-        const total = Object.keys(state.routeData).length;
-        document.getElementById('summaryTitle').textContent = tf('summaryTitle', {total});
-        document.querySelector('#summaryBox .summary-icon').textContent = '✅';
-        document.getElementById('summaryBox').classList.remove('error');
-        document.getElementById('summaryLinkBtn').classList.remove('hidden');
-      }
+      // Människan sätter alltid Rutt/S-gränsen → köa granskning.
+      updateImageItem(id, 'loading', t('statusAwaitingReview'));
+      state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
+      maybeShowNextReview();
     } catch (err) {
       state.abortController = null;
       img.retrying = false;
@@ -3197,8 +3129,11 @@
   /* ═══════════════════════════════════════════════
      LOGGING
   ═══════════════════════════════════════════════ */
+  // Loggrutan är borttagen ur personalens vy (analytics finns i Supabase).
+  // Behåll funktionen som en säker no-op så befintliga anrop inte kraschar.
   function addLog(text, type = '') {
     const box = document.getElementById('logBox');
+    if (!box) return;
     const line = document.createElement('div');
     line.className = 'log-line' + (type ? ' ' + type : '');
     line.textContent = `[${timestamp()}] ${text}`;
@@ -3264,15 +3199,10 @@
           continue;                                    // gå vidare, stoppa inte batchen
         }
         addLog(tf('logResult', { route: result.routeNumber, count: decision.entries.length }), 'ok');
-        if (decision.verdict === 'silent') {
-          // Avläsningarna är eniga → spara tyst, ingen modal.
-          await commitScan(img, apiUrl, result, decision.entries, 'auto', null);
-        } else {
-          // Oense om gräns eller en KOF-siffra → köa en lugn granskning.
-          updateImageItem(img.id, 'loading', t('statusAwaitingReview'));
-          state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
-          maybeShowNextReview();                        // visa direkt om ingen modal är öppen
-        }
+        // Människan sätter alltid Rutt/S-gränsen → köa en lugn granskning.
+        updateImageItem(img.id, 'loading', t('statusAwaitingReview'));
+        state.reviewQueue.push({ type: 'review', img, apiUrl, result, decision });
+        maybeShowNextReview();                          // visa direkt om ingen modal är öppen
       } catch (err) {
         if (err.name === 'AbortError') {
           updateImageItem(img.id, 'error', t('logCancelled'));
@@ -3556,11 +3486,11 @@ Rules:
   }
 
   // ─────────────────────────────
-  //  RECONCILE — jämför Opus-extraktionen mot den oberoende andra-avläsningen
+  //  RECONCILE — härleder posterna + en FÖRVALD Rutt/S-gräns
   // ─────────────────────────────
-  //  verdict 'silent'   → eniga → spara direkt utan modal
-  //  verdict 'boundary' → oense om var Rutt/S-gränsen går → be användaren dela
-  //  verdict 'digit'    → ense om gränsen men oense om en KOF-siffra → be om koll
+  //  Vi litar på siffrorna (ingen sifferkontroll). Människan sätter alltid
+  //  gränsen i granskningsvyn — det här ger bara ett bra startförslag:
+  //  Opus gissning i första hand, annars Haiku-judgens gissning (fallback).
   function reconcileReadings(result, judge) {
     const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
 
@@ -3574,7 +3504,7 @@ Rules:
     if (rawSplit !== null && (rawSplit < 0 || rawSplit > raw.length)) rawSplit = null;
 
     // Sätt route ur gränsen FÖRE filtrering, filtrera sedan till 6-siffriga KOF.
-    // Härled opusSplit som index i den filtrerade listan (för divider + jämförelse).
+    // Härled opusSplit som index i den filtrerade listan (för divider).
     let entries = raw
       .map((e, i) => ({ ...e, kof: String(e.kof ?? '').trim(),
         route: (rawSplit !== null && i >= rawSplit) ? `S${rn}` : `Rutt ${rn}` }))
@@ -3582,37 +3512,17 @@ Rules:
     let opusSplit = entries.findIndex(e => String(e.route).startsWith('S'));
     opusSplit = opusSplit === -1 ? null : opusSplit;
 
-    // Fail-open: kunde inte verifiera → spara tyst
-    if (!judge || judge.failed) {
-      return { verdict: 'silent', entries, splitIndex: opusSplit, judgeSplitIndex: null, digitConflicts: [] };
+    // Fallback: hittade Opus ingen S-rutt men judgen gjorde det → använd judgens
+    // gissning som förvald gräns (sätt om route därefter). Bara som startförslag.
+    let splitIndex = opusSplit;
+    if (splitIndex === null && judge && !judge.failed
+        && Number.isInteger(judge.splitIndex)
+        && judge.splitIndex > 0 && judge.splitIndex < entries.length) {
+      splitIndex = judge.splitIndex;
+      entries = entries.map((e, i) => ({ ...e, route: i >= splitIndex ? `S${rn}` : `Rutt ${rn}` }));
     }
 
-    const judgeSplit = Number.isInteger(judge.splitIndex) ? judge.splitIndex
-      : (judge.splitIndex === null ? null : undefined);
-    const jkofs = Array.isArray(judge.kofs)
-      ? judge.kofs.map(k => String(k).replace(/\D/g, '')).filter(k => k.length === 6)
-      : null;
-
-    // Jämför KOF positionellt — bara om båda läste samma antal rader
-    const digitConflicts = [];
-    let lengthMismatch = false;
-    if (jkofs && jkofs.length === entries.length) {
-      entries.forEach((e, i) => {
-        if (jkofs[i] && jkofs[i] !== e.kof) digitConflicts.push({ index: i, opusKof: e.kof, judgeKof: jkofs[i] });
-      });
-    } else if (jkofs && jkofs.length) {
-      lengthMismatch = true;
-    }
-
-    const boundaryDisagree = judgeSplit !== undefined && judgeSplit !== opusSplit;
-
-    if (boundaryDisagree || lengthMismatch) {
-      return { verdict: 'boundary', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts };
-    }
-    if (digitConflicts.length) {
-      return { verdict: 'digit', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts };
-    }
-    return { verdict: 'silent', entries, splitIndex: opusSplit, judgeSplitIndex: judgeSplit, digitConflicts: [] };
+    return { entries, splitIndex };
   }
 
   // Sätter route för alla poster utifrån dokumentposition relativt splitKof:
@@ -3667,21 +3577,19 @@ Rules:
   /* ═══════════════════════════════════════════════
      OBLIGATORISK GRANSKNING
   ═══════════════════════════════════════════════ */
-  // Lugn, villkorlig granskning. Visas BARA när de två avläsningarna är oense
-  // (decision.verdict 'boundary' eller 'digit'). Inga varningar — bara en blick.
+  // Lugn granskning som visas för VARJE ark. Människan sätter Rutt/S-gränsen
+  // (AI:ns gissning är förvald) eller trycker "Ingen S-rutt". Inga varningar.
   function showObligReview(img, apiUrl, result, decision) {
     const entries = decision.entries.map(e => ({ ...e }));
     state.pendingReview = { img, apiUrl, result, entries, decision };
     obligReviewImgState.scale = 1;
     obligReviewImgState.rotation = 0;
     const rn = result.routeNumber ?? '?';
-    const isDigit = decision.verdict === 'digit';
-    document.getElementById('obligReviewTitle').textContent = isDigit
-      ? tf('reconcileDigitTitle', { route: rn, count: entries.length })
-      : tf('reconcileBoundaryTitle', { route: rn, count: entries.length });
-    document.getElementById('obligReviewSubtitle').textContent = isDigit
-      ? t('reconcileDigitSubtitle') : t('reconcileBoundarySubtitle');
-    document.getElementById('obligReviewSaveBtn').textContent = t('obligSaveBtn');
+    document.getElementById('obligReviewTitle').textContent =
+      tf('reconcileBoundaryTitle', { route: rn, count: entries.length });
+    document.getElementById('obligReviewSubtitle').textContent =
+      t('reconcileBoundarySubtitle');
+    document.getElementById('obligReviewSaveBtn').textContent = t('obligNextBtn');
     document.getElementById('obligReviewDiscardBtn').textContent = t('obligDiscardBtn');
     const imgEl = document.getElementById('obligReviewSourceImg');
     const vp    = document.getElementById('obligReviewImgViewport');
@@ -3696,32 +3604,31 @@ Rules:
   // Rader i DOKUMENTORDNING (inte grupperat) så gränsen syns. Varje rad har en
   // "Dela här"-knapp (sätt gränsen i ett tryck) + den gamla flytta-en-knappen.
   function renderObligReviewEntries() {
-    const { entries, decision, result } = state.pendingReview;
+    const { entries, result } = state.pendingReview;
     const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-    const conflicts = decision?.digitConflicts ?? [];
     const firstSIdx = entries.findIndex(e => String(e.route ?? '').startsWith('S'));
+    const hasSplit = firstSIdx > 0;
     const html = entries.map((e, i) => {
       const isS = String(e.route ?? '').startsWith('S');
       const divider = (i === firstSIdx && firstSIdx > 0)
         ? `<div class="oblig-split-divider">${escHtml(tf('splitBoundaryLabel', { route: rn }))}</div>` : '';
-      const conflict = conflicts.find(c => c.index === i && !c.resolved);
-      const conflictBlock = conflict ? `
-        <div class="oblig-digit-conflict" data-detail-for="${escHtml(e.kof)}">
-          <span class="oblig-digit-q">${escHtml(t('reconcileDigitChoose'))}</span>
-          <button class="oblig-digit-choice" data-idx="${i}" data-kof="${escHtml(conflict.opusKof)}">${escHtml(conflict.opusKof)}</button>
-          <button class="oblig-digit-choice" data-idx="${i}" data-kof="${escHtml(conflict.judgeKof)}">${escHtml(conflict.judgeKof)}</button>
-        </div>` : '';
       return `${divider}
-        <div class="oblig-review-entry-row${conflict ? ' has-conflict' : ''}" data-kof="${escHtml(e.kof)}" data-idx="${i}">
+        <div class="oblig-review-entry-row" data-kof="${escHtml(e.kof)}" data-idx="${i}">
           <div class="oblig-review-kof">${escHtml(e.kof)}</div>
           <div class="oblig-review-store">${escHtml(e.store ?? '')}</div>
           <div class="oblig-review-est">${e.units || ''}</div>
           <button class="split-here-btn" data-kof="${escHtml(e.kof)}">${escHtml(t('splitHereBtn'))}</button>
           <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
                   data-kof="${escHtml(e.kof)}">→ ${isS ? t('obligMoveToMain') : t('obligMoveToS')}</button>
-        </div>${conflictBlock}`;
+        </div>`;
     }).join('');
     document.getElementById('obligReviewEntries').innerHTML = html;
+    // "Ingen S-rutt"-knappen: aktiv/markerad när ingen S-rutt är satt.
+    const nb = document.getElementById('obligNoSplitBtn');
+    if (nb) {
+      nb.classList.toggle('is-active', !hasSplit);
+      nb.textContent = hasSplit ? t('noSplitBtn') : '✓ ' + t('noSplitBtn');
+    }
   }
 
   // Flytta EN KOF mellan huvudrutt/S-rutt (finlir).
@@ -3740,12 +3647,11 @@ Rules:
     renderObligReviewEntries();
   }
 
-  // Användaren valde rätt siffersträng för en flaggad KOF.
-  function chooseObligDigit(idx, kof) {
-    const { entries, decision } = state.pendingReview;
-    if (entries[idx]) entries[idx].kof = kof;
-    const c = (decision?.digitConflicts ?? []).find(x => x.index === idx);
-    if (c) c.resolved = true;
+  // "Ingen S-rutt" — alla poster blir Rutt N (rensar gränsen).
+  function clearSplitObligReview() {
+    const { entries, result } = state.pendingReview;
+    const n = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
+    entries.forEach(e => { e.route = `Rutt ${n}`; });
     renderObligReviewEntries();
   }
 
@@ -3753,7 +3659,7 @@ Rules:
     const btn = document.getElementById('obligReviewSaveBtn');
     btn.disabled = true;
     btn.textContent = t('obligSaving');
-    let { img, apiUrl, result, entries, decision } = state.pendingReview;
+    let { img, apiUrl, result, entries } = state.pendingReview;
     // Baka in en eventuell manuell rotering så bilden sparas rätt vänd i molnet
     // och visas rätt i jämförelsevyn / på andra enheter.
     const manualRot = obligReviewImgState.rotation % 360;
@@ -3761,11 +3667,11 @@ Rules:
       apiUrl = await applyRotation(apiUrl, manualRot);
       img.dataUrl = apiUrl;
     }
-    await commitScan(img, apiUrl, result, entries, 'reviewed', { verdict: decision?.verdict ?? null });
+    await commitScan(img, apiUrl, result, entries, 'reviewed', null);
     state.pendingReview = null;
     document.getElementById('obligReviewOverlay').classList.add('hidden');
     btn.disabled = false;
-    btn.textContent = t('obligSaveBtn');
+    btn.textContent = t('obligNextBtn');
     renderImageList();
     maybeShowNextReview();
   }
@@ -4742,6 +4648,27 @@ Rules:
     if (btn) showKofInRoutes(btn.dataset.kof);
   });
 
+  // Dold admin-gest: long-press (~1,5 s) på titeln "Rutt-scanner" → bekräfta →
+  // rensa all inläst data. Knappen är borttagen ur personalens vy så den inte
+  // trycks av misstag; den här gesten är till för arbetsledaren.
+  (function() {
+    const title = document.getElementById('headerTitle');
+    if (!title) return;
+    let timer = null;
+    const start = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { clearAllData(); }, 1500);  // clearAllData() bekräftar själv
+    };
+    const cancel = () => clearTimeout(timer);
+    title.addEventListener('touchstart', start, { passive: true });
+    title.addEventListener('touchend', cancel);
+    title.addEventListener('touchmove', cancel, { passive: true });
+    title.addEventListener('touchcancel', cancel);
+    title.addEventListener('mousedown', start);
+    title.addEventListener('mouseup', cancel);
+    title.addEventListener('mouseleave', cancel);
+  })();
+
   // Obligatorisk granskning — knappar
   document.getElementById('obligReviewRotateBtn').addEventListener('click', () => {
     obligReviewImgState.rotation = (obligReviewImgState.rotation + 90) % 360;
@@ -4749,12 +4676,11 @@ Rules:
   });
   document.getElementById('obligReviewSaveBtn').addEventListener('click', confirmObligReview);
   document.getElementById('obligReviewDiscardBtn').addEventListener('click', discardObligReview);
+  document.getElementById('obligNoSplitBtn').addEventListener('click', clearSplitObligReview);
   // S-rutt-toggle (delegerat)
   document.getElementById('obligReviewEntries').addEventListener('click', e => {
     const splitBtn = e.target.closest('.split-here-btn');
     if (splitBtn) { splitHereObligReview(splitBtn.dataset.kof); return; }
-    const digitBtn = e.target.closest('.oblig-digit-choice');
-    if (digitBtn) { chooseObligDigit(parseInt(digitBtn.dataset.idx), digitBtn.dataset.kof); return; }
     const btn = e.target.closest('.oblig-review-toggle-btn');
     if (btn) toggleObligReviewRoute(btn.dataset.kof);
   });
