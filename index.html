@@ -1004,6 +1004,7 @@
     }
 
     .clear-data-btn:active { opacity: 0.7; }
+    #pane-routes .clear-data-btn { margin-top: 16px; }
 
     .btn-row { display: flex; gap: 8px; }
     .btn-row .clear-data-btn { flex: 1; width: auto; }
@@ -1523,7 +1524,7 @@
     </div>
 
     <div id="savedBadge" class="saved-badge hidden"></div>
-    <button class="clear-data-btn hidden" id="clearDataBtn" onclick="clearAllData()">
+    <button class="clear-data-btn" onclick="clearAllData()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"/>
         <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -1764,6 +1765,15 @@
       <span data-i18n="addRoute">+ Ny rutt</span>
     </button>
     <div id="routesList" class="hidden flex-col"></div>
+    <button class="clear-data-btn" onclick="clearAllData()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      <span data-i18n="clearDataBtn">Rensa all inläst data</span>
+    </button>
   </div>
 
 </div>
@@ -2922,12 +2932,9 @@
   function updateStorageUI() {
     const total  = Object.keys(state.routeData).length;
     const badge  = document.getElementById('savedBadge');
-    const clearBtn = document.getElementById('clearDataBtn');
     if (total === 0 && !state.isLoadingSupabase) {
       badge.classList.add('hidden');
-      clearBtn.classList.add('hidden');
     } else if (total > 0) {
-      clearBtn.classList.remove('hidden');
       if (state.savedAt) {
         const saved   = new Date(state.savedAt);
         const expires = new Date(state.savedAt + EXPIRY_HOURS * 3_600_000);
