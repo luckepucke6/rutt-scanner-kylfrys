@@ -75,7 +75,7 @@ state.savedAt          // timestamp of last localStorage write
 state.supabaseLoadedAt // timestamp when Supabase data was last fetched, or null
 state.isLoadingSupabase, state.isSyncing // load/sync guards
 state.scanImages       // { [imgId]: dataUrl } in-memory scan image cache
-state.pendingReview, state.reviewQueue // conditional review shown one at a time (see Scan pipeline)
+state.pendingReview, state.reviewQueue // per-sheet split review shown one at a time (see Scan pipeline)
 ```
 
 There is **no** `state.apiKey` — the Anthropic key lives server-side in the Edge Function, not in the client.
@@ -104,13 +104,12 @@ File selected
       [callClaudeJudge] (Haiku, JUDGE_PROMPT, max_tokens 1500) — INDEPENDENT second read of the image
         returns: { kofs[], splitIndex } (or { failed:true } — fail-open)
   → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
-  → [reconcileReadings] — compares the two readings, normalizes route from splitIndex, returns a verdict:
-        'silent'   → readings agree on boundary + every KOF → SAVE DIRECTLY, no modal
-        'boundary' → disagree on where the Rutt/S-split is → show the calm review in boundary mode
-        'digit'    → agree on boundary but disagree on a KOF's digits → show the calm review in digit mode
-  → 'silent':  [commitScan] immediately
-     'boundary'/'digit': queue { type:'review', decision } → [showObligReview] (calm, conditional)
-  → [commitScan] (silent path, or on review save):
+  → [reconcileReadings] — normalizes route from splitIndex and picks a DEFAULT boundary:
+        Opus splitIndex if present, else the judge's splitIndex as a fallback guess.
+        We trust the digits — there is NO digit cross-check. Returns { entries, splitIndex }.
+  → queue { type:'review', decision } → [showObligReview] — shown for EVERY sheet so a
+        human always confirms the Rutt/S boundary (the AI sometimes misses the blank-row gap).
+  → [commitScan] (on review save / "Gå vidare"):
       [storeEntries] → state.routeData
       [uploadScanImage] → scan_images.insert (gets UUID, back-fills scanImageId on KOFs)
       [logScan] → scan_logs ; [logJudge] → judge_logs ; [saveToStorage] ; [saveToSupabase] → route_entries.upsert
@@ -118,13 +117,17 @@ File selected
 
 For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
 
-**Split stability:** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image. `PROMPT` therefore asks Opus for an explicit `splitIndex` (the entry index where the S-block starts, or `null`), and `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`. If they disagree the user is asked to point at the boundary with the **"Dela här" (split-here)** button — one tap sets the split at that row (everything from it down → SN). Split-here lives in both `showObligReview` (`splitHereObligReview`, unsaved) and the comparison view (`splitHerePersisted`, batched upsert). The per-KOF move buttons remain for fine adjustment.
+**Split stability (human-in-the-loop):** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image — and the AI sometimes misses it entirely (puts everything in one route) or misplaces it. So the split is **always** confirmed by a human: `showObligReview` is shown for every sheet with the AI's guess pre-selected. `PROMPT` asks Opus for an explicit `splitIndex` (entry index where the S-block starts, or `null`); `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`, used only as a **fallback default** when Opus found none. In the review the user can: tap **"Dela här" (split-here)** to set the boundary at a row (everything from it down → SN), use the per-KOF move buttons for fine adjustment, or tap **"Ingen S-rutt"** (`clearSplitObligReview`) to make the whole sheet "Rutt N". Split-here also lives in the comparison view (`splitHerePersisted`, batched upsert).
 
 **Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi`. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately) are **permanent**, not display-only.
 
-**One conditional review modal:** `showObligReview` is **not** shown for every scan — only when `reconcileReadings` returns `'boundary'` or `'digit'`. When the two readings agree, the scan is committed silently (no modal, just a toast). The modal uses deliberately calm language (no "warning"/red alarms) because non-technical staff also scan. The old `showScanReview` warning modal has been removed.
+**One calm review modal per sheet:** `showObligReview` is shown for **every** scanned sheet — its only job is to let the human set the Rutt/S boundary. We **trust the digits**, so there are no digit warnings and no "approve/reject" alarms; the language is deliberately calm because non-technical staff also scan. The save button reads **"Gå vidare"**. The old `showScanReview` warning modal and the digit-conflict UI have been removed.
 
-**Review queuing:** when several images in a batch each need review, they are queued in `state.reviewQueue` (type `'review'`, carrying the `decision`) and surfaced one at a time via `state.pendingReview`.
+**Review queuing:** when several images in a batch are scanned, each is queued in `state.reviewQueue` (type `'review'`, carrying the `decision`) and surfaced one at a time via `state.pendingReview`, so the user steps through all sheets one by one.
+
+**Logs:** the in-app live log box has been removed from the Scan tab (staff don't see logs). `addLog()` is now a safe no-op (calls left in place). Analytics are still written to Supabase (`scan_logs`, `judge_logs`, `search_logs`, `session_segments`) for the owner to inspect there.
+
+**Admin gesture:** the "Synka till molnet" and "Rensa all inläst data" buttons were removed from the Scan tab. Sync happens automatically on save; **clearing all data** is now behind a hidden long-press (~1.5 s) on the header title `#headerTitle` → `clearAllData()` (which still confirms via `t('confirmClear')`).
 
 ### Claude API usage
 
@@ -133,13 +136,13 @@ Two active calls, both POSTed to the Edge Function proxy at `CLAUDE_PROXY_URL` (
 | Function | Purpose | Model | max_tokens | timeout |
 |---|---|---|---|---|
 | `callClaudeApi(dataUrl)` | Route sheet extraction (incl. `rotation`, `splitIndex`) | `claude-opus-4-8` | 3000 | 90 s |
-| `callClaudeJudge(dataUrl)` | Independent second read (KOF digits + split) | `claude-haiku-4-5-20251001` | 1500 | 40 s |
+| `callClaudeJudge(dataUrl)` | Independent second read — used only for a fallback split guess | `claude-haiku-4-5-20251001` | 1500 | 40 s |
 
 Both calls authenticate to the proxy with `apikey` and `Authorization: Bearer <SUPABASE_ANON_KEY>` headers. The Anthropic key and `anthropic-version` are added **server-side**. `callClaudeApi` wires `state.abortController` into the fetch signal so `cancelProcessing()` can abort an in-flight extraction.
 
 **`callClaudeApi`** uses the `PROMPT` constant — it defines how the blank-row separator splits entries into "Rutt N" vs "SN", returns an explicit `splitIndex` (the boundary decision), a per-entry `route` field (kept consistent with `splitIndex`), and a `rotation` field (0/90/180/270).
 
-**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant and re-reads the sheet **from scratch, without seeing the extraction** (so it cannot just echo it). It returns `{ kofs[], splitIndex }`. `reconcileReadings` then compares the two readings digit-by-digit and on the split point. Failsafe: any failure returns `{ failed: true }`, which `reconcileReadings` treats as `'silent'` — never block the user.
+**`callClaudeJudge`** uses the `JUDGE_PROMPT` constant and re-reads the sheet **from scratch, without seeing the extraction**. It returns `{ kofs[], splitIndex }`, but only `splitIndex` is used: `reconcileReadings` falls back to it as the **default boundary** when Opus returned no split (`kofs[]` is currently ignored — we trust the digits and do no cross-check). Failsafe: any failure returns `{ failed: true }`, which `reconcileReadings` simply ignores — the human sets the split regardless, so the judge never blocks the user.
 
 #### Server-side proxy (claude-proxy)
 
