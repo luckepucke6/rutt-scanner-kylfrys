@@ -972,9 +972,7 @@
 
     .result-route { font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
     .result-store { font-size: 14px; color: var(--color-text-secondary); line-height: 1.4; margin-bottom: 10px; }
-    .result-driver { font-size: 13px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 6px; }
     .result-estimate { font-size: 13px; color: var(--color-text-secondary); font-style: italic; }
-    .route-group-driver { font-size: 11px; font-weight: 500; opacity: 0.85; margin-top: 2px; }
 
     .result-header {
       background: var(--color-success); padding: 8px 16px;
@@ -1622,9 +1620,8 @@
           <path d="M194 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <!-- Node 3: Rutt-kort -->
           <rect x="201" y="15" width="74" height="50" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
-          <text x="238" y="33" text-anchor="middle" font-size="9" fill="#166534" font-family="system-ui, sans-serif" font-weight="700">Rutt 4</text>
-          <text x="238" y="45" text-anchor="middle" font-size="8" fill="#15803d" font-family="system-ui, sans-serif">Förare: Kalle</text>
-          <text x="238" y="56" text-anchor="middle" font-size="8" fill="#15803d" font-family="system-ui, sans-serif">ICA Maxi</text>
+          <text x="238" y="36" text-anchor="middle" font-size="9" fill="#166534" font-family="system-ui, sans-serif" font-weight="700">Rutt 4</text>
+          <text x="238" y="50" text-anchor="middle" font-size="8" fill="#15803d" font-family="system-ui, sans-serif">ICA Maxi</text>
         </svg>
       </div>
     </div>
@@ -1749,10 +1746,6 @@
       <input type="number" class="modal-input" id="editUnitsInput" min="0" step="1" inputmode="numeric">
     </div>
     <div class="modal-field">
-      <div class="modal-label" data-i18n="modalDriverLabel">Förare</div>
-      <input type="text" class="modal-input" id="editDriverInput">
-    </div>
-    <div class="modal-field">
       <div class="modal-label" data-i18n="modalRouteLabel">Rutt</div>
       <select class="modal-select" id="editRouteSelect"></select>
     </div>
@@ -1771,10 +1764,6 @@
     <div class="modal-field">
       <div class="modal-label" data-i18n="routeNameLabel">Ruttnamn</div>
       <input type="text" class="modal-input" id="routeNameInput">
-    </div>
-    <div class="modal-field">
-      <div class="modal-label" data-i18n="routeDriverLabel">Förare</div>
-      <input type="text" class="modal-input" id="routeDriverInput">
     </div>
     <div id="routeModalKofList" class="route-modal-kof-list hidden"></div>
     <div class="modal-actions">
@@ -2005,7 +1994,6 @@
         state.routeOrder.push(row.kof);
         state.routeData[row.kof] = {
           route:       row.route,
-          driver:      row.driver ?? '',
           store:       row.store_name ?? '',
           pall:        row.pall ?? '',
           bur:         row.bur ?? '',
@@ -2224,14 +2212,14 @@
       modalTitle: 'Redigera stopp', modalTitleNew: 'Nytt KOF-nummer',
       modalKofLabel: 'KOF-nummer',
       modalStoreLabel: 'Butik / adress', modalUnitsLabel: 'Antal enheter',
-      modalDriverLabel: 'Förare', modalRouteLabel: 'Rutt',
+      modalRouteLabel: 'Rutt',
       modalCancel: 'Avbryt', modalSave: 'Spara',
       editTooltip: 'Redigera',
       editKofInvalid: 'KOF-numret måste vara exakt 6 siffror.',
       editStoreEmpty: 'Butiksnamn får inte vara tomt.',
       addRoute: '+ Ny rutt', addKof: '+ Nytt KOF',
       newRouteTitle: 'Ny rutt', editRouteTitle: 'Redigera rutt',
-      routeNameLabel: 'Ruttnamn', routeDriverLabel: 'Förare',
+      routeNameLabel: 'Ruttnamn',
       routeNameEmpty: 'Ange ett ruttnamn.',
       confirmDeleteRoute: 'Är du säker? Detta tar bort alla KOF-nummer i rutten.',
       confirmDeleteKof: 'Ta bort KOF {kof}? Detta kan inte ångras.',
@@ -2351,14 +2339,14 @@
       modalTitle: 'Edit stop', modalTitleNew: 'New KOF number',
       modalKofLabel: 'KOF number',
       modalStoreLabel: 'Store / address', modalUnitsLabel: 'Number of units',
-      modalDriverLabel: 'Driver', modalRouteLabel: 'Route',
+      modalRouteLabel: 'Route',
       modalCancel: 'Cancel', modalSave: 'Save',
       editTooltip: 'Edit',
       editKofInvalid: 'KOF number must be exactly 6 digits.',
       editStoreEmpty: 'Store name cannot be empty.',
       addRoute: '+ New route', addKof: '+ New KOF',
       newRouteTitle: 'New route', editRouteTitle: 'Edit route',
-      routeNameLabel: 'Route name', routeDriverLabel: 'Driver',
+      routeNameLabel: 'Route name',
       routeNameEmpty: 'Enter a route name.',
       confirmDeleteRoute: 'Are you sure? This will delete all KOF numbers in this route.',
       confirmDeleteKof: 'Delete KOF {kof}? This cannot be undone.',
@@ -2478,14 +2466,14 @@
       modalTitle: 'Редактировать остановку', modalTitleNew: 'Новый КОФ-номер',
       modalKofLabel: 'КОФ-номер', modalStoreLabel: 'Магазин / адрес',
       modalUnitsLabel: 'Количество единиц',
-      modalDriverLabel: 'Водитель', modalRouteLabel: 'Маршрут',
+      modalRouteLabel: 'Маршрут',
       modalCancel: 'Отмена', modalSave: 'Сохранить',
       editTooltip: 'Редактировать',
       editKofInvalid: 'КОФ-номер должен быть ровно 6 цифр.',
       editStoreEmpty: 'Название магазина не может быть пустым.',
       addRoute: '+ Новый маршрут', addKof: '+ Новый КОФ',
       newRouteTitle: 'Новый маршрут', editRouteTitle: 'Редактировать маршрут',
-      routeNameLabel: 'Название маршрута', routeDriverLabel: 'Водитель',
+      routeNameLabel: 'Название маршрута',
       routeNameEmpty: 'Введите название маршрута.',
       confirmDeleteRoute: 'Вы уверены? Это удалит все КОФ-номера маршрута.',
       confirmDeleteKof: 'Удалить КОФ {kof}? Это нельзя отменить.',
@@ -3284,12 +3272,11 @@ DOCUMENT STRUCTURE — each page has this exact layout:
 Steps 3 and 4 may be absent if the page has only one section.
 CRITICAL: Do NOT stop extracting when you hit the empty rows. They are a visual separator, not end-of-page. Always continue reading below them and include ALL entries from the S-block. Omitting S-block entries is an extraction error.
 
-{"routeNumber":"4","driver":"161 Xhulijo","rotation":0,"splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
+{"routeNumber":"4","rotation":0,"splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4","confidence":"high"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4","confidence":"low"}]}
 
 Rules:
 - rotation: how many degrees CLOCKWISE the image must be rotated to be upright with text readable normally. One of 0, 90, 180, 270. If the sheet is already upright, use 0. If the text runs bottom-to-top (you had to tilt your head left), use 90. If upside down, use 180. If text runs top-to-bottom (tilt head right), use 270.
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
-- driver: Text after the dash in the header. Strip trailing ":)" or emoji. Use "" if not found.
 - kof: the 6-digit number in the leftmost data column (skip header rows). Do NOT invent or guess digits — only include what is clearly visible.
 - store: the full text from the middle column — includes store name, address, and any customer/account number visible in that column (e.g. "COOP CITY STHLM 4512" where 4512 is a customer number).
 - pall/bur/hlv: value in that column, empty string if blank.
@@ -3651,7 +3638,6 @@ Rules:
       const sortOrder = existing?.sortOrder ?? ++maxSort;
       state.routeData[kof] = {
         route,
-        driver:      String(parsed.driver ?? '').trim(),
         store:       entry.store ?? '',
         pall:        entry.pall  ?? '',
         bur:         entry.bur   ?? '',
@@ -3770,7 +3756,6 @@ Rules:
           </div>
           <div class="result-card-body">
             <div class="result-route">${escHtml(data.route)}</div>
-            ${data.driver ? `<div class="result-driver">👤 ${escHtml(data.driver)}</div>` : ''}
             <div class="result-store">${escHtml(data.store)}</div>
             ${data.units ? `<div class="result-estimate">${escHtml(tf('estimate', {n: data.units}))}</div>` : ''}
             ${(data.confidence === 'low' || data.confidence === 'medium') ? `<div class="result-warn">⚠️ ${escHtml(t('uncertainWarning'))}</div>` : ''}
@@ -3897,14 +3882,12 @@ Rules:
       const hasS     = allRouteNames.has(sKey);
       const mainStops = groups[mainKey] ?? [];
       const sStops    = groups[sKey]    ?? [];
-      const driver    = state.routes[mainKey] ?? mainStops[0]?.driver
-                     ?? state.routes[sKey]    ?? sStops[0]?.driver ?? '';
       const primaryKey = hasMain ? mainKey : sKey;
       const isUncertain = state.routeReview[mainKey] === 'uncertain'
                        || state.routeReview[sKey]    === 'uncertain';
       const uncertainBadge = isUncertain
         ? `<span class="route-uncertain-badge" title="${escHtml(t('reviewFlag'))}">⚠</span>` : '';
-      const routeLabel = (hasMain ? mainKey : sKey) + (driver ? ` - ${driver}` : '');
+      const routeLabel = hasMain ? mainKey : sKey;
       const separatorRow = (hasMain && hasS && (mainStops.length > 0 || sStops.length > 0))
         ? `<tr class="rutt-separator"><td colspan="3"></td></tr>` : '';
 
@@ -3953,7 +3936,6 @@ Rules:
     document.getElementById('editKofInput').value    = kof ?? '';
     document.getElementById('editStoreInput').value  = data.store ?? '';
     document.getElementById('editUnitsInput').value  = data.units ?? 0;
-    document.getElementById('editDriverInput').value = data.driver ?? (presetRoute ? (state.routes[presetRoute] ?? '') : '');
 
     const allRoutes = Object.keys(state.routes).sort((a, b) => {
       const na = parseInt(a.match(/\d+/)?.[0] ?? 0);
@@ -3987,7 +3969,6 @@ Rules:
     const newKof    = document.getElementById('editKofInput').value.trim();
     const newStore  = document.getElementById('editStoreInput').value.trim();
     const newUnits  = parseInt(document.getElementById('editUnitsInput').value) || 0;
-    const newDriver = document.getElementById('editDriverInput').value.trim();
     const newRoute  = document.getElementById('editRouteSelect').value;
 
     if (!/^\d{6}$/.test(newKof)) { alert(t('editKofInvalid')); return; }
@@ -3995,7 +3976,7 @@ Rules:
 
     const isNew   = !editingKof;
     const oldData = isNew ? {} : (state.routeData[editingKof] ?? {});
-    const updated = { ...oldData, store: newStore, route: newRoute, driver: newDriver,
+    const updated = { ...oldData, store: newStore, route: newRoute,
                       pall: oldData.pall ?? '', bur: oldData.bur ?? '', hlv: oldData.hlv ?? '',
                       units: newUnits };
 
@@ -4031,7 +4012,7 @@ Rules:
   ═══════════════════════════════════════════════ */
   function syncRoutesMeta() {
     for (const d of Object.values(state.routeData)) {
-      state.routes[d.route] = d.driver || state.routes[d.route] || '';
+      state.routes[d.route] = '';
     }
   }
 
@@ -4054,8 +4035,6 @@ Rules:
     document.getElementById('routeModalTitle').textContent =
       routeName ? t('editRouteTitle') : t('newRouteTitle');
     document.getElementById('routeNameInput').value = routeName ?? '';
-    document.getElementById('routeDriverInput').value =
-      routeName ? (state.routes[routeName] ?? '') : '';
     document.getElementById('routeDeleteBtn').classList.toggle('hidden', !routeName);
 
     const kofListEl = document.getElementById('routeModalKofList');
@@ -4098,7 +4077,6 @@ Rules:
   async function saveRouteModal() {
     const editingRoute = document.getElementById('routeModal').dataset.editingRoute || null;
     const newName   = document.getElementById('routeNameInput').value.trim();
-    const newDriver = document.getElementById('routeDriverInput').value.trim();
     if (!newName) { alert(t('routeNameEmpty')); return; }
 
     if (editingRoute && editingRoute !== newName) {
@@ -4106,7 +4084,6 @@ Rules:
       for (const kof of Object.keys(state.routeData)) {
         if (state.routeData[kof].route === editingRoute) {
           state.routeData[kof].route  = newName;
-          state.routeData[kof].driver = newDriver;
         }
       }
       delete state.routes[editingRoute];
@@ -4116,22 +4093,9 @@ Rules:
           .map(([kof, d]) => ({ kof, route: newName, store_name: d.store }));
         if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
       }
-    } else if (editingRoute) {
-      // Driver change only
-      for (const kof of Object.keys(state.routeData)) {
-        if (state.routeData[kof].route === editingRoute) {
-          state.routeData[kof].driver = newDriver;
-        }
-      }
-      if (sb) {
-        const rows = Object.entries(state.routeData)
-          .filter(([, d]) => d.route === editingRoute)
-          .map(([kof, d]) => ({ kof, route: editingRoute, store_name: d.store }));
-        if (rows.length) await sb.from('route_entries').upsert(rows, { onConflict: 'kof' });
-      }
     }
 
-    state.routes[newName] = newDriver;
+    state.routes[newName] = '';
     saveToStorage();
     closeRouteModal();
     renderRoutesTab();

@@ -63,7 +63,7 @@ The one piece of code outside `index.html` is the Supabase Edge Function `supaba
 A single `state` object is the source of truth:
 
 ```js
-state.routeData      // { [kof: string]: { route, driver, store, pall, bur, hlv, units } }
+state.routeData      // { [kof: string]: { route, store, pall, bur, hlv, units } }
 state.routeOrder     // [kof] — document order, drives sort_order
 state.routes         // { [routeName]: meta } derived route grouping
 state.routeReview    // { [routeName]: bool } ⚠ review flags (persisted separately)
@@ -80,7 +80,7 @@ state.pendingReview, state.reviewQueue // per-sheet split review shown one at a 
 
 There is **no** `state.apiKey` — the Anthropic key lives server-side in the Edge Function, not in the client.
 
-`routeData[kof].units` is an integer — the sum of pall+bur+hlv for that entry. Note: `driver`, `pall`, `bur`, `hlv`, and `confidence` are kept in memory only and are **not** synced to Supabase.
+`routeData[kof].units` is an integer — the sum of pall+bur+hlv for that entry. Note: `pall`, `bur`, `hlv`, and `confidence` are kept in memory only and are **not** synced to Supabase. Driver/chauffeur names were removed entirely for GDPR reasons — they are no longer extracted, stored, displayed, or persisted anywhere (and the `driver` column was dropped from `route_entries`).
 
 `routeData` is persisted to `localStorage` under key `rutt_scanner_v1` (`STORAGE_KEY`) with an 8-hour expiry; this snapshot also includes `routes` and `routeReview`. `routeReview` is **additionally** persisted under `rutt_route_review` (`ROUTE_REVIEW_KEY`) on its own, because `loadFromSupabase()` clears `STORAGE_KEY` on startup and the ⚠ review flags must survive that. Other `localStorage` keys: `rutt_device_id`, `rutt_lang`, and `rutt_verified_date` (see [Session UI state](#session-only-ui-state)).
 
@@ -100,7 +100,7 @@ File selected
   → [toJpeg] (resize to max 1600px, q=0.88, corrects all 8 EXIF orientations)
   → Promise.all([ callClaudeApi, callClaudeJudge ])   (run in parallel — judge is independent)
       [callClaudeApi]  (Opus, PROMPT, max_tokens 3000)
-        returns: { routeNumber, driver, rotation, splitIndex, entries[{ kof, store, …, units, route, confidence }] }
+        returns: { routeNumber, rotation, splitIndex, entries[{ kof, store, …, units, route, confidence }] }
       [callClaudeJudge] (Haiku, JUDGE_PROMPT, max_tokens 1500) — INDEPENDENT second read of the image
         returns: { kofs[], splitIndex } (or { failed:true } — fail-open)
   → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
@@ -161,7 +161,7 @@ Each route sheet has two sections separated by a blank row:
 - Rows above the blank → stored as `"Rutt N"` (e.g. `"Rutt 4"`)
 - Rows below the blank → stored as `"SN"` (e.g. `"S4"`)
 
-The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → routeNumber `"4"`, driver `"161 Xhulijo"`.
+The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → routeNumber `"4"` (the text after the dash is ignored — driver names are no longer extracted).
 
 ### Supabase integration
 

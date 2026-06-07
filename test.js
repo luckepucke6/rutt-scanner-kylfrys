@@ -15,11 +15,10 @@ const MODEL = 'claude-sonnet-4-6';
 const JUDGE_MODEL = 'claude-haiku-4-5-20251001';
 
 const PROMPT = `Extract route info from this Swedish logistics route sheet. The image may be rotated sideways — read it regardless of orientation. Return ONLY valid JSON, nothing else:
-{"routeNumber":"4","driver":"161 Xhulijo","splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
+{"routeNumber":"4","splitIndex":1,"entries":[{"kof":"369321","store":"PB LUGNETS ALLE 29 STHLM","pall":"1","bur":"","hlv":"","units":1,"route":"Rutt 4"},{"kof":"123456","store":"COOP CITY STHLM","pall":"2","bur":"1","hlv":"","units":3,"route":"S4"}]}
 
 Rules:
 - routeNumber: ONLY the single number after "Rutt " in the header, before the dash. Example: "Rutt 4- 161 Xhulijo" → "4". Always 1–15.
-- driver: REQUIRED. Text after the dash in the header. Example: "Rutt 4- 161 Xhulijo :)" → "161 Xhulijo". Strip trailing ":)" or emoji. Use "" if not found.
 - kof: the 6-digit number in the leftmost data column (skip header rows).
 - store: store name and address from the Startplats column.
 - pall/bur/hlv: value in that column, empty string if blank.
@@ -235,7 +234,7 @@ async function main() {
           return null;
         }),
       ]);
-      console.log(`  📄 Svar: Rutt ${parsed.routeNumber}, förare: "${parsed.driver}", ${(parsed.entries ?? []).length} poster, splitIndex ${parsed.splitIndex}`);
+      console.log(`  📄 Svar: Rutt ${parsed.routeNumber}, ${(parsed.entries ?? []).length} poster, splitIndex ${parsed.splitIndex}`);
     } catch (err) {
       console.log(`  ❌ FEL: API-anrop misslyckades — ${err.message}`);
       totalErrors++;
