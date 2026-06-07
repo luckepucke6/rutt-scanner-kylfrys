@@ -1544,7 +1544,7 @@
   <!-- ════ GUIDE TAB ════ -->
   <div id="pane-guide" class="content flex-col hidden">
 
-    <!-- Section 1: Ta bilden rätt -->
+    <!-- Section 1: Fota & scanna in -->
     <div class="guide-section">
       <div class="guide-section-header">
         <div class="guide-section-icon">
@@ -1553,12 +1553,12 @@
             <circle cx="12" cy="13" r="3"/>
           </svg>
         </div>
-        <div class="guide-section-title" data-i18n="guideSec1Title">1. Ta bilden rätt</div>
+        <div class="guide-section-title" data-i18n="guideSec1Title">1. Fota & scanna in</div>
       </div>
       <ol class="guide-steps">
-        <li data-i18n="guideSec1Step1">Ta först bilderna med din vanliga kameraapp</li>
-        <li data-i18n="guideSec1Step2">Fota hela pappret – alla sidor ska vara med</li>
-        <li data-i18n="guideSec1Step3">Se till att alla siffror syns tydligt – inga avklippta kanter, skuggor eller reflexer</li>
+        <li data-i18n="guideSec1Step1">Fota hela pappret med kameran – alla siffror tydliga, inga skuggor eller avklippta kanter</li>
+        <li data-i18n="guideSec1Step2">Öppna Scan-fliken, välj bilderna och tryck "Läs in bilder"</li>
+        <li data-i18n="guideSec1Step3">Gå igenom varje ark: dela upp i Rutt och S-rutt och kontrollera att S-rutten stämmer</li>
       </ol>
       <div class="guide-illustration">
         <svg width="280" height="120" viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1589,50 +1589,7 @@
       </div>
     </div>
 
-    <!-- Section 2: Scanna in dokument -->
-    <div class="guide-section">
-      <div class="guide-section-header">
-        <div class="guide-section-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <polyline points="1 20 1 14 7 14"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg>
-        </div>
-        <div class="guide-section-title" data-i18n="guideSec2Title">2. Scanna in dokument</div>
-      </div>
-      <ol class="guide-steps">
-        <li data-i18n="guideSec2Step1">Gå till Scan-fliken och tryck på kameran</li>
-        <li data-i18n="guideSec2Step2">Öppna kamerarullen och välj alla bilder som ska vara med – de laddas in i appen</li>
-        <li data-i18n="guideSec2Step3">När alla bilder är inladdade, tryck "Läs in bilder"</li>
-        <li data-i18n="guideSec2Step4">Bilderna läses in en efter en – gå igenom varje bild och kontrollera att siffrorna stämmer och att rutten stämmer. Appen kan ibland läsa rutten fel, så var extra uppmärksam på den.</li>
-        <li data-i18n="guideSec2Step5">När du har checkat alla bilder är allt inläst – då kan du börja söka på rutter</li>
-      </ol>
-      <div class="guide-illustration">
-        <svg width="260" height="80" viewBox="0 0 260 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Node 1: Bilder -->
-          <rect x="5" y="20" width="64" height="40" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
-          <text x="37" y="36" text-anchor="middle" font-size="16">📷</text>
-          <text x="37" y="52" text-anchor="middle" font-size="10" fill="#1d4ed8" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusBilder">Bilder</text>
-          <!-- Arrow 1 -->
-          <path d="M72 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-          <path d="M96 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <!-- Node 2: App -->
-          <rect x="103" y="20" width="54" height="40" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
-          <text x="130" y="36" text-anchor="middle" font-size="16">📱</text>
-          <text x="130" y="52" text-anchor="middle" font-size="10" fill="#15803d" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusApp">App</text>
-          <!-- Arrow 2 -->
-          <path d="M160 40h28" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-          <path d="M184 34l6 6-6 6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <!-- Node 3: Moln -->
-          <rect x="191" y="20" width="64" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
-          <text x="223" y="36" text-anchor="middle" font-size="16">☁️</text>
-          <text x="223" y="52" text-anchor="middle" font-size="10" fill="#6d28d9" font-family="system-ui, sans-serif" font-weight="600" data-i18n="guideIllusMoln">Moln</text>
-        </svg>
-      </div>
-    </div>
-
-    <!-- Section 3: Söka upp en bur -->
+    <!-- Section 2: Sök rutt -->
     <div class="guide-section">
       <div class="guide-section-header">
         <div class="guide-section-icon">
@@ -1641,12 +1598,11 @@
             <path d="m21 21-4.35-4.35"/>
           </svg>
         </div>
-        <div class="guide-section-title" data-i18n="guideSec3Title">3. Söka upp en bur</div>
+        <div class="guide-section-title" data-i18n="guideSec2Title">2. Sök rutt</div>
       </div>
       <ol class="guide-steps">
-        <li data-i18n="guideSec3Step1">Gå till Sök KOF-fliken</li>
-        <li data-i18n="guideSec3Step2">Skriv in KOF-numret från buretiketten</li>
-        <li data-i18n="guideSec3Step3">Rutten visas direkt – ingen knapp att trycka på</li>
+        <li data-i18n="guideSec2Step1">Öppna Sök KOF-fliken</li>
+        <li data-i18n="guideSec2Step2">Skriv KOF-numret från buretiketten – rutten visas direkt</li>
       </ol>
       <div class="guide-illustration">
         <svg width="280" height="80" viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1673,7 +1629,7 @@
       </div>
     </div>
 
-    <!-- Section 4: Ändra eller rätta fel -->
+    <!-- Section 3: Rätta fel -->
     <div class="guide-section">
       <div class="guide-section-header">
         <div class="guide-section-icon">
@@ -1682,14 +1638,12 @@
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </div>
-        <div class="guide-section-title" data-i18n="guideSec4Title">4. Ändra eller rätta fel</div>
+        <div class="guide-section-title" data-i18n="guideSec3Title">3. Rätta fel</div>
       </div>
       <ol class="guide-steps">
-        <li data-i18n="guideSec4Step1">Gå till Rutter-fliken</li>
-        <li data-i18n="guideSec4Step2">Tryck på en rad för att flytta den mellan Rutt N och SN. Håll inne raden (långtryck) för att redigera KOF, butik, antal eller förare — eller ta bort den.</li>
-        <li data-i18n="guideSec4Step3">Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten – alla ändringar sparas direkt till molnet</li>
-        <li data-i18n="guideSec4Step4">Tryck på ögat-ikonen på en rutt-header för att granska alla KOF-poster mot originaldokumentet. Här kan du även flytta en KOF mellan rutt och S-rutt med ↓/↑-knappen.</li>
-        <li data-i18n="guideSec4Step5">Välj "✓ Ser bra ut" för att godkänna, eller "⚠ Kontrollera igen" för att markera rutten som osäker — osäkra rutter visas med en varningsikon i listan</li>
+        <li data-i18n="guideSec3Step1">Öppna Rutter-fliken</li>
+        <li data-i18n="guideSec3Step2">Tryck på en rad för att flytta mellan Rutt och S-rutt. Långtryck för att redigera eller ta bort.</li>
+        <li data-i18n="guideSec3Step3">Penna = byt namn / ta bort rutt. Öga = jämför mot pappret.</li>
       </ol>
     </div>
 
@@ -2332,32 +2286,22 @@
       errImageFormat: 'Ogiltigt bildformat — prova ett annat foto',
       errImageInvalid: 'Ogiltig bildfil',
       errParseAI: 'Kunde inte tolka AI-svaret: {raw}',
-      guideSec1Title: '1. Ta bilden rätt',
-      guideSec1Step1: 'Ta först bilderna med din vanliga kameraapp',
-      guideSec1Step2: 'Fota hela pappret – alla sidor ska vara med',
-      guideSec1Step3: 'Se till att alla siffror syns tydligt – inga avklippta kanter, skuggor eller reflexer',
-      guideSec2Title: '2. Scanna in dokument',
-      guideSec2Step1: 'Gå till Scan-fliken och tryck på kameran',
-      guideSec2Step2: 'Öppna kamerarullen och välj alla bilder som ska vara med – de laddas in i appen',
-      guideSec2Step3: 'När alla bilder är inladdade, tryck "Läs in bilder"',
-      guideSec2Step4: 'Bilderna läses in en efter en – gå igenom varje bild och kontrollera att siffrorna stämmer och att rutten stämmer. Appen kan ibland läsa rutten fel, så var extra uppmärksam på den.',
-      guideSec2Step5: 'När du har checkat alla bilder är allt inläst – då kan du börja söka på rutter',
-      guideSec3Title: '3. Söka upp en bur',
-      guideSec3Step1: 'Gå till Sök KOF-fliken',
-      guideSec3Step2: 'Skriv in KOF-numret från buretiketten',
-      guideSec3Step3: 'Rutten visas direkt – ingen knapp att trycka på',
-      guideSec4Title: '4. Ändra eller rätta fel',
-      guideSec4Step1: 'Gå till Rutter-fliken',
-      guideSec4Step2: 'Tryck på en rad för att flytta den mellan Rutt N och SN. Håll inne raden (långtryck) för att redigera KOF, butik, antal eller förare — eller ta bort den.',
-      guideSec4Step3: 'Tryck på pennikonen på en rutt-header för att byta namn eller ta bort rutten – alla ändringar sparas direkt till molnet',
-      guideSec4Step4: 'Tryck på ögat-ikonen på en rutt-header för att granska alla KOF-poster mot originaldokumentet. Här kan du även flytta en KOF mellan rutt och S-rutt med ↓/↑-knappen.',
-      guideSec4Step5: 'Välj "✓ Ser bra ut" för att godkänna, eller "⚠ Kontrollera igen" för att markera rutten som osäker — osäkra rutter visas med en varningsikon i listan',
+      guideSec1Title: '1. Fota & scanna in',
+      guideSec1Step1: 'Fota hela pappret med kameran – alla siffror tydliga, inga skuggor eller avklippta kanter',
+      guideSec1Step2: 'Öppna Scan-fliken, välj bilderna och tryck "Läs in bilder"',
+      guideSec1Step3: 'Gå igenom varje ark: dela upp i Rutt och S-rutt och kontrollera att S-rutten stämmer',
+      guideSec2Title: '2. Sök rutt',
+      guideSec2Step1: 'Öppna Sök KOF-fliken',
+      guideSec2Step2: 'Skriv KOF-numret från buretiketten – rutten visas direkt',
+      guideSec3Title: '3. Rätta fel',
+      guideSec3Step1: 'Öppna Rutter-fliken',
+      guideSec3Step2: 'Tryck på en rad för att flytta mellan Rutt och S-rutt. Långtryck för att redigera eller ta bort.',
+      guideSec3Step3: 'Penna = byt namn / ta bort rutt. Öga = jämför mot pappret.',
       guideFooter: 'Fortfarande osäker? Fråga din arbetsledare.',
       guideIllusRight: 'Rätt ✓', guideIllusWrong: 'Fel ✗',
-      guideIllusBilder: 'Bilder', guideIllusApp: 'App', guideIllusMoln: 'Moln',
       guideIllusEtikett: 'Etikett', guideIllusSok: 'Sök KOF',
       dataUpdated: 'Data uppdaterad',
-      verifyBannerText: '⚠️ Kontrollera att alla rutter stämmer med papprena innan körning startar. Rapportera avvikelser till arbetsledaren.',
+      verifyBannerText: '⚠️ Kontrollera att S-rutten stämmer mot pappret innan körning startar. Rapportera avvikelser till arbetsledaren.',
       verifyBannerBtn: 'Jag har kontrollerat ✓',
       reviewToggleRoutes: 'Rutter',
       reviewToggleDocs: 'Dokument',
@@ -2469,32 +2413,22 @@
       errImageFormat: 'Invalid image format — try another photo',
       errImageInvalid: 'Invalid image file',
       errParseAI: 'Could not parse AI response: {raw}',
-      guideSec1Title: '1. Take the photo correctly',
-      guideSec1Step1: 'Take the photos with your regular camera app first',
-      guideSec1Step2: 'Photograph the whole sheet – all pages must be included',
-      guideSec1Step3: 'Make sure all the numbers are clearly visible – no cropped edges, shadows or reflections',
-      guideSec2Title: '2. Scan documents',
-      guideSec2Step1: 'Go to the Scan tab and tap the camera',
-      guideSec2Step2: 'Open your camera roll and select all the images to include – they load into the app',
-      guideSec2Step3: 'Once all images are loaded, tap "Load images"',
-      guideSec2Step4: 'The images are read one after another – go through each image and check that the numbers are correct and the route is correct. The app can sometimes read the route wrong, so pay extra attention to it.',
-      guideSec2Step5: 'When you have checked all the images, everything is loaded – then you can start searching for routes',
-      guideSec3Title: '3. Find a cage',
-      guideSec3Step1: 'Go to the Search KOF tab',
-      guideSec3Step2: 'Enter the KOF number from the cage label',
-      guideSec3Step3: 'The route appears immediately – no button to press',
-      guideSec4Title: '4. Edit or correct errors',
-      guideSec4Step1: 'Go to the Routes tab',
-      guideSec4Step2: 'Tap a row to move it between Route N and SN. Press and hold the row to edit the KOF, store, units or driver — or delete it.',
-      guideSec4Step3: 'Tap the pencil icon on a route header to rename or delete it – all changes are saved directly to the cloud',
-      guideSec4Step4: 'Tap the eye icon on a route header to review all KOF entries against the original document. Here you can also move a KOF between the route and its S-route with the ↓/↑ button.',
-      guideSec4Step5: 'Choose "✓ Looks good" to approve, or "⚠ Check again" to flag the route as uncertain — uncertain routes show a warning badge in the list',
+      guideSec1Title: '1. Photograph & scan',
+      guideSec1Step1: 'Photograph the whole sheet with your camera – all numbers clear, no shadows or cropped edges',
+      guideSec1Step2: 'Open the Scan tab, select the images and tap "Load images"',
+      guideSec1Step3: 'Go through each sheet: split into Route and S-route and check that the S-route is correct',
+      guideSec2Title: '2. Search route',
+      guideSec2Step1: 'Open the Search KOF tab',
+      guideSec2Step2: 'Enter the KOF number from the cage label – the route appears immediately',
+      guideSec3Title: '3. Fix errors',
+      guideSec3Step1: 'Open the Routes tab',
+      guideSec3Step2: 'Tap a row to move it between Route and S-route. Press and hold to edit or delete.',
+      guideSec3Step3: 'Pencil = rename / delete route. Eye = compare against the sheet.',
       guideFooter: 'Still unsure? Ask your supervisor.',
       guideIllusRight: 'Correct ✓', guideIllusWrong: 'Wrong ✗',
-      guideIllusBilder: 'Photos', guideIllusApp: 'App', guideIllusMoln: 'Cloud',
       guideIllusEtikett: 'Label', guideIllusSok: 'Search KOF',
       dataUpdated: 'Data updated',
-      verifyBannerText: '⚠️ Verify that all routes match the printed sheets before the shift starts. Report discrepancies to your supervisor.',
+      verifyBannerText: '⚠️ Check that the S-route matches the sheet before the shift starts. Report discrepancies to your supervisor.',
       verifyBannerBtn: 'I have checked ✓',
       reviewToggleRoutes: 'Routes',
       reviewToggleDocs: 'Document',
@@ -2605,32 +2539,22 @@
       errImageFormat: 'Неверный формат изображения — попробуйте другое фото',
       errImageInvalid: 'Неверный файл изображения',
       errParseAI: 'Не удалось разобрать ответ ИИ: {raw}',
-      guideSec1Title: '1. Сделайте фото правильно',
-      guideSec1Step1: 'Сначала сделайте фотографии обычным приложением камеры',
-      guideSec1Step2: 'Сфотографируйте весь лист — должны быть все страницы',
-      guideSec1Step3: 'Убедитесь, что все цифры чётко видны — без обрезанных краёв, теней и бликов',
-      guideSec2Title: '2. Сканировать документы',
-      guideSec2Step1: 'Перейдите на вкладку Сканер и нажмите на камеру',
-      guideSec2Step2: 'Откройте галерею и выберите все нужные изображения — они загрузятся в приложение',
-      guideSec2Step3: 'Когда все изображения загружены, нажмите «Загрузить изображения»',
-      guideSec2Step4: 'Изображения считываются одно за другим — просмотрите каждое и проверьте, что цифры верны и маршрут верен. Приложение иногда читает маршрут неправильно, поэтому будьте особенно внимательны к нему.',
-      guideSec2Step5: 'Когда вы проверили все изображения, всё загружено — тогда можно искать маршруты',
-      guideSec3Title: '3. Найти клетку',
-      guideSec3Step1: 'Перейдите на вкладку Поиск КОФ',
-      guideSec3Step2: 'Введите КОФ-номер с этикетки клетки',
-      guideSec3Step3: 'Маршрут отображается сразу — нажимать кнопку не нужно',
-      guideSec4Title: '4. Изменить или исправить ошибки',
-      guideSec4Step1: 'Перейдите на вкладку Маршруты',
-      guideSec4Step2: 'Нажмите на строку, чтобы переместить её между Маршрутом N и SN. Удерживайте строку (долгое нажатие), чтобы изменить КОФ, магазин, количество или водителя — или удалить.',
-      guideSec4Step3: 'Нажмите на иконку карандаша в заголовке маршрута для переименования или удаления — все изменения сохраняются в облаке',
-      guideSec4Step4: 'Нажмите иконку глаза на заголовке маршрута, чтобы проверить все КОФ-записи по оригиналу. Здесь же можно переместить КОФ между маршрутом и S-маршрутом кнопкой ↓/↑.',
-      guideSec4Step5: 'Выберите «✓ Выглядит хорошо» для одобрения или «⚠ Проверить ещё раз» для пометки как неточный — неточные маршруты отображаются со значком предупреждения',
+      guideSec1Title: '1. Сфотографировать и сканировать',
+      guideSec1Step1: 'Сфотографируйте весь лист камерой — все цифры чёткие, без теней и обрезанных краёв',
+      guideSec1Step2: 'Откройте вкладку Сканер, выберите изображения и нажмите «Загрузить изображения»',
+      guideSec1Step3: 'Просмотрите каждый лист: разделите на Маршрут и S-маршрут и проверьте, что S-маршрут верен',
+      guideSec2Title: '2. Найти маршрут',
+      guideSec2Step1: 'Откройте вкладку Поиск КОФ',
+      guideSec2Step2: 'Введите КОФ-номер с этикетки клетки — маршрут отображается сразу',
+      guideSec3Title: '3. Исправить ошибки',
+      guideSec3Step1: 'Откройте вкладку Маршруты',
+      guideSec3Step2: 'Нажмите на строку, чтобы переместить её между Маршрутом и S-маршрутом. Долгое нажатие — изменить или удалить.',
+      guideSec3Step3: 'Карандаш = переименовать / удалить маршрут. Глаз = сравнить с листом.',
       guideFooter: 'Остались вопросы? Спросите своего руководителя.',
       guideIllusRight: 'Верно ✓', guideIllusWrong: 'Ошибка ✗',
-      guideIllusBilder: 'Фото', guideIllusApp: 'Апп', guideIllusMoln: 'Облако',
       guideIllusEtikett: 'Этикетка', guideIllusSok: 'Поиск КОФ',
       dataUpdated: 'Данные обновлены',
-      verifyBannerText: '⚠️ Проверьте, что все маршруты соответствуют распечатанным листам до начала смены. Сообщайте о расхождениях руководителю.',
+      verifyBannerText: '⚠️ Проверьте, что S-маршрут соответствует листу до начала смены. Сообщайте о расхождениях руководителю.',
       verifyBannerBtn: 'Я проверил ✓',
       reviewToggleRoutes: 'Маршруты',
       reviewToggleDocs: 'Документ',
