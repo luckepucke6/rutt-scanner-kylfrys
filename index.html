@@ -710,39 +710,27 @@
       font-family: var(--font);
     }
     .oblig-review-toggle-btn.is-s-route { border-color: #5856d6; color: #5856d6; }
-    .split-here-btn {
-      flex-shrink: 0; padding: 3px 8px;
-      background: none; border: 0.5px dashed var(--color-text-secondary);
-      border-radius: 20px; font-size: 11px; font-weight: 600;
-      color: var(--color-text-secondary); cursor: pointer;
-      white-space: nowrap; -webkit-tap-highlight-color: transparent;
-      font-family: var(--font);
-    }
-    .split-here-btn:active { background: #5856d6; color: #fff; border-color: #5856d6; border-style: solid; }
-    @media (hover: hover) { .split-here-btn:hover { border-color: #5856d6; color: #5856d6; } }
-    .oblig-review-splitbar {
-      flex-shrink: 0; padding: 10px 14px 0;
-    }
-    .oblig-nosplit-btn {
-      width: 100%; padding: 12px;
-      background: var(--color-surface-2);
-      border: 0.5px solid var(--color-border); border-radius: var(--radius);
-      font-size: 15px; font-weight: 700; font-family: var(--font);
-      color: var(--color-text-secondary); cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .oblig-nosplit-btn:active { opacity: 0.85; }
-    .oblig-nosplit-btn.is-active {
-      background: rgba(88,86,214,0.10); border-color: #5856d6; color: #5856d6;
-    }
-    .oblig-split-divider {
+    /* Klickbart gap MELLAN raderna där man sätter Rutt/S-gränsen. */
+    .oblig-split-gap {
       display: flex; align-items: center; justify-content: center;
-      gap: 8px; margin: 4px 0; padding: 3px 0;
+      gap: 8px; width: 100%; min-height: 40px; margin: 2px 0; padding: 0 8px;
+      background: none; border: 0; cursor: pointer; font-family: var(--font);
       font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
-      color: #5856d6; text-transform: uppercase;
+      text-transform: uppercase; color: var(--color-text-secondary);
+      opacity: 0.7; -webkit-tap-highlight-color: transparent;
     }
-    .oblig-split-divider::before, .oblig-split-divider::after {
-      content: ''; flex: 1; height: 1px; background: rgba(88,86,214,0.35);
+    /* Streckad linje på vardera sida om etiketten. */
+    .oblig-split-gap::before, .oblig-split-gap::after {
+      content: ''; flex: 1; height: 1px;
+      background: repeating-linear-gradient(to right,
+        var(--color-border) 0 4px, transparent 4px 8px);
+    }
+    .oblig-split-gap:active { opacity: 1; color: #5856d6; }
+    @media (hover: hover) { .oblig-split-gap:hover { opacity: 1; } }
+    /* Aktivt gap = nuvarande gräns: lila, heldragna linjer, full opacitet. */
+    .oblig-split-gap.is-active { color: #5856d6; opacity: 1; }
+    .oblig-split-gap.is-active::before, .oblig-split-gap.is-active::after {
+      background: rgba(88,86,214,0.45);
     }
     .review-split-btn {
       flex-shrink: 0; padding: 3px 8px;
@@ -1787,9 +1775,6 @@
     <div class="oblig-review-img-viewport" id="obligReviewImgViewport">
       <img class="oblig-review-source-img" id="obligReviewSourceImg" alt="">
     </div>
-    <div class="oblig-review-splitbar">
-      <button class="oblig-nosplit-btn" id="obligNoSplitBtn">Ingen S-rutt</button>
-    </div>
     <div class="oblig-review-entries" id="obligReviewEntries"></div>
     <div class="oblig-review-actions">
       <button class="oblig-review-save-btn" id="obligReviewSaveBtn">Gå vidare</button>
@@ -2303,7 +2288,7 @@
       splitHereBtn: 'Dela här',
       splitBoundaryLabel: 'S{route} börjar här',
       reconcileBoundaryTitle: 'Var börjar S-rutten? — Rutt {route}',
-      reconcileBoundarySubtitle: 'Markera var S-rutten börjar — finns ingen, tryck Ingen S-rutt.',
+      reconcileBoundarySubtitle: 'Tryck mellan raderna där S-rutten börjar. Finns ingen S-rutt – tryck längst ner.',
       statusAwaitingReview: 'Väntar på granskning…',
       showInRoutes: 'Visa i ruttlistan →',
     },
@@ -2430,7 +2415,7 @@
       splitHereBtn: 'Split here',
       splitBoundaryLabel: 'S{route} starts here',
       reconcileBoundaryTitle: 'Where does the S-route start? — Route {route}',
-      reconcileBoundarySubtitle: 'Mark where the S-route starts — if there is none, tap No S-route.',
+      reconcileBoundarySubtitle: 'Tap between the rows where the S-route starts. No S-route — tap the bottom option.',
       statusAwaitingReview: 'Awaiting review…',
       showInRoutes: 'Show in route list →',
     },
@@ -2556,7 +2541,7 @@
       splitHereBtn: 'Разделить здесь',
       splitBoundaryLabel: 'S{route} начинается здесь',
       reconcileBoundaryTitle: 'Где начинается S-маршрут? — Маршрут {route}',
-      reconcileBoundarySubtitle: 'Отметьте, где начинается S-маршрут — если его нет, нажмите «Нет S-маршрута».',
+      reconcileBoundarySubtitle: 'Нажмите между строками, где начинается S-маршрут. Нет S-маршрута — нажмите внизу.',
       statusAwaitingReview: 'Ожидание проверки…',
       showInRoutes: 'Показать в списке →',
     },
@@ -3455,16 +3440,6 @@ Rules:
     return { entries, splitIndex };
   }
 
-  // Sätter route för alla poster utifrån dokumentposition relativt splitKof:
-  // splitKof och allt nedanför → SN, allt ovanför → Rutt N. Muterar arrayen.
-  function applySplitAt(entries, routeNum, splitKof) {
-    const rn = String(routeNum ?? '').match(/\d+/)?.[0] ?? '?';
-    const idx = entries.findIndex(e => e.kof === splitKof);
-    entries.forEach((e, i) => {
-      e.route = (idx !== -1 && i >= idx) ? `S${rn}` : `Rutt ${rn}`;
-    });
-  }
-
   // Sparar en färdig scan: lagrar poster, laddar upp bilden, loggar och synkar.
   // Används både av det tysta flödet och efter manuell granskning.
   async function commitScan(img, apiUrl, result, entries, userAction, manualChanges) {
@@ -3531,34 +3506,39 @@ Rules:
     document.getElementById('obligReviewOverlay').classList.remove('hidden');
   }
 
-  // Rader i DOKUMENTORDNING (inte grupperat) så gränsen syns. Varje rad har en
-  // "Dela här"-knapp (sätt gränsen i ett tryck) + den gamla flytta-en-knappen.
+  // Rader i DOKUMENTORDNING (inte grupperat) så gränsen syns. Mellan varje rad
+  // (och längst ner) finns ett klickbart gap där man sätter Rutt/S-gränsen.
+  // Varje rad har dessutom flytta-en-knappen för finjustering.
   function renderObligReviewEntries() {
     const { entries, result } = state.pendingReview;
     const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
     const firstSIdx = entries.findIndex(e => String(e.route ?? '').startsWith('S'));
-    const hasSplit = firstSIdx > 0;
+    const n = entries.length;
+    // Gränsen: index för första S-raden, annars n (ingen S-rutt).
+    const currentSplitIdx = firstSIdx >= 0 ? firstSIdx : n;
+    // Klickbart gap efter rad i → S-rutten börjar på rad i+1 (splitIdx = i+1).
+    // Det sista gapet (splitIdx = n) betyder ingen S-rutt.
+    const gap = (splitIdx) => {
+      const isEnd    = splitIdx >= n;
+      const isActive = splitIdx === currentSplitIdx;
+      let label;
+      if (isEnd) label = isActive ? '✓ ' + t('noSplitBtn') : t('noSplitBtn');
+      else       label = isActive ? tf('splitBoundaryLabel', { route: rn }) : t('splitHereBtn');
+      return `<button type="button" class="oblig-split-gap${isEnd ? ' oblig-split-gap-end' : ''}${isActive ? ' is-active' : ''}"
+                data-splitidx="${splitIdx}">${escHtml(label)}</button>`;
+    };
     const html = entries.map((e, i) => {
       const isS = String(e.route ?? '').startsWith('S');
-      const divider = (i === firstSIdx && firstSIdx > 0)
-        ? `<div class="oblig-split-divider">${escHtml(tf('splitBoundaryLabel', { route: rn }))}</div>` : '';
-      return `${divider}
-        <div class="oblig-review-entry-row" data-kof="${escHtml(e.kof)}" data-idx="${i}">
+      const row = `<div class="oblig-review-entry-row" data-kof="${escHtml(e.kof)}" data-idx="${i}">
           <div class="oblig-review-kof">${escHtml(e.kof)}</div>
           <div class="oblig-review-store">${escHtml(e.store ?? '')}</div>
           <div class="oblig-review-est">${e.units || ''}</div>
-          <button class="split-here-btn" data-kof="${escHtml(e.kof)}">${escHtml(t('splitHereBtn'))}</button>
           <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
                   data-kof="${escHtml(e.kof)}">→ ${isS ? t('obligMoveToMain') : t('obligMoveToS')}</button>
         </div>`;
+      return row + gap(i + 1);
     }).join('');
     document.getElementById('obligReviewEntries').innerHTML = html;
-    // "Ingen S-rutt"-knappen: aktiv/markerad när ingen S-rutt är satt.
-    const nb = document.getElementById('obligNoSplitBtn');
-    if (nb) {
-      nb.classList.toggle('is-active', !hasSplit);
-      nb.textContent = hasSplit ? t('noSplitBtn') : '✓ ' + t('noSplitBtn');
-    }
   }
 
   // Flytta EN KOF mellan huvudrutt/S-rutt (finlir).
@@ -3570,18 +3550,12 @@ Rules:
     renderObligReviewEntries();
   }
 
-  // "Dela här" — sätt gränsen vid en rad: den + allt nedanför blir SN.
-  function splitHereObligReview(kof) {
-    const { entries, result } = state.pendingReview;
-    applySplitAt(entries, result.routeNumber, kof);
-    renderObligReviewEntries();
-  }
-
-  // "Ingen S-rutt" — alla poster blir Rutt N (rensar gränsen).
-  function clearSplitObligReview() {
+  // Sätt gränsen via ett gap: rad splitIdx och nedåt → SN, ovanför → Rutt N.
+  // splitIdx === antal poster ⇒ ingen S-rutt (allt blir Rutt N).
+  function setSplitObligReview(splitIdx) {
     const { entries, result } = state.pendingReview;
     const n = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-    entries.forEach(e => { e.route = `Rutt ${n}`; });
+    entries.forEach((e, i) => { e.route = i >= splitIdx ? `S${n}` : `Rutt ${n}`; });
     renderObligReviewEntries();
   }
 
@@ -4562,11 +4536,10 @@ Rules:
   });
   document.getElementById('obligReviewSaveBtn').addEventListener('click', confirmObligReview);
   document.getElementById('obligReviewDiscardBtn').addEventListener('click', discardObligReview);
-  document.getElementById('obligNoSplitBtn').addEventListener('click', clearSplitObligReview);
-  // S-rutt-toggle (delegerat)
+  // Dela-gap (mellan raderna) + per-KOF-flytt (delegerat)
   document.getElementById('obligReviewEntries').addEventListener('click', e => {
-    const splitBtn = e.target.closest('.split-here-btn');
-    if (splitBtn) { splitHereObligReview(splitBtn.dataset.kof); return; }
+    const gap = e.target.closest('.oblig-split-gap');
+    if (gap) { setSplitObligReview(parseInt(gap.dataset.splitidx, 10)); return; }
     const btn = e.target.closest('.oblig-review-toggle-btn');
     if (btn) toggleObligReviewRoute(btn.dataset.kof);
   });
