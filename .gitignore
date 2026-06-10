@@ -223,3 +223,6 @@ __marimo__/
 # får ej hamna i det publika repot
 test-images/
 docs/
+
+# Supabase CLI lokalt tillstånd
+supabase/.temp/

@@ -1931,24 +1931,6 @@
     setTimeout(() => el.classList.remove('show'), 2000);
   }
 
-  async function cleanupOldSupabaseData() {
-    if (!sb) return;
-    const cutoff10h = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
-    const cutoff30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { error: e1 } = await sb.from('route_entries').delete().lt('created_at', cutoff10h);
-    if (e1) console.warn('Supabase cleanup route_entries:', e1);
-    const { error: e2 } = await sb.from('search_logs').delete().lt('searched_at', cutoff30d);
-    if (e2) console.warn('Supabase cleanup search_logs:', e2);
-    const { error: e3 } = await sb.from('scan_images').delete().lt('created_at', cutoff10h);
-    if (e3) console.warn('Supabase cleanup scan_images:', e3);
-    const { error: e4 } = await sb.from('judge_logs').delete().lt('scanned_at', cutoff30d);
-    if (e4) console.warn('Supabase cleanup judge_logs:', e4);
-    const { error: e5 } = await sb.from('scan_logs').delete().lt('scanned_at', cutoff30d);
-    if (e5) console.warn('Supabase cleanup scan_logs:', e5);
-    const { error: e6 } = await sb.from('session_segments').delete().lt('segment_start', cutoff30d);
-    if (e6) console.warn('Supabase cleanup session_segments:', e6);
-  }
-
   function getDeviceId() {
     let id = localStorage.getItem('rutt_device_id');
     if (!id) {
@@ -2004,6 +1986,7 @@
       syncRoutesMeta();
       renderSearchUI();
       renderRoutesTab();
+      logDailyTotal(); // no-op om routeData är tom; loggar dagens redan inlästa data
     } catch (err) {
       console.warn('Supabase laddningsfel:', err);
     }
@@ -2129,6 +2112,25 @@
     }).then(({ error }) => { if (error) console.warn('Supabase scan-logg fel:', error); });
   }
 
+  // Permanent dagsvis post över totala enheter (överlever 10h-rensningen av route_entries).
+  // Upsertar på datum så raden alltid speglar dagens fulla total, oavsett hur många lappar.
+  async function logDailyTotal() {
+    if (!sb) return;
+    const entries = Object.values(state.routeData);
+    if (!entries.length) return;
+    const row = {
+      entry_date:  new Date().toISOString().slice(0, 10), // UTC-datum, matchar scan_logs/backfill
+      total_units: entries.reduce((s, d) => s + (parseInt(d.units) || 0), 0),
+      route_count: new Set(entries.map(d => d.route.match(/\d+/)?.[0]).filter(Boolean)).size,
+      kof_count:   entries.length,
+      device_id:   getDeviceId(),
+      updated_at:  new Date().toISOString(),
+    };
+    const { error } = await sb.from('daily_unit_totals')
+      .upsert(row, { onConflict: 'entry_date' });
+    if (error) console.warn('Supabase dagstotal-fel:', error);
+  }
+
   function logJudge(route, approved, confidence, issues, kofCount, userAction, manualChanges) {
     if (!sb) return;
     sb.from('judge_logs').insert({
@@ -2141,6 +2143,40 @@
       user_action:    userAction ?? null,
       manual_changes: manualChanges ?? null,
     }).then(({ error }) => { if (error) console.warn('Supabase judge-logg fel:', error); });
+  }
+
+  // 90 dagars append-only historik per KOF — inga chaufförsnamn, inga bilder.
+  // En batch rader per sparad scan; samma KOF en annan dag = nya rader.
+  function logScanHistory(entries) {
+    if (!sb) return;
+    const rows = entries.map(e => ({
+      kof:        e.kof,
+      route:      e.route,
+      store_name: e.store ?? '',
+      pall:       e.pall ?? '',
+      bur:        e.bur ?? '',
+      hlv:        e.hlv ?? '',
+      units:      parseInt(e.units) || 0,
+      confidence: e.confidence ?? null,
+      sort_order: state.routeData[e.kof]?.sortOrder ?? null,
+      device_id:  getDeviceId(),
+    }));
+    sb.from('scan_history').insert(rows).then(({ error }) => { if (error) console.warn('Supabase scan_history-fel:', error); });
+  }
+
+  // 90 dagars logg över varje manuell mutation (rutt-byte, dela, flytt, redigering, radering).
+  function logAudit(rows) {
+    if (!sb) return;
+    const deviceId = getDeviceId();
+    sb.from('audit_log').insert(rows.map(r => ({ ...r, device_id: deviceId })))
+      .then(({ error }) => { if (error) console.warn('Supabase audit_log-fel:', error); });
+  }
+
+  // 90 dagars AI-vs-människa-splitbeslut per ark (mäter promptkvalitet).
+  function logSplitDecision(d) {
+    if (!sb) return;
+    sb.from('split_decisions').insert({ ...d, device_id: getDeviceId() })
+      .then(({ error }) => { if (error) console.warn('Supabase split_decisions-fel:', error); });
   }
 
   // Konservativ uppskattning: manuellt uppslag av en KOF i pappersbunt ~30 s
@@ -2660,11 +2696,13 @@
   async function changeInlineRoute(kof, newRoute) {
     const data = state.routeData[kof];
     if (!data || data.route === newRoute) { inlineEditKof = null; renderRoutesTab(); return; }
+    const oldRoute = data.route;
     data.route = newRoute;
     inlineEditKof = null;
     saveToStorage();
     renderRoutesTab();
     showToast(t('toastSaved'));
+    logAudit([{ action: 'route_change', kof, route: newRoute, old_value: oldRoute, new_value: newRoute }]);
     if (sb) {
       try {
         await sb.from('route_entries').upsert(
@@ -2690,19 +2728,21 @@
     const changed = [];
     kofs.forEach((k, i) => {
       const want = i >= splitIdx ? sKey : mainKey;
-      if (state.routeData[k].route !== want) { state.routeData[k].route = want; changed.push(k); }
+      const from = state.routeData[k].route;
+      if (from !== want) { state.routeData[k].route = want; changed.push({ k, from, to: want }); }
     });
     refreshReviewBody(routeNum);
     if (!changed.length) return;
     saveToStorage();
     renderRoutesTab();
     showToast(t('toastSaved'));
+    logAudit(changed.map(c => ({ action: 'split_here', kof: c.k, route: c.to, old_value: c.from, new_value: c.to })));
     if (sb) {
       try {
         await sb.from('route_entries').upsert(
-          changed.map(k => ({
-            kof: k, route: state.routeData[k].route,
-            store_name: state.routeData[k].store ?? '', units: parseInt(state.routeData[k].units) || 0,
+          changed.map(c => ({
+            kof: c.k, route: state.routeData[c.k].route,
+            store_name: state.routeData[c.k].store ?? '', units: parseInt(state.routeData[c.k].units) || 0,
           })),
           { onConflict: 'kof' }
         );
@@ -2804,6 +2844,8 @@
 
   async function clearAllData() {
     if (!confirm(t('confirmClear'))) return;
+    const kofN   = Object.keys(state.routeData).length;
+    const routeN = new Set(Object.values(state.routeData).map(d => d.route)).size;
     state.routeData   = {};
     state.routeOrder  = [];
     state.routes      = {};
@@ -2815,6 +2857,7 @@
     renderSearchUI();
     renderRoutesTab();
     addLog(t('logCleared'), 'err');
+    logAudit([{ action: 'clear_all', kof: null, route: null, old_value: `${kofN} kof / ${routeN} rutter`, new_value: null }]);
     if (sb) {
       state.isSyncing = true;
       state.scanImages = {};
@@ -3429,20 +3472,21 @@ Rules:
 
     // Fallback: hittade Opus ingen S-rutt men judgen gjorde det → använd judgens
     // gissning som förvald gräns (sätt om route därefter). Bara som startförslag.
+    const judgeSplit = (judge && !judge.failed && Number.isInteger(judge.splitIndex))
+      ? judge.splitIndex : null;
     let splitIndex = opusSplit;
-    if (splitIndex === null && judge && !judge.failed
-        && Number.isInteger(judge.splitIndex)
-        && judge.splitIndex > 0 && judge.splitIndex < entries.length) {
-      splitIndex = judge.splitIndex;
+    if (splitIndex === null && judgeSplit !== null
+        && judgeSplit > 0 && judgeSplit < entries.length) {
+      splitIndex = judgeSplit;
       entries = entries.map((e, i) => ({ ...e, route: i >= splitIndex ? `S${rn}` : `Rutt ${rn}` }));
     }
 
-    return { entries, splitIndex };
+    return { entries, splitIndex, opusSplit, judgeSplit };
   }
 
   // Sparar en färdig scan: lagrar poster, laddar upp bilden, loggar och synkar.
   // Används både av det tysta flödet och efter manuell granskning.
-  async function commitScan(img, apiUrl, result, entries, userAction, manualChanges) {
+  async function commitScan(img, apiUrl, result, entries, userAction, manualChanges, decision = null, moves = null) {
     result.entries = entries;
     const { count } = storeEntries(result, img.id);
     const scanImageId = await uploadScanImage(apiUrl, img.id);
@@ -3452,19 +3496,39 @@ Rules:
       new Set(entries.map(e => e.route)).size,
       entries.reduce((s, e) => s + (parseInt(e.units) || 0), 0)
     );
+    const confidencePct = Math.round(100 * entries.filter(e => e.confidence === 'high').length / (entries.length || 1));
     logJudge(
       result.routeNumber ?? null,
       userAction === 'auto',
-      100,
+      confidencePct,
       [],
       entries.length,
       userAction,
       manualChanges ?? null,
     );
+    logScanHistory(entries);
+    const firstS = entries.findIndex(e => String(e.route).startsWith('S'));
+    const finalSplit = firstS === -1 ? null : firstS;
+    logSplitDecision({
+      route:                result.routeNumber ?? null,
+      entry_count:          entries.length,
+      opus_split_index:     decision?.opusSplit ?? null,
+      judge_split_index:    decision?.judgeSplit ?? null,
+      proposed_split_index: decision?.splitIndex ?? null,
+      final_split_index:    finalSplit,
+      human_changed:        finalSplit !== (decision?.splitIndex ?? null),
+      moved_kofs:           moves?.length ?? 0,
+    });
+    if (moves?.length) {
+      logAudit(moves.map(m => ({
+        action: 'review_move', kof: m.kof, route: m.to, old_value: m.from, new_value: m.to,
+      })));
+    }
     state.savedAt = Date.now();
     saveToStorage();
     const synced = await saveToSupabase();
     if (synced === false) addLog(t('logSyncFailed'), 'err');
+    logDailyTotal();
     renderRoutesTab();
     renderSearchUI();
     showToast(t('toastSaved'));
@@ -3486,7 +3550,7 @@ Rules:
   // (AI:ns gissning är förvald) eller trycker "Ingen S-rutt". Inga varningar.
   function showObligReview(img, apiUrl, result, decision) {
     const entries = decision.entries.map(e => ({ ...e }));
-    state.pendingReview = { img, apiUrl, result, entries, decision };
+    state.pendingReview = { img, apiUrl, result, entries, decision, moves: [] };
     obligReviewImgState.scale = 1;
     obligReviewImgState.rotation = 0;
     const rn = result.routeNumber ?? '?';
@@ -3546,7 +3610,9 @@ Rules:
     const e = state.pendingReview.entries.find(x => x.kof === kof);
     if (!e) return;
     const n = String(state.pendingReview.result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
+    const from = e.route;
     e.route = e.route.startsWith('S') ? `Rutt ${n}` : `S${n}`;
+    state.pendingReview.moves.push({ kof, from, to: e.route });
     renderObligReviewEntries();
   }
 
@@ -3563,7 +3629,7 @@ Rules:
     const btn = document.getElementById('obligReviewSaveBtn');
     btn.disabled = true;
     btn.textContent = t('obligSaving');
-    let { img, apiUrl, result, entries } = state.pendingReview;
+    let { img, apiUrl, result, entries, decision, moves } = state.pendingReview;
     // Baka in en eventuell manuell rotering så bilden sparas rätt vänd i molnet
     // och visas rätt i jämförelsevyn / på andra enheter.
     const manualRot = obligReviewImgState.rotation % 360;
@@ -3571,7 +3637,7 @@ Rules:
       apiUrl = await applyRotation(apiUrl, manualRot);
       img.dataUrl = apiUrl;
     }
-    await commitScan(img, apiUrl, result, entries, 'reviewed', null);
+    await commitScan(img, apiUrl, result, entries, 'reviewed', null, decision, moves);
     state.pendingReview = null;
     document.getElementById('obligReviewOverlay').classList.add('hidden');
     btn.disabled = false;
@@ -3974,6 +4040,14 @@ Rules:
       if (error) console.warn('Supabase redigerings-fel:', error);
     }
 
+    logAudit([{
+      action: 'edit_kof',
+      kof: newKof,
+      route: newRoute,
+      old_value: isNew ? null : `${editingKof}|${oldData.route}|${oldData.store}|${oldData.units}`,
+      new_value: `${newKof}|${newRoute}|${newStore}|${newUnits}`,
+    }]);
+
     saveToStorage();
     closeEditModal();
     renderRoutesTab();
@@ -4079,14 +4153,17 @@ Rules:
 
   async function deleteRoute(routeName) {
     if (!confirm(t('confirmDeleteRoute'))) return;
+    let n = 0;
     for (const kof of Object.keys(state.routeData)) {
       if (state.routeData[kof].route === routeName) {
         delete state.routeData[kof];
         state.routeOrder = state.routeOrder.filter(k => k !== kof);
+        n++;
       }
     }
     delete state.routes[routeName];
     if (sb) await sb.from('route_entries').delete().eq('route', routeName);
+    logAudit([{ action: 'delete_route', kof: null, route: routeName, old_value: `${n} kof`, new_value: null }]);
     closeRouteModal();
     saveToStorage();
     renderRoutesTab();
@@ -4099,9 +4176,11 @@ Rules:
   ═══════════════════════════════════════════════ */
   async function deleteKof(kof) {
     if (!confirm(tf('confirmDeleteKof', {kof}))) return;
+    const oldRoute = state.routeData[kof]?.route ?? null;
     delete state.routeData[kof];
     state.routeOrder = state.routeOrder.filter(k => k !== kof);
     if (sb) await sb.from('route_entries').delete().eq('kof', kof);
+    logAudit([{ action: 'delete_kof', kof, route: oldRoute, old_value: oldRoute, new_value: null }]);
     closeEditModal();
     saveToStorage();
     renderRoutesTab();
@@ -4390,7 +4469,6 @@ Rules:
   initSupabase();
   initRealtimeSync();
   initReviewDivider();
-  cleanupOldSupabaseData();
   getDeviceId();
   loadFromStorage();
   loadLang();
@@ -4398,8 +4476,6 @@ Rules:
   { const _t = new Date().toISOString().slice(0, 10); if (localStorage.getItem('rutt_verified_date') === _t) routesVerified = true; }
   loadFromSupabase().then(loadRouteReview);
   loadRouteReview();
-  document.addEventListener('click', () => { if (seg.active) resetSegmentTimer(); });
-  document.addEventListener('input', () => { if (seg.active) resetSegmentTimer(); });
   window.addEventListener('beforeunload', endSegment);
 
   // Event delegation — image list
