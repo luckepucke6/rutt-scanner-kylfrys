@@ -701,19 +701,16 @@
       font-weight: 600; font-size: 12px; color: var(--color-accent);
       flex-shrink: 0; min-width: 20px; text-align: right;
     }
-    .oblig-review-toggle-btn {
-      flex-shrink: 0; padding: 3px 8px;
-      background: none; border: 0.5px solid var(--color-accent);
-      border-radius: 20px; font-size: 11px; font-weight: 600;
-      color: var(--color-accent); cursor: pointer;
-      white-space: nowrap; -webkit-tap-highlight-color: transparent;
-      font-family: var(--font);
+    /* Rader som hör till S-rutten markeras med lila vänsterkant (ingen knapp –
+       man ser direkt vad som ligger under gränsen). */
+    .oblig-review-entry-row.is-s {
+      border-color: rgba(88,86,214,0.4);
+      box-shadow: inset 3px 0 0 #5856d6;
     }
-    .oblig-review-toggle-btn.is-s-route { border-color: #5856d6; color: #5856d6; }
-    /* Klickbart gap MELLAN raderna där man sätter Rutt/S-gränsen. */
+    /* Klickbart gap MELLAN raderna – ENDA sättet att sätta Rutt/S-gränsen. */
     .oblig-split-gap {
       display: flex; align-items: center; justify-content: center;
-      gap: 8px; width: 100%; min-height: 40px; margin: 2px 0; padding: 0 8px;
+      gap: 8px; width: 100%; min-height: 44px; margin: 2px 0; padding: 0 8px;
       background: none; border: 0; cursor: pointer; font-family: var(--font);
       font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
       text-transform: uppercase; color: var(--color-text-secondary);
@@ -2317,12 +2314,11 @@
       obligTitle: 'Rutt {route} — {count} rader',
       obligTitleNoRoute: '{count} rader',
       obligSubtitle: 'Jämför med pappret. Tryck → S-rutt / → Huvudrutt för att flytta rad.',
-      obligMoveToMain: 'Huvud&shy;rutt', obligMoveToS: 'S-rutt',
       obligSaving: 'Sparar…', obligNextBtn: 'Gå vidare',
       obligDiscardBtn: '↺ Börja om',
       noSplitBtn: 'Ingen S-rutt',
       splitHereBtn: 'Dela här',
-      splitBoundaryLabel: 'S{route} börjar här',
+      splitBoundaryLabel: '⬇ S{route} börjar här',
       reconcileBoundaryTitle: 'Var börjar S-rutten? — Rutt {route}',
       reconcileBoundarySubtitle: 'Tryck mellan raderna där S-rutten börjar. Finns ingen S-rutt – tryck längst ner.',
       statusAwaitingReview: 'Väntar på granskning…',
@@ -2444,12 +2440,11 @@
       obligTitle: 'Route {route} — {count} rows',
       obligTitleNoRoute: '{count} rows',
       obligSubtitle: 'Compare with the paper. Tap → S-route / → Main route to move a row.',
-      obligMoveToMain: 'Main route', obligMoveToS: 'S-route',
       obligSaving: 'Saving…', obligNextBtn: 'Continue',
       obligDiscardBtn: '↺ Start over',
       noSplitBtn: 'No S-route',
       splitHereBtn: 'Split here',
-      splitBoundaryLabel: 'S{route} starts here',
+      splitBoundaryLabel: '⬇ S{route} starts here',
       reconcileBoundaryTitle: 'Where does the S-route start? — Route {route}',
       reconcileBoundarySubtitle: 'Tap between the rows where the S-route starts. No S-route — tap the bottom option.',
       statusAwaitingReview: 'Awaiting review…',
@@ -2570,12 +2565,11 @@
       obligTitle: 'Маршрут {route} — {count} строк',
       obligTitleNoRoute: '{count} строк',
       obligSubtitle: 'Сравните с бумагой. Нажмите → S-маршрут / → Главный, чтобы переместить строку.',
-      obligMoveToMain: 'Главный', obligMoveToS: 'S-маршрут',
       obligSaving: 'Сохранение…', obligNextBtn: 'Далее',
       obligDiscardBtn: '↺ Начать заново',
       noSplitBtn: 'Нет S-маршрута',
       splitHereBtn: 'Разделить здесь',
-      splitBoundaryLabel: 'S{route} начинается здесь',
+      splitBoundaryLabel: '⬇ S{route} начинается здесь',
       reconcileBoundaryTitle: 'Где начинается S-маршрут? — Маршрут {route}',
       reconcileBoundarySubtitle: 'Нажмите между строками, где начинается S-маршрут. Нет S-маршрута — нажмите внизу.',
       statusAwaitingReview: 'Ожидание проверки…',
@@ -3571,8 +3565,8 @@ Rules:
   }
 
   // Rader i DOKUMENTORDNING (inte grupperat) så gränsen syns. Mellan varje rad
-  // (och längst ner) finns ett klickbart gap där man sätter Rutt/S-gränsen.
-  // Varje rad har dessutom flytta-en-knappen för finjustering.
+  // (och längst ner) finns ett klickbart gap där man sätter Rutt/S-gränsen –
+  // det är det ENDA sättet (gap-tryck). S-rader markeras med lila vänsterkant.
   function renderObligReviewEntries() {
     const { entries, result } = state.pendingReview;
     const rn = String(result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
@@ -3593,27 +3587,14 @@ Rules:
     };
     const html = entries.map((e, i) => {
       const isS = String(e.route ?? '').startsWith('S');
-      const row = `<div class="oblig-review-entry-row" data-kof="${escHtml(e.kof)}" data-idx="${i}">
+      const row = `<div class="oblig-review-entry-row${isS ? ' is-s' : ''}">
           <div class="oblig-review-kof">${escHtml(e.kof)}</div>
           <div class="oblig-review-store">${escHtml(e.store ?? '')}</div>
           <div class="oblig-review-est">${e.units || ''}</div>
-          <button class="oblig-review-toggle-btn${isS ? ' is-s-route' : ''}"
-                  data-kof="${escHtml(e.kof)}">→ ${isS ? t('obligMoveToMain') : t('obligMoveToS')}</button>
         </div>`;
       return row + gap(i + 1);
     }).join('');
     document.getElementById('obligReviewEntries').innerHTML = html;
-  }
-
-  // Flytta EN KOF mellan huvudrutt/S-rutt (finlir).
-  function toggleObligReviewRoute(kof) {
-    const e = state.pendingReview.entries.find(x => x.kof === kof);
-    if (!e) return;
-    const n = String(state.pendingReview.result.routeNumber ?? '').match(/\d+/)?.[0] ?? '?';
-    const from = e.route;
-    e.route = e.route.startsWith('S') ? `Rutt ${n}` : `S${n}`;
-    state.pendingReview.moves.push({ kof, from, to: e.route });
-    renderObligReviewEntries();
   }
 
   // Sätt gränsen via ett gap: rad splitIdx och nedåt → SN, ovanför → Rutt N.
@@ -4612,12 +4593,10 @@ Rules:
   });
   document.getElementById('obligReviewSaveBtn').addEventListener('click', confirmObligReview);
   document.getElementById('obligReviewDiscardBtn').addEventListener('click', discardObligReview);
-  // Dela-gap (mellan raderna) + per-KOF-flytt (delegerat)
+  // Dela-gap (mellan raderna) — enda sättet att sätta Rutt/S-gränsen
   document.getElementById('obligReviewEntries').addEventListener('click', e => {
     const gap = e.target.closest('.oblig-split-gap');
-    if (gap) { setSplitObligReview(parseInt(gap.dataset.splitidx, 10)); return; }
-    const btn = e.target.closest('.oblig-review-toggle-btn');
-    if (btn) toggleObligReviewRoute(btn.dataset.kof);
+    if (gap) setSplitObligReview(parseInt(gap.dataset.splitidx, 10));
   });
   // Pinch-to-zoom på granskningsbilden
   (function() {

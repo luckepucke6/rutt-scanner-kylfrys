@@ -46,7 +46,7 @@ The script calls the real Claude API for each image, validates the response (6-d
 
 **Mobile-first, cold-warehouse UX** — no hover-only primary interactions. Touch targets minimum 44×44 px. Assume the user has gloves on and is using one hand in a cold environment.
 
-**The S-route move button must always be visible** — every row in the comparison view (`routeReviewModal`) has a `.review-move-btn` (↓ SN / ↑ Rutt N) that lets staff move a KOF between the main route and its S-route. Never hide or remove this button, including on mobile. Ensure narrow-column layouts always have enough room for it (reduce padding before reducing content). Each row also has a `.review-split-btn` ("Dela här") that sets the whole boundary in one tap (that row and everything below → SN); keep both buttons.
+**The S-route move button must always be visible — in the comparison view only.** This rule is scoped to the **comparison view** (`routeReviewModal`, opened via the eye button — a later editing surface), NOT the post-scan review. There, every row has a `.review-move-btn` (↓ SN / ↑ Rutt N) to move a KOF between the main route and its S-route, plus a `.review-split-btn` ("Dela här") that sets the whole boundary in one tap. Never hide or remove these on mobile; reduce padding before reducing content; keep both buttons. **The post-scan review (`showObligReview`) is deliberately the opposite** — a single tap-between-rows split gap and no per-KOF move (see [Scan pipeline](#scan-pipeline-step-by-step)); the staff-facing split must stay that simple.
 
 ---
 
@@ -109,7 +109,9 @@ File selected
         We trust the digits — there is NO digit cross-check. Returns { entries, splitIndex, opusSplit, judgeSplit }.
   → queue { type:'review', decision } → [showObligReview] — shown for EVERY sheet so a
         human always confirms the Rutt/S boundary (the AI sometimes misses the blank-row gap).
-        Per-KOF moves via the toggle button are tracked in state.pendingReview.moves.
+        The ONLY control is the tap-between-rows split gap (`setSplitObligReview`); there is
+        no per-KOF move button. state.pendingReview.moves is kept (always empty now) only
+        for commitScan's signature / split_decisions logging.
   → [commitScan] (on review save / "Gå vidare"):
       [storeEntries] → state.routeData
       [uploadScanImage] → scan_images.insert (gets UUID, back-fills scanImageId on KOFs)
@@ -120,7 +122,7 @@ File selected
 
 For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
 
-**Split stability (human-in-the-loop):** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image — and the AI sometimes misses it entirely (puts everything in one route) or misplaces it. So the split is **always** confirmed by a human: `showObligReview` is shown for every sheet with the AI's guess pre-selected. `PROMPT` asks Opus for an explicit `splitIndex` (entry index where the S-block starts, or `null`); `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`, used only as a **fallback default** when Opus found none. In the review the user can: tap **"Dela här" (split-here)** to set the boundary at a row (everything from it down → SN), use the per-KOF move buttons for fine adjustment, or tap **"Ingen S-rutt"** (`clearSplitObligReview`) to make the whole sheet "Rutt N". Split-here also lives in the comparison view (`splitHerePersisted`, batched upsert).
+**Split stability (human-in-the-loop):** the only signal separating "Rutt N" from "SN" is a completely empty row, which a single-row gap can lose in the downscaled image — and the AI sometimes misses it entirely (puts everything in one route) or misplaces it. So the split is **always** confirmed by a human: `showObligReview` is shown for every sheet with the AI's guess pre-selected. `PROMPT` asks Opus for an explicit `splitIndex` (entry index where the S-block starts, or `null`); `callClaudeJudge` re-reads the sheet **independently** and reports its own `splitIndex`, used only as a **fallback default** when Opus found none. The review has **one** mechanism: the user taps the **gap between two rows** — the blank row on the paper maps directly to the blank gap in the list. That gap becomes the boundary (everything from it down → SN); the active gap is labelled "⬇ S{route} börjar här" and rows below it get a purple left edge (`.oblig-review-entry-row.is-s`) so the split is visible at a glance. The **bottom gap** ("Ingen S-rutt") makes the whole sheet "Rutt N". All of this is `setSplitObligReview(splitIdx)` (splitIdx === entry count ⇒ no S-route). There are **no** per-KOF move buttons in this modal — the S-block is always the contiguous run after the first gap, so a clean gap-cut always suffices. Split-here also lives in the comparison view (`splitHerePersisted`, batched upsert).
 
 **Image orientation:** auto-rotation comes from the `rotation` field returned by `callClaudeApi`. The rotation is baked into the stored image via `applyRotation`, so it persists into `showObligReview`, `scan_images`, and the comparison view. The manual rotate buttons in `showObligReview` (baked on confirm) and `openRouteReview` (baked + re-uploads the `scan_images` row immediately) are **permanent**, not display-only.
 
