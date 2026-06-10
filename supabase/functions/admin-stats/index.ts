@@ -93,9 +93,6 @@ Deno.serve(async (req) => {
       case "usage":
         return jsonResponse({ ok: true, data: await getUsage(sb) });
 
-      case "failed_searches":
-        return jsonResponse({ ok: true, data: await getFailedSearches(sb) });
-
       case "kof_history":
         return jsonResponse({ ok: true, data: await getKofHistory(sb, params) });
 
@@ -125,15 +122,12 @@ Deno.serve(async (req) => {
 async function getOverview(sb: ReturnType<typeof createClient>) {
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
-  const since24h = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const since7d = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     lastScan,
     lastSearch,
     activeDevicesToday,
-    failedSearches24h,
-    failedSearches7d,
     judgeFailed7d,
     todayTotals,
     searchPerf,
@@ -143,8 +137,6 @@ async function getOverview(sb: ReturnType<typeof createClient>) {
     sb.from("scan_logs").select("scanned_at").order("scanned_at", { ascending: false }).limit(1).maybeSingle(),
     sb.from("search_logs").select("searched_at").order("searched_at", { ascending: false }).limit(1).maybeSingle(),
     sb.from("search_logs").select("device_id").gte("searched_at", `${todayStr}T00:00:00Z`),
-    sb.from("search_logs").select("id", { count: "exact", head: true }).eq("success", false).gte("searched_at", since24h),
-    sb.from("search_logs").select("id", { count: "exact", head: true }).eq("success", false).gte("searched_at", since7d),
     sb.from("judge_logs").select("id", { count: "exact", head: true }).eq("approved", false).gte("scanned_at", since7d),
     sb.from("daily_unit_totals").select("*").eq("entry_date", todayStr).maybeSingle(),
     sb.from("search_performance_stats").select("*").maybeSingle(),
@@ -160,8 +152,6 @@ async function getOverview(sb: ReturnType<typeof createClient>) {
     last_scan_at: lastScan.data?.scanned_at ?? null,
     last_search_at: lastSearch.data?.searched_at ?? null,
     active_devices_today: activeDeviceCount,
-    failed_searches_24h: failedSearches24h.count ?? 0,
-    failed_searches_7d: failedSearches7d.count ?? 0,
     judge_not_approved_7d: judgeFailed7d.count ?? 0,
     today_totals: todayTotals.data ?? null,
     search_performance: searchPerf.data ?? null,
@@ -224,20 +214,8 @@ async function getUsage(sb: ReturnType<typeof createClient>) {
     volume_trend: volumeTrend.data ?? [],
     sessions: {
       daily_agg: dailyAgg,
-      per_device: perDevice,
     },
   };
-}
-
-async function getFailedSearches(sb: ReturnType<typeof createClient>) {
-  const { data, error } = await sb
-    .from("search_logs")
-    .select("kof, searched_at, device_id, route_found, response_time_ms")
-    .eq("success", false)
-    .order("searched_at", { ascending: false })
-    .limit(100);
-  if (error) throw error;
-  return { rows: data ?? [] };
 }
 
 async function getKofHistory(sb: ReturnType<typeof createClient>, params: Record<string, unknown>) {

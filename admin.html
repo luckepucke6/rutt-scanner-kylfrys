@@ -273,25 +273,10 @@
           <table id="sessionsDailyTable"></table>
         </div>
       </div>
-      <div class="card">
-        <h2>Aktivitet per enhet</h2>
-        <div class="table-scroll">
-          <table id="sessionsDeviceTable"></table>
-        </div>
-      </div>
     </div>
 
     <!-- Support -->
     <div class="pane" id="pane-support">
-      <div class="row">
-        <button id="refreshSupportBtn" class="secondary">↻ Uppdatera</button>
-      </div>
-      <div class="card">
-        <h2>Misslyckade sökningar</h2>
-        <div class="table-scroll">
-          <table id="failedSearchesTable"></table>
-        </div>
-      </div>
       <div class="card">
         <h2>Slå upp KOF i historiken</h2>
         <div class="row">
@@ -447,7 +432,6 @@
         btn.classList.add('active');
         document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
         if (btn.dataset.tab === 'usage') loadUsage();
-        if (btn.dataset.tab === 'support') loadSupport();
         if (btn.dataset.tab === 'ai') loadAiQuality();
         if (btn.dataset.tab === 'data') loadTable();
         if (btn.dataset.tab === 'maintenance') loadAudit();
@@ -489,8 +473,6 @@
         kpi('Senaste skanning', fmtDate(data.last_scan_at)),
         kpi('Senaste sökning', fmtDate(data.last_search_at)),
         kpi('Aktiva enheter idag', data.active_devices_today ?? 0),
-        kpi('Misslyckade sökningar (24h)', data.failed_searches_24h ?? 0, data.failed_searches_24h ? 'warn' : 'ok'),
-        kpi('Misslyckade sökningar (7d)', data.failed_searches_7d ?? 0, data.failed_searches_7d ? 'warn' : 'ok'),
         kpi('AI ej godkänd (7d)', data.judge_not_approved_7d ?? 0, data.judge_not_approved_7d ? 'warn' : 'ok'),
       ].join('');
 
@@ -582,37 +564,10 @@
       document.getElementById('sessionsDailyTable').innerHTML = `
         <thead><tr><th>Datum</th><th>Aktiva enheter</th><th>Aktiv tid</th><th>Paustid</th><th>Sökningar</th></tr></thead>
         <tbody>${dailyRows || '<tr><td colspan="5" class="muted">Ingen data</td></tr>'}</tbody>`;
-
-      const perDevice = (data.sessions || {}).per_device || [];
-      const deviceRows = perDevice.map(r => `<tr>
-        <td>${r.session_date}</td>
-        <td>${shortDevice(r.device_id)}</td>
-        <td>${fmtMin(r.total_active_minutes)}</td>
-        <td>${fmtMin(r.pause_minutes)}</td>
-        <td>${r.segment_count}</td>
-        <td>${r.total_searches}</td>
-      </tr>`).join('');
-      document.getElementById('sessionsDeviceTable').innerHTML = `
-        <thead><tr><th>Datum</th><th>Enhet</th><th>Aktiv tid</th><th>Paustid</th><th>Segment</th><th>Sökningar</th></tr></thead>
-        <tbody>${deviceRows || '<tr><td colspan="6" class="muted">Ingen data</td></tr>'}</tbody>`;
     }
     document.getElementById('refreshUsageBtn').addEventListener('click', loadUsage);
 
     // --- Support ---
-    async function loadSupport() {
-      const data = await callAdmin('failed_searches');
-      const rows = data.rows || [];
-      const body = rows.map(r => `<tr>
-        <td>${fmtDate(r.searched_at)}</td>
-        <td>${r.kof ?? ''}</td>
-        <td>${shortDevice(r.device_id)}</td>
-        <td>${fmtMs(r.response_time_ms)}</td>
-      </tr>`).join('');
-      document.getElementById('failedSearchesTable').innerHTML = `
-        <thead><tr><th>Tid</th><th>KOF</th><th>Enhet</th><th>Svarstid</th></tr></thead>
-        <tbody>${body || '<tr><td colspan="4" class="muted">Inga misslyckade sökningar 🎉</td></tr>'}</tbody>`;
-    }
-    document.getElementById('refreshSupportBtn').addEventListener('click', loadSupport);
 
     function setKofHistoryStatus(msg, isError) {
       const el = document.getElementById('kofHistoryStatus');
