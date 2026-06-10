@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Rutt-scanner** is a mobile web app for terminal staff at Kyl & Frys Expressen, a refrigerated logistics company.
 
-**Problem it solves:** Every morning staff handle physical route sheets containing KOF numbers (6-digit identifiers tied to delivery stops). Looking up a KOF manually used to take up to an hour — the app reduces that to seconds.
+**Problem it solves:** Staff handle physical route sheets containing KOF numbers (6-digit identifiers tied to delivery stops), typically scanned in from around midday onward. Looking up a KOF manually used to take up to an hour — the app reduces that to seconds.
 
-**How it works:** Staff photograph the route sheets at the start of shift → Claude API extracts KOF data → stored in Supabase → anyone on shift can instantly look up any KOF.
+**How it works:** Staff photograph the route sheets (typically from around midday onward, not first thing in the morning) → Claude API extracts KOF data → stored in Supabase → anyone on shift can instantly look up any KOF.
 
 **UX constraints:** Cold warehouse environment — large touch targets, one-handed use, glove-compatible interface. Live camera KOF scanning was tested and removed; manual text input proved faster in practice.
 
