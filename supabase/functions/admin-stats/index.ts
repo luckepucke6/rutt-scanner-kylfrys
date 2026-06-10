@@ -90,6 +90,15 @@ Deno.serve(async (req) => {
       case "ai_quality":
         return jsonResponse({ ok: true, data: await getAiQuality(sb) });
 
+      case "usage":
+        return jsonResponse({ ok: true, data: await getUsage(sb) });
+
+      case "failed_searches":
+        return jsonResponse({ ok: true, data: await getFailedSearches(sb) });
+
+      case "kof_history":
+        return jsonResponse({ ok: true, data: await getKofHistory(sb, params) });
+
       case "table":
         return jsonResponse({ ok: true, data: await getTable(sb, params) });
 
@@ -129,6 +138,7 @@ async function getOverview(sb: ReturnType<typeof createClient>) {
     todayTotals,
     searchPerf,
     searchTrend,
+    volumeAlltime,
   ] = await Promise.all([
     sb.from("scan_logs").select("scanned_at").order("scanned_at", { ascending: false }).limit(1).maybeSingle(),
     sb.from("search_logs").select("searched_at").order("searched_at", { ascending: false }).limit(1).maybeSingle(),
@@ -139,6 +149,7 @@ async function getOverview(sb: ReturnType<typeof createClient>) {
     sb.from("daily_unit_totals").select("*").eq("entry_date", todayStr).maybeSingle(),
     sb.from("search_performance_stats").select("*").maybeSingle(),
     sb.from("search_performance_daily").select("*").limit(14),
+    sb.from("daily_unit_totals_stats").select("*").maybeSingle(),
   ]);
 
   const activeDeviceCount = new Set(
@@ -155,6 +166,7 @@ async function getOverview(sb: ReturnType<typeof createClient>) {
     today_totals: todayTotals.data ?? null,
     search_performance: searchPerf.data ?? null,
     search_trend: searchTrend.data ?? [],
+    volume_alltime: volumeAlltime.data ?? null,
   };
 }
 
@@ -167,6 +179,79 @@ async function getAiQuality(sb: ReturnType<typeof createClient>) {
     judge: judgeStats.data ?? null,
     split: splitStats.data ?? null,
   };
+}
+
+async function getUsage(sb: ReturnType<typeof createClient>) {
+  const [volumeTrend, sessionsPerDevice] = await Promise.all([
+    sb.from("daily_unit_totals").select("entry_date, total_units, route_count, kof_count")
+      .order("entry_date", { ascending: false }).limit(30),
+    sb.from("session_segments_daily").select("*")
+      .order("session_date", { ascending: false }).limit(60),
+  ]);
+
+  const perDevice = sessionsPerDevice.data ?? [];
+
+  const dailyMap = new Map<string, {
+    session_date: string;
+    devices: Set<string>;
+    total_active_minutes: number;
+    total_pause_minutes: number;
+    total_searches: number;
+  }>();
+  for (const row of perDevice as Array<Record<string, unknown>>) {
+    const date = String(row.session_date);
+    let agg = dailyMap.get(date);
+    if (!agg) {
+      agg = { session_date: date, devices: new Set(), total_active_minutes: 0, total_pause_minutes: 0, total_searches: 0 };
+      dailyMap.set(date, agg);
+    }
+    agg.devices.add(String(row.device_id));
+    agg.total_active_minutes += Number(row.total_active_minutes ?? 0);
+    agg.total_pause_minutes += Number(row.pause_minutes ?? 0);
+    agg.total_searches += Number(row.total_searches ?? 0);
+  }
+  const dailyAgg = [...dailyMap.values()]
+    .map((a) => ({
+      session_date: a.session_date,
+      active_devices: a.devices.size,
+      total_active_minutes: Math.round(a.total_active_minutes * 10) / 10,
+      total_pause_minutes: Math.round(a.total_pause_minutes * 10) / 10,
+      total_searches: a.total_searches,
+    }))
+    .sort((a, b) => b.session_date.localeCompare(a.session_date));
+
+  return {
+    volume_trend: volumeTrend.data ?? [],
+    sessions: {
+      daily_agg: dailyAgg,
+      per_device: perDevice,
+    },
+  };
+}
+
+async function getFailedSearches(sb: ReturnType<typeof createClient>) {
+  const { data, error } = await sb
+    .from("search_logs")
+    .select("kof, searched_at, device_id, route_found, response_time_ms")
+    .eq("success", false)
+    .order("searched_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return { rows: data ?? [] };
+}
+
+async function getKofHistory(sb: ReturnType<typeof createClient>, params: Record<string, unknown>) {
+  const kof = String(params.kof ?? "");
+  if (!/^\d{6}$/.test(kof)) throw new Error("Ogiltigt KOF-nummer");
+
+  const { data, error } = await sb
+    .from("scan_history")
+    .select("scanned_at, route, store_name, units, pall, bur, hlv, device_id")
+    .eq("kof", kof)
+    .order("scanned_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return { kof, rows: data ?? [] };
 }
 
 async function getTable(sb: ReturnType<typeof createClient>, params: Record<string, unknown>) {

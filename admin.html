@@ -224,6 +224,8 @@
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="overview">Översikt</button>
+      <button class="tab-btn" data-tab="usage">Användning</button>
+      <button class="tab-btn" data-tab="support">Support</button>
       <button class="tab-btn" data-tab="ai">AI-kvalitet</button>
       <button class="tab-btn" data-tab="data">Rådata</button>
       <button class="tab-btn" data-tab="maintenance">Underhåll</button>
@@ -243,9 +245,62 @@
         <div class="kpi-grid" id="usageKpis"></div>
       </div>
       <div class="card">
+        <h2>Total volym (all-time)</h2>
+        <div class="kpi-grid" id="volumeAlltimeKpis"></div>
+      </div>
+      <div class="card">
         <h2>Sökningar — senaste 14 dagarna</h2>
         <div class="table-scroll">
           <table id="searchTrendTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Användning -->
+    <div class="pane" id="pane-usage">
+      <div class="row">
+        <button id="refreshUsageBtn" class="secondary">↻ Uppdatera</button>
+      </div>
+      <div class="card">
+        <h2>Volym per dag</h2>
+        <div class="table-scroll">
+          <table id="volumeTrendTable"></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Aktivitet per dag</h2>
+        <div class="table-scroll">
+          <table id="sessionsDailyTable"></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Aktivitet per enhet</h2>
+        <div class="table-scroll">
+          <table id="sessionsDeviceTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Support -->
+    <div class="pane" id="pane-support">
+      <div class="row">
+        <button id="refreshSupportBtn" class="secondary">↻ Uppdatera</button>
+      </div>
+      <div class="card">
+        <h2>Misslyckade sökningar</h2>
+        <div class="table-scroll">
+          <table id="failedSearchesTable"></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Slå upp KOF i historiken</h2>
+        <div class="row">
+          <input type="text" id="kofHistoryInput" placeholder="6-siffrigt KOF" maxlength="6" style="max-width:160px">
+          <button id="kofHistoryBtn">Sök</button>
+        </div>
+        <div class="status-msg" id="kofHistoryStatus"></div>
+        <div class="table-scroll">
+          <table id="kofHistoryTable"></table>
         </div>
       </div>
     </div>
@@ -271,7 +326,6 @@
         <div class="row">
           <select id="tableSelect">
             <option value="route_entries">route_entries</option>
-            <option value="scan_images">scan_images</option>
             <option value="search_logs">search_logs</option>
             <option value="scan_logs">scan_logs</option>
             <option value="judge_logs">judge_logs</option>
@@ -392,6 +446,8 @@
         document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'usage') loadUsage();
+        if (btn.dataset.tab === 'support') loadSupport();
         if (btn.dataset.tab === 'ai') loadAiQuality();
         if (btn.dataset.tab === 'data') loadTable();
         if (btn.dataset.tab === 'maintenance') loadAudit();
@@ -412,6 +468,12 @@
     function fmtHours(ms) {
       if (!ms) return '0 h';
       return (ms / 3600000).toFixed(1) + ' h';
+    }
+    function fmtMin(min) {
+      if (!min) return '0 min';
+      const m = Math.round(min);
+      if (m < 60) return m + ' min';
+      return Math.floor(m / 60) + ' tim ' + (m % 60) + ' min';
     }
     function kpi(label, value, cls = '') {
       return `<div class="kpi ${cls}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
@@ -441,6 +503,17 @@
         kpi('Snitt svarstid', fmtMs(sp.avg_response_time_ms)),
         kpi('Median svarstid', fmtMs(sp.median_response_time_ms)),
         kpi('Tid sparad totalt', fmtHours(sp.total_ms_saved)),
+      ].join('');
+
+      const va = data.volume_alltime || {};
+      document.getElementById('volumeAlltimeKpis').innerHTML = [
+        kpi('Antal inlästa dagar', va.days_recorded ?? 0),
+        kpi('Snitt enheter/dag', va.avg_units_per_day ?? '–'),
+        kpi('Totalt antal enheter', va.total_units_all_time ?? 0),
+        kpi('Min enheter/dag', va.min_units_per_day ?? '–'),
+        kpi('Max enheter/dag', va.max_units_per_day ?? '–'),
+        kpi('Första dagen', va.first_date ?? '–'),
+        kpi('Senaste dagen', va.last_date ?? '–'),
       ].join('');
 
       const trend = data.search_trend || [];
@@ -479,6 +552,98 @@
       ].join('');
     }
     document.getElementById('refreshAiBtn').addEventListener('click', loadAiQuality);
+
+    // --- Användning ---
+    function shortDevice(id) {
+      return id ? String(id).slice(0, 8) : '–';
+    }
+    async function loadUsage() {
+      const data = await callAdmin('usage');
+
+      const trend = data.volume_trend || [];
+      const trendRows = trend.map(r => `<tr>
+        <td>${r.entry_date}</td>
+        <td>${r.total_units}</td>
+        <td>${r.route_count}</td>
+        <td>${r.kof_count}</td>
+      </tr>`).join('');
+      document.getElementById('volumeTrendTable').innerHTML = `
+        <thead><tr><th>Datum</th><th>Enheter</th><th>Rutter</th><th>KOF</th></tr></thead>
+        <tbody>${trendRows || '<tr><td colspan="4" class="muted">Ingen data</td></tr>'}</tbody>`;
+
+      const dailyAgg = (data.sessions || {}).daily_agg || [];
+      const dailyRows = dailyAgg.map(r => `<tr>
+        <td>${r.session_date}</td>
+        <td>${r.active_devices}</td>
+        <td>${fmtMin(r.total_active_minutes)}</td>
+        <td>${fmtMin(r.total_pause_minutes)}</td>
+        <td>${r.total_searches}</td>
+      </tr>`).join('');
+      document.getElementById('sessionsDailyTable').innerHTML = `
+        <thead><tr><th>Datum</th><th>Aktiva enheter</th><th>Aktiv tid</th><th>Paustid</th><th>Sökningar</th></tr></thead>
+        <tbody>${dailyRows || '<tr><td colspan="5" class="muted">Ingen data</td></tr>'}</tbody>`;
+
+      const perDevice = (data.sessions || {}).per_device || [];
+      const deviceRows = perDevice.map(r => `<tr>
+        <td>${r.session_date}</td>
+        <td>${shortDevice(r.device_id)}</td>
+        <td>${fmtMin(r.total_active_minutes)}</td>
+        <td>${fmtMin(r.pause_minutes)}</td>
+        <td>${r.segment_count}</td>
+        <td>${r.total_searches}</td>
+      </tr>`).join('');
+      document.getElementById('sessionsDeviceTable').innerHTML = `
+        <thead><tr><th>Datum</th><th>Enhet</th><th>Aktiv tid</th><th>Paustid</th><th>Segment</th><th>Sökningar</th></tr></thead>
+        <tbody>${deviceRows || '<tr><td colspan="6" class="muted">Ingen data</td></tr>'}</tbody>`;
+    }
+    document.getElementById('refreshUsageBtn').addEventListener('click', loadUsage);
+
+    // --- Support ---
+    async function loadSupport() {
+      const data = await callAdmin('failed_searches');
+      const rows = data.rows || [];
+      const body = rows.map(r => `<tr>
+        <td>${fmtDate(r.searched_at)}</td>
+        <td>${r.kof ?? ''}</td>
+        <td>${shortDevice(r.device_id)}</td>
+        <td>${fmtMs(r.response_time_ms)}</td>
+      </tr>`).join('');
+      document.getElementById('failedSearchesTable').innerHTML = `
+        <thead><tr><th>Tid</th><th>KOF</th><th>Enhet</th><th>Svarstid</th></tr></thead>
+        <tbody>${body || '<tr><td colspan="4" class="muted">Inga misslyckade sökningar 🎉</td></tr>'}</tbody>`;
+    }
+    document.getElementById('refreshSupportBtn').addEventListener('click', loadSupport);
+
+    function setKofHistoryStatus(msg, isError) {
+      const el = document.getElementById('kofHistoryStatus');
+      el.textContent = msg;
+      el.className = 'status-msg ' + (isError ? 'err' : 'ok');
+    }
+    document.getElementById('kofHistoryBtn').addEventListener('click', async () => {
+      const kof = document.getElementById('kofHistoryInput').value.trim();
+      if (!/^\d{6}$/.test(kof)) { setKofHistoryStatus('Ange ett 6-siffrigt KOF.', true); return; }
+      try {
+        const data = await callAdmin('kof_history', { kof });
+        const rows = data.rows || [];
+        const body = rows.map(r => `<tr>
+          <td>${fmtDate(r.scanned_at)}</td>
+          <td>${r.route ?? ''}</td>
+          <td>${r.store_name ?? ''}</td>
+          <td>${r.units ?? ''}</td>
+          <td>${shortDevice(r.device_id)}</td>
+        </tr>`).join('');
+        document.getElementById('kofHistoryTable').innerHTML = `
+          <thead><tr><th>Datum</th><th>Rutt</th><th>Butik</th><th>Enheter</th><th>Enhet</th></tr></thead>
+          <tbody>${body || '<tr><td colspan="5" class="muted">Ingen historik hittades</td></tr>'}</tbody>`;
+        setKofHistoryStatus(rows.length ? `${rows.length} träff(ar).` : 'Ingen historik hittades.', false);
+      } catch (e) {
+        setKofHistoryStatus('Fel: ' + e.message, true);
+        document.getElementById('kofHistoryTable').innerHTML = '';
+      }
+    });
+    document.getElementById('kofHistoryInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('kofHistoryBtn').click();
+    });
 
     // --- Rådata ---
     async function loadTable() {
