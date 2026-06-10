@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Rutt-scanner — Admin</title>
+  <style>
+    :root {
+      --color-bg: #f2f2f7;
+      --color-surface: #ffffff;
+      --color-surface-2: #f9f9fb;
+      --color-border: rgba(0, 0, 0, 0.10);
+      --color-border-strong: rgba(0, 0, 0, 0.18);
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #6b6b6b;
+      --color-text-tertiary: #aeaeb2;
+      --color-accent: #007aff;
+      --color-accent-fg: #ffffff;
+      --color-accent-soft: #e8f0fe;
+      --color-success: #28a745;
+      --color-success-bg: #f0faf3;
+      --color-success-border: rgba(40, 167, 69, 0.30);
+      --color-error: #dc3545;
+      --color-error-bg: #fff5f6;
+      --color-error-border: rgba(220, 53, 69, 0.30);
+      --color-warning: #fd7e14;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #000000;
+        --color-surface: #1c1c1e;
+        --color-surface-2: #2c2c2e;
+        --color-border: rgba(255, 255, 255, 0.10);
+        --color-border-strong: rgba(255, 255, 255, 0.20);
+        --color-text-primary: #f2f2f7;
+        --color-text-secondary: #8e8e93;
+        --color-text-tertiary: #48484a;
+        --color-accent-soft: #0a2540;
+        --color-success-bg: #0c2013;
+        --color-success-border: rgba(40, 167, 69, 0.35);
+        --color-error-bg: #200c0d;
+        --color-error-border: rgba(220, 53, 69, 0.35);
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      padding: 16px;
+      padding-bottom: 60px;
+    }
+    h1 { font-size: 20px; margin-bottom: 16px; }
+    h2 { font-size: 16px; margin-bottom: 10px; }
+    .card {
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .login-wrap {
+      max-width: 360px;
+      margin: 80px auto;
+      text-align: center;
+    }
+    input, select, button {
+      font-family: var(--font);
+      font-size: 16px;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface-2);
+      color: var(--color-text-primary);
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 12px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--color-accent);
+      color: var(--color-accent-fg);
+      cursor: pointer;
+      min-height: 44px;
+    }
+    button.secondary {
+      background: var(--color-surface-2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-strong);
+    }
+    button.danger {
+      background: var(--color-error);
+      color: #fff;
+    }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .error-msg {
+      color: var(--color-error);
+      font-size: 14px;
+      margin: 8px 0;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 90px;
+      padding: 10px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border-strong);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--color-accent);
+      color: var(--color-accent-fg);
+      border-color: var(--color-accent);
+    }
+    .pane { display: none; }
+    .pane.active { display: block; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      background: var(--color-surface-2);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+    .kpi.warn { background: var(--color-error-bg); border: 1px solid var(--color-error-border); }
+    .kpi.ok { background: var(--color-success-bg); border: 1px solid var(--color-success-border); }
+    .kpi .label {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+    .kpi .value {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    th {
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+      background: var(--color-surface);
+    }
+    .table-scroll {
+      overflow-x: auto;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .pager {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .hidden { display: none !important; }
+    .muted { color: var(--color-text-secondary); font-size: 13px; }
+    .maintenance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .maintenance-item:last-child { border-bottom: none; }
+    .status-msg {
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .status-msg.ok { color: var(--color-success); }
+    .status-msg.err { color: var(--color-error); }
+  </style>
+</head>
+<body>
+
+  <!-- Inloggning -->
+  <div class="login-wrap" id="loginScreen">
+    <h1>Rutt-scanner — Admin</h1>
+    <input type="password" id="passwordInput" placeholder="Lösenord" autocomplete="current-password">
+    <button id="loginBtn" style="width:100%">Logga in</button>
+    <div class="error-msg hidden" id="loginError"></div>
+  </div>
+
+  <!-- Panel -->
+  <div id="panel" class="hidden">
+    <h1>Rutt-scanner — Admin</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Översikt</button>
+      <button class="tab-btn" data-tab="ai">AI-kvalitet</button>
+      <button class="tab-btn" data-tab="data">Rådata</button>
+      <button class="tab-btn" data-tab="maintenance">Underhåll</button>
+    </div>
+
+    <!-- Översikt -->
+    <div class="pane active" id="pane-overview">
+      <div class="row">
+        <button id="refreshOverviewBtn" class="secondary">↻ Uppdatera</button>
+      </div>
+      <div class="card">
+        <h2>Systemhälsa</h2>
+        <div class="kpi-grid" id="healthKpis"></div>
+      </div>
+      <div class="card">
+        <h2>Användning &amp; volym</h2>
+        <div class="kpi-grid" id="usageKpis"></div>
+      </div>
+      <div class="card">
+        <h2>Sökningar — senaste 14 dagarna</h2>
+        <div class="table-scroll">
+          <table id="searchTrendTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI-kvalitet -->
+    <div class="pane" id="pane-ai">
+      <div class="row">
+        <button id="refreshAiBtn" class="secondary">↻ Uppdatera</button>
+      </div>
+      <div class="card">
+        <h2>Domare (Haiku) — judge_logs</h2>
+        <div class="kpi-grid" id="judgeKpis"></div>
+      </div>
+      <div class="card">
+        <h2>Rutt/S-gränser — split_decisions</h2>
+        <div class="kpi-grid" id="splitKpis"></div>
+      </div>
+    </div>
+
+    <!-- Rådata -->
+    <div class="pane" id="pane-data">
+      <div class="card">
+        <div class="row">
+          <select id="tableSelect">
+            <option value="route_entries">route_entries</option>
+            <option value="scan_images">scan_images</option>
+            <option value="search_logs">search_logs</option>
+            <option value="scan_logs">scan_logs</option>
+            <option value="judge_logs">judge_logs</option>
+            <option value="session_segments">session_segments</option>
+            <option value="daily_unit_totals">daily_unit_totals</option>
+            <option value="scan_history">scan_history</option>
+            <option value="audit_log">audit_log</option>
+            <option value="split_decisions">split_decisions</option>
+          </select>
+          <button id="loadTableBtn">Ladda</button>
+        </div>
+        <div class="table-scroll">
+          <table id="dataTable"></table>
+        </div>
+        <div class="pager">
+          <button id="prevPageBtn" class="secondary">← Föregående</button>
+          <span class="muted" id="pageInfo"></span>
+          <button id="nextPageBtn" class="secondary">Nästa →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Underhåll -->
+    <div class="pane" id="pane-maintenance">
+      <div class="card">
+        <h2>Radera enskild KOF</h2>
+        <div class="row">
+          <input type="text" id="deleteKofInput" placeholder="6-siffrigt KOF" maxlength="6" style="max-width:160px">
+          <button class="danger" id="deleteKofBtn">Radera KOF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Radera hel rutt</h2>
+        <div class="row">
+          <input type="text" id="deleteRouteInput" placeholder='t.ex. "Rutt 4" eller "S4"' style="max-width:200px">
+          <button class="danger" id="deleteRouteBtn">Radera rutt</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Rensa all inläst data</h2>
+        <p class="muted" style="margin-bottom:10px">Tar bort alla route_entries och scan_images. Kan inte ångras.</p>
+        <button class="danger" id="clearAllBtn">Rensa allt</button>
+      </div>
+      <div class="status-msg" id="maintenanceStatus"></div>
+      <div class="card">
+        <h2>Senaste ändringar — audit_log</h2>
+        <div class="table-scroll">
+          <table id="auditTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://sblqelvbomnmgiojpppp.supabase.co';
+    const ADMIN_FN_URL = SUPABASE_URL + '/functions/v1/admin-stats';
+    const PW_KEY = 'rutt_admin_pw';
+
+    let dataPage = { table: 'route_entries', offset: 0, limit: 50, total: 0 };
+
+    function getPassword() {
+      return sessionStorage.getItem(PW_KEY) || '';
+    }
+
+    async function callAdmin(action, params = {}) {
+      const res = await fetch(ADMIN_FN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: getPassword(), action, params }),
+      });
+      if (res.status === 401) {
+        sessionStorage.removeItem(PW_KEY);
+        showLogin('Fel lösenord.');
+        throw new Error('Fel lösenord');
+      }
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Okänt fel');
+      return json.data;
+    }
+
+    function showLogin(error) {
+      document.getElementById('panel').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      const errEl = document.getElementById('loginError');
+      if (error) {
+        errEl.textContent = error;
+        errEl.classList.remove('hidden');
+      } else {
+        errEl.classList.add('hidden');
+      }
+    }
+
+    function showPanel() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('panel').classList.remove('hidden');
+      loadOverview();
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const pw = document.getElementById('passwordInput').value;
+      if (!pw) return;
+      sessionStorage.setItem(PW_KEY, pw);
+      try {
+        await callAdmin('overview');
+        showPanel();
+      } catch (e) {
+        showLogin(e.message === 'Fel lösenord' ? 'Fel lösenord.' : 'Kunde inte ansluta: ' + e.message);
+      }
+    });
+    document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('loginBtn').click();
+    });
+
+    // --- Tabs ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'ai') loadAiQuality();
+        if (btn.dataset.tab === 'data') loadTable();
+        if (btn.dataset.tab === 'maintenance') loadAudit();
+      });
+    });
+
+    // --- Helpers ---
+    function fmtDate(iso) {
+      if (!iso) return '–';
+      const d = new Date(iso);
+      return d.toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' });
+    }
+    function fmtMs(ms) {
+      if (ms == null) return '–';
+      if (ms < 1000) return ms + ' ms';
+      return (ms / 1000).toFixed(1) + ' s';
+    }
+    function fmtHours(ms) {
+      if (!ms) return '0 h';
+      return (ms / 3600000).toFixed(1) + ' h';
+    }
+    function kpi(label, value, cls = '') {
+      return `<div class="kpi ${cls}"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+    }
+
+    // --- Översikt ---
+    async function loadOverview() {
+      const data = await callAdmin('overview');
+      const sp = data.search_performance || {};
+      const tt = data.today_totals || {};
+
+      document.getElementById('healthKpis').innerHTML = [
+        kpi('Senaste skanning', fmtDate(data.last_scan_at)),
+        kpi('Senaste sökning', fmtDate(data.last_search_at)),
+        kpi('Aktiva enheter idag', data.active_devices_today ?? 0),
+        kpi('Misslyckade sökningar (24h)', data.failed_searches_24h ?? 0, data.failed_searches_24h ? 'warn' : 'ok'),
+        kpi('Misslyckade sökningar (7d)', data.failed_searches_7d ?? 0, data.failed_searches_7d ? 'warn' : 'ok'),
+        kpi('AI ej godkänd (7d)', data.judge_not_approved_7d ?? 0, data.judge_not_approved_7d ? 'warn' : 'ok'),
+      ].join('');
+
+      document.getElementById('usageKpis').innerHTML = [
+        kpi('Enheter idag', tt.total_units ?? 0),
+        kpi('Rutter idag', tt.route_count ?? 0),
+        kpi('KOF idag', tt.kof_count ?? 0),
+        kpi('Sökningar totalt', sp.total_searches ?? 0),
+        kpi('Lyckandegrad', (sp.success_rate_pct ?? '–') + '%'),
+        kpi('Snitt svarstid', fmtMs(sp.avg_response_time_ms)),
+        kpi('Median svarstid', fmtMs(sp.median_response_time_ms)),
+        kpi('Tid sparad totalt', fmtHours(sp.total_ms_saved)),
+      ].join('');
+
+      const trend = data.search_trend || [];
+      const rows = trend.map(r => `<tr>
+        <td>${r.search_date}</td>
+        <td>${r.total_searches}</td>
+        <td>${r.successful_searches}</td>
+        <td>${fmtMs(r.avg_response_time_ms)}</td>
+        <td>${fmtHours(r.ms_saved)}</td>
+      </tr>`).join('');
+      document.getElementById('searchTrendTable').innerHTML = `
+        <thead><tr><th>Datum</th><th>Sökningar</th><th>Lyckade</th><th>Snitt-tid</th><th>Tid sparad</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" class="muted">Ingen data</td></tr>'}</tbody>`;
+    }
+    document.getElementById('refreshOverviewBtn').addEventListener('click', loadOverview);
+
+    // --- AI-kvalitet ---
+    async function loadAiQuality() {
+      const data = await callAdmin('ai_quality');
+      const j = data.judge || {};
+      const s = data.split || {};
+      document.getElementById('judgeKpis').innerHTML = [
+        kpi('Antal bedömda', j.total_judged ?? 0),
+        kpi('Godkända', j.approved_count ?? 0),
+        kpi('Godkänd-andel', (j.approval_rate_pct ?? '–') + '%'),
+        kpi('Snitt-confidence', j.avg_confidence ?? '–'),
+        kpi('Senaste skanning', fmtDate(j.last_scan)),
+      ].join('');
+      document.getElementById('splitKpis').innerHTML = [
+        kpi('Antal ark', s.total_sheets ?? 0),
+        kpi('Människa ändrade gränsen', s.human_changed_count ?? 0),
+        kpi('Andel ändrade', (s.human_changed_rate_pct ?? '–') + '%'),
+        kpi('Snitt flyttade KOF', s.avg_moved_kofs ?? '–'),
+        kpi('Opus föreslog gräns', s.opus_proposed_count ?? 0),
+        kpi('Domare föreslog gräns', s.judge_proposed_count ?? 0),
+      ].join('');
+    }
+    document.getElementById('refreshAiBtn').addEventListener('click', loadAiQuality);
+
+    // --- Rådata ---
+    async function loadTable() {
+      dataPage.table = document.getElementById('tableSelect').value;
+      const data = await callAdmin('table', { table: dataPage.table, limit: dataPage.limit, offset: dataPage.offset });
+      dataPage.total = data.total;
+      renderDataTable(data.rows);
+      const from = data.rows.length ? dataPage.offset + 1 : 0;
+      const to = dataPage.offset + data.rows.length;
+      document.getElementById('pageInfo').textContent = `${from}–${to} av ${data.total}`;
+      document.getElementById('prevPageBtn').disabled = dataPage.offset <= 0;
+      document.getElementById('nextPageBtn').disabled = to >= data.total;
+    }
+    function renderDataTable(rows) {
+      const table = document.getElementById('dataTable');
+      if (!rows.length) {
+        table.innerHTML = '<tbody><tr><td class="muted">Inga rader</td></tr></tbody>';
+        return;
+      }
+      const cols = Object.keys(rows[0]);
+      const head = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead>';
+      const body = '<tbody>' + rows.map(r => '<tr>' + cols.map(c => {
+        let v = r[c];
+        if (v === null || v === undefined) v = '';
+        else if (typeof v === 'object') v = JSON.stringify(v);
+        return `<td title="${String(v).replace(/"/g, '&quot;')}">${v}</td>`;
+      }).join('') + '</tr>').join('') + '</tbody>';
+      table.innerHTML = head + body;
+    }
+    document.getElementById('loadTableBtn').addEventListener('click', () => {
+      dataPage.offset = 0;
+      loadTable();
+    });
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+      dataPage.offset = Math.max(0, dataPage.offset - dataPage.limit);
+      loadTable();
+    });
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+      dataPage.offset += dataPage.limit;
+      loadTable();
+    });
+
+    // --- Underhåll ---
+    function setMaintenanceStatus(msg, isError) {
+      const el = document.getElementById('maintenanceStatus');
+      el.textContent = msg;
+      el.className = 'status-msg ' + (isError ? 'err' : 'ok');
+    }
+    document.getElementById('deleteKofBtn').addEventListener('click', async () => {
+      const kof = document.getElementById('deleteKofInput').value.trim();
+      if (!/^\d{6}$/.test(kof)) { setMaintenanceStatus('Ange ett 6-siffrigt KOF.', true); return; }
+      if (!confirm(`Radera KOF ${kof}? Detta kan inte ångras.`)) return;
+      try {
+        await callAdmin('delete_kof', { kof });
+        setMaintenanceStatus(`KOF ${kof} raderad.`, false);
+        document.getElementById('deleteKofInput').value = '';
+        loadAudit();
+      } catch (e) { setMaintenanceStatus('Fel: ' + e.message, true); }
+    });
+    document.getElementById('deleteRouteBtn').addEventListener('click', async () => {
+      const route = document.getElementById('deleteRouteInput').value.trim();
+      if (!route) { setMaintenanceStatus('Ange ett ruttnamn.', true); return; }
+      if (!confirm(`Radera alla KOF i "${route}"? Detta kan inte ångras.`)) return;
+      try {
+        const data = await callAdmin('delete_route', { route });
+        setMaintenanceStatus(`Rutt "${route}" raderad (${data.kof_count} KOF).`, false);
+        document.getElementById('deleteRouteInput').value = '';
+        loadAudit();
+      } catch (e) { setMaintenanceStatus('Fel: ' + e.message, true); }
+    });
+    document.getElementById('clearAllBtn').addEventListener('click', async () => {
+      if (!confirm('Rensa ALL inläst data (route_entries + scan_images)? Detta kan inte ångras.')) return;
+      if (!confirm('Är du helt säker? Detta påverkar alla enheter direkt.')) return;
+      try {
+        const data = await callAdmin('clear_all');
+        setMaintenanceStatus(`Rensat: ${data.cleared_route_entries} KOF, ${data.cleared_scan_images} bilder.`, false);
+        loadAudit();
+      } catch (e) { setMaintenanceStatus('Fel: ' + e.message, true); }
+    });
+
+    async function loadAudit() {
+      const data = await callAdmin('audit', { limit: 50 });
+      const rows = data.rows || [];
+      const body = rows.map(r => `<tr>
+        <td>${fmtDate(r.occurred_at)}</td>
+        <td>${r.action ?? ''}</td>
+        <td>${r.kof ?? ''}</td>
+        <td>${r.route ?? ''}</td>
+        <td>${r.old_value ?? ''}</td>
+        <td>${r.new_value ?? ''}</td>
+        <td>${r.device_id ?? ''}</td>
+      </tr>`).join('');
+      document.getElementById('auditTable').innerHTML = `
+        <thead><tr><th>Tid</th><th>Åtgärd</th><th>KOF</th><th>Rutt</th><th>Från</th><th>Till</th><th>Enhet</th></tr></thead>
+        <tbody>${body || '<tr><td colspan="7" class="muted">Inga rader</td></tr>'}</tbody>`;
+    }
+
+    // --- Init ---
+    if (getPassword()) {
+      callAdmin('overview').then(showPanel).catch(() => showLogin());
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>

@@ -40,9 +40,9 @@ The script calls the real Claude API for each image, validates the response (6-d
 
 **Never use mock data** — no stubs, fakes, or hardcoded test data. All tests run against the real Claude API and real Supabase. Use `test.js` with a real key.
 
-**Everything stays in `index.html`** — never split into separate JS or CSS files. The project is intentionally single-file for simple GitHub Pages deployment. The **only** exception is the server-side Edge Function (`supabase/functions/claude-proxy/index.ts`), which cannot live in the public client because it holds the Anthropic key.
+**Everything stays in `index.html`** — never split into separate JS or CSS files. The project is intentionally single-file for simple GitHub Pages deployment. The exceptions are the server-side Edge Functions (`supabase/functions/claude-proxy/index.ts`, `supabase/functions/admin-stats/index.ts`), which cannot live in the public client because they hold secrets, and `admin.html` (see [Admin panel](#admin-panel) below), which is a deliberately separate owner-only tool.
 
-**i18n for all UI text** — new visible strings must be added to the `LANGS` object (sv/en/ru) and accessed via `t()` or `tf()`. Never hardcode Swedish strings directly in HTML.
+**i18n for all UI text** — new visible strings in `index.html` (the staff app) must be added to the `LANGS` object (sv/en/ru) and accessed via `t()` or `tf()`. Never hardcode Swedish strings directly in HTML. `admin.html` is exempt — it is Swedish-only and owner-facing, so strings are hardcoded there.
 
 **Mobile-first, cold-warehouse UX** — no hover-only primary interactions. Touch targets minimum 44×44 px. Assume the user has gloves on and is using one hand in a cold environment.
 
@@ -106,13 +106,16 @@ File selected
   → [applyRotation] (if rotation ∈ {90,180,270}, bake it into the stored image so it displays upright everywhere)
   → [reconcileReadings] — normalizes route from splitIndex and picks a DEFAULT boundary:
         Opus splitIndex if present, else the judge's splitIndex as a fallback guess.
-        We trust the digits — there is NO digit cross-check. Returns { entries, splitIndex }.
+        We trust the digits — there is NO digit cross-check. Returns { entries, splitIndex, opusSplit, judgeSplit }.
   → queue { type:'review', decision } → [showObligReview] — shown for EVERY sheet so a
         human always confirms the Rutt/S boundary (the AI sometimes misses the blank-row gap).
+        Per-KOF moves via the toggle button are tracked in state.pendingReview.moves.
   → [commitScan] (on review save / "Gå vidare"):
       [storeEntries] → state.routeData
       [uploadScanImage] → scan_images.insert (gets UUID, back-fills scanImageId on KOFs)
       [logScan] → scan_logs ; [logJudge] → judge_logs ; [saveToStorage] ; [saveToSupabase] → route_entries.upsert
+      [logScanHistory] → scan_history (90-day archive) ; [logSplitDecision] → split_decisions
+      (AI vs human Rutt/S boundary) ; [logAudit] → audit_log for any review_move entries
 ```
 
 For **PDF uploads**: `handleFileSelect` → `splitPdfToImages` (pdf.js, 2× scale, each page → JPEG) → each page enters the pipeline above. PDF pages are already upright, so the `rotation` field is ignored for them.
@@ -193,9 +196,23 @@ The route number is extracted from the header: `"Rutt 4- 161 Xhulijo"` → route
 `session_segments` — analytics (10-minute inactivity cutoff):
 - `segment_start`, `segment_end`, `duration_minutes`, `search_count`, `session_date`, `device_id`
 
-**Sync flow:** On startup, `loadFromSupabase()` fetches all current `route_entries` and their associated `scan_images`, sets `state.supabaseLoadedAt`, and clears the `localStorage` cache. `initRealtimeSync()` subscribes the `route-realtime` channel to three things: `postgres_changes` on `route_entries` (→ `onRemoteChange()`, which debounces a full reload), and two `broadcast` events — `routes_verified` (another device tapped the verify banner) and `data_cleared` (another device wiped the data). A polling fallback kicks in if realtime is unavailable.
+`daily_unit_totals` — permanent daily aggregate, upserted on conflict of `entry_date` by `logDailyTotal()`:
+- `entry_date`, `total_units`, `route_count`, `kof_count`, `device_id`, `updated_at`
+
+`scan_history` — append-only 90-day archive of every scanned KOF, written by `logScanHistory()` (called from `commitScan`). No driver names, no images. Lets staff/owner answer "what route was KOF X on, on date D?" even after `route_entries` is purged:
+- `kof`, `route`, `store_name`, `pall`, `bur`, `hlv`, `units`, `confidence`, `sort_order`, `device_id`, `scanned_at`
+
+`audit_log` — 90-day log of every manual mutation, written by `logAudit()` from `changeInlineRoute`, `splitHerePersisted`, `saveEdit`, `deleteKof`, `deleteRoute`, and `clearAllData` (which logs counts even though it wipes everything else):
+- `action` (`route_change` | `split_here` | `review_move` | `edit_kof` | `delete_kof` | `delete_route` | `clear_all`), `kof`, `route`, `old_value`, `new_value`, `device_id`, `occurred_at`
+
+`split_decisions` — 90-day per-sheet record of the AI-vs-human Rutt/S boundary, written by `logSplitDecision()` from `commitScan`, used to measure prompt quality:
+- `route`, `entry_count`, `opus_split_index`, `judge_split_index`, `proposed_split_index`, `final_split_index`, `human_changed`, `moved_kofs`, `device_id`, `scanned_at`
+
+**Sync flow:** On startup, `loadFromSupabase()` fetches all current `route_entries` (created within the last 10h) and their associated `scan_images`, sets `state.supabaseLoadedAt`, and clears the `localStorage` cache. `initRealtimeSync()` subscribes the `route-realtime` channel to three things: `postgres_changes` on `route_entries` (→ `onRemoteChange()`, which debounces a full reload), and two `broadcast` events — `routes_verified` (another device tapped the verify banner) and `data_cleared` (another device wiped the data). A polling fallback kicks in if realtime is unavailable.
 
 Each device gets a stable UUID stored under `rutt_device_id` in `localStorage`.
+
+**Data retention:** all scheduled deletion runs server-side via `pg_cron` (see `supabase/sql/03_pg_cron_retention.sql`, run manually in the Supabase SQL editor — there is no migration tooling in this project). `route_entries` and `scan_images` are purged after 10 hours (GDPR — sheet headers may show driver names); `scan_logs`, `judge_logs`, `search_logs`, `session_segments` after 30 days; `scan_history`, `audit_log`, `split_decisions` after 90 days; `daily_unit_totals` is permanent. The client no longer runs any cleanup (the old `cleanupOldSupabaseData()` was removed) — `clearAllData()`, `deleteKof()`, and `deleteRoute()` remain as the only client-initiated deletes, and only target `route_entries`/`scan_images`. `scan_history`, `audit_log`, and `split_decisions` are insert+select only for the anon client (RLS, see `supabase/sql/02_rls.sql`) — the client cannot update or delete them.
 
 ### Language support
 
@@ -220,3 +237,13 @@ Each KOF row in `#reviewBody` has a `data-kof` attribute and is tappable: clicki
 ### Route modal KOF list (pen button)
 
 `openRouteModal(routeName)` renders a scrollable KOF list (KOF | BUTIK | EST columns) inside `#routeModalKofList` showing all entries for that route. Tapping a row closes the route modal and opens `editModal` for that KOF; after saving/cancelling the route modal reopens (via `editModalAfterClose`).
+
+## Admin panel
+
+`admin.html` is a separate, owner-only operations dashboard (not part of the staff-facing app, not linked from it). It is password-protected and lets Lucas check system health, usage, AI quality, and raw table data, plus run light maintenance (delete a KOF, delete a route, clear all data).
+
+- **Auth:** a single shared password, checked server-side. The page stores it in `sessionStorage` (cleared when the tab closes) and sends it with every request — there is no Supabase Auth/session.
+- **Backend:** `supabase/functions/admin-stats/index.ts`, a second Edge Function alongside `claude-proxy`. It reads the secret `ADMIN_PASSWORD` and uses `SUPABASE_SERVICE_ROLE_KEY` (auto-injected) to bypass RLS, so it can read all 10 tables and the views below regardless of the `anon` policies used by `index.html`. Deploy with `supabase functions deploy admin-stats --no-verify-jwt` (same as `claude-proxy`).
+- **Actions** (dispatched via `{ password, action, params }`): `overview`, `ai_quality`, `table` (paginated, table name vitlisted, `scan_images.image_data` excluded), `audit`, and the maintenance writes `delete_kof`, `delete_route`, `clear_all`. Every maintenance write also inserts an `audit_log` row (`device_id: 'admin-panel'`), same shape as `logAudit()` in `index.html`.
+- **Views** the Edge Function reads from (created manually in the Supabase SQL editor, defined in `supabase/views/`): `daily_unit_totals_stats`, `session_segments_daily`, `search_performance_stats` / `search_performance_daily`, `judge_quality_stats`, `split_decision_stats`.
+- **Does not touch:** `index.html`, `claude-proxy`, or any existing RLS policy — the staff app's `anon`-key flow is unchanged.
