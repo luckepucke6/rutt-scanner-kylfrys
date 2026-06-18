@@ -1401,12 +1401,57 @@
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: var(--color-bg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #loginOverlay.hidden { display: none; }
+    .login-box {
+      width: 90%; max-width: 340px;
+      text-align: center;
+    }
+    .login-box h1 {
+      font-size: 22px; font-weight: 700;
+      margin-bottom: 24px; color: var(--color-text);
+    }
+    .login-box input {
+      width: 100%; box-sizing: border-box;
+      padding: 14px 16px; font-size: 17px;
+      border: 1.5px solid var(--color-border);
+      border-radius: 12px; background: #fff;
+      -webkit-appearance: none;
+    }
+    .login-box input:focus {
+      outline: none; border-color: var(--color-primary);
+    }
+    .login-box button {
+      width: 100%; margin-top: 14px;
+      padding: 14px; font-size: 17px; font-weight: 600;
+      border: none; border-radius: 12px;
+      background: var(--color-primary); color: #fff;
+      cursor: pointer; -webkit-appearance: none;
+    }
+    .login-box button:active { opacity: 0.85; }
+    #loginError {
+      margin-top: 12px; font-size: 14px;
+      color: var(--color-danger);
+    }
+    #loginError.hidden { display: none; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
-<div id="app">
+<div id="loginOverlay">
+  <div class="login-box">
+    <h1 data-i18n="loginTitle">Logga in</h1>
+    <input type="password" id="loginInput" autocomplete="current-password" data-i18n-placeholder="loginPlaceholder" placeholder="Lösenord">
+    <button id="loginBtn" data-i18n="loginButton">Logga in</button>
+    <div id="loginError" class="hidden"></div>
+  </div>
+</div>
+<div id="app" class="hidden">
 
   <!-- Header -->
   <div class="header">
@@ -1852,6 +1897,8 @@
   // Anthropic-anrop går via Supabase Edge Function (claude-proxy) — nyckeln ligger
   // serverside, aldrig i den publika klientkoden. Se supabase/functions/claude-proxy.
   const CLAUDE_PROXY_URL  = SUPABASE_URL + '/functions/v1/claude-proxy';
+  const APP_AUTH_URL      = SUPABASE_URL + '/functions/v1/app-auth';
+  const APP_AUTH_KEY      = 'rutt_app_authed';
 
   let sb = null;
 
@@ -2043,6 +2090,7 @@
   }
 
   let searchStartTime = 0;
+  let searchAttempt = '';
 
   const RESPONSE_TIME_MAX_MS = 60000; // > 60 s = övergiven sökning, logga som null
 
@@ -2323,6 +2371,11 @@
       reconcileBoundarySubtitle: 'Tryck mellan raderna där S-rutten börjar. Finns ingen S-rutt – tryck längst ner.',
       statusAwaitingReview: 'Väntar på granskning…',
       showInRoutes: 'Visa i ruttlistan →',
+      loginTitle: 'Logga in',
+      loginPlaceholder: 'Lösenord',
+      loginButton: 'Logga in',
+      loginWrongPw: 'Fel lösenord.',
+      loginConnError: 'Kunde inte ansluta — försök igen.',
     },
     en: {
       tabRoutes: 'Routes', tabSearch: 'Search KOF', tabScan: 'Scan', tabGuide: 'Guide',
@@ -2449,6 +2502,11 @@
       reconcileBoundarySubtitle: 'Tap between the rows where the S-route starts. No S-route — tap the bottom option.',
       statusAwaitingReview: 'Awaiting review…',
       showInRoutes: 'Show in route list →',
+      loginTitle: 'Log in',
+      loginPlaceholder: 'Password',
+      loginButton: 'Log in',
+      loginWrongPw: 'Wrong password.',
+      loginConnError: 'Could not connect — try again.',
     },
     ru: {
       tabRoutes: 'Маршруты', tabSearch: 'Поиск КОФ', tabScan: 'Сканер', tabGuide: 'Гид',
@@ -2574,6 +2632,11 @@
       reconcileBoundarySubtitle: 'Нажмите между строками, где начинается S-маршрут. Нет S-маршрута — нажмите внизу.',
       statusAwaitingReview: 'Ожидание проверки…',
       showInRoutes: 'Показать в списке →',
+      loginTitle: 'Вход',
+      loginPlaceholder: 'Пароль',
+      loginButton: 'Войти',
+      loginWrongPw: 'Неправильный пароль.',
+      loginConnError: 'Не удалось подключиться — попробуйте снова.',
     },
   };
 
@@ -2598,6 +2661,9 @@
     document.documentElement.lang = state.lang;
     document.querySelectorAll('[data-i18n]').forEach(el => {
       el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
     });
     document.getElementById('lang-select').value = state.lang;
     const egg = document.getElementById('easterEggRu');
@@ -3702,7 +3768,11 @@ Rules:
     clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
     input.style.paddingLeft = val.length > 0 ? '54px' : '15px';
     document.getElementById('searchHint').classList.toggle('hidden', val.length > 0);
-    if (val.length === 0) { searchStartTime = 0; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return; }
+    if (val.length === 0) {
+      if (searchStartTime > 0) { logSearch(searchAttempt, null, null); recordSearchInSegment(); }
+      searchStartTime = 0; searchAttempt = ''; hideSuggestions(); document.getElementById('resultArea').innerHTML = ''; return;
+    }
+    searchAttempt = val;
     if (val.length === 1 && searchStartTime === 0) { searchStartTime = Date.now(); if (!seg.active) startSegment(); }
     if (seg.active) resetSegmentTimer();
     if (val.length === 6) { hideSuggestions(); searchKof(); return; }
@@ -3743,7 +3813,8 @@ Rules:
   }
 
   function clearSearch() {
-    searchStartTime = 0;
+    if (searchStartTime > 0) { logSearch(searchAttempt, null, null); recordSearchInSegment(); }
+    searchStartTime = 0; searchAttempt = '';
     const input = document.getElementById('kofInput');
     input.value = '';
     input.style.paddingLeft = '15px';
@@ -3763,6 +3834,7 @@ Rules:
     let responseTime = searchStartTime > 0 ? Date.now() - searchStartTime : null;
     if (responseTime !== null && responseTime > RESPONSE_TIME_MAX_MS) responseTime = null;
     searchStartTime = 0;
+    searchAttempt = '';
     logSearch(raw, data ?? null, responseTime);
     recordSearchInSegment();
     const resultArea = document.getElementById('resultArea');
@@ -4447,17 +4519,76 @@ Rules:
   /* ═══════════════════════════════════════════════
      INIT
   ═══════════════════════════════════════════════ */
-  initSupabase();
-  initRealtimeSync();
-  initReviewDivider();
-  getDeviceId();
-  loadFromStorage();
-  loadLang();
-  updateStorageUI();
-  { const _t = new Date().toISOString().slice(0, 10); if (localStorage.getItem('rutt_verified_date') === _t) routesVerified = true; }
-  loadFromSupabase().then(loadRouteReview);
-  loadRouteReview();
-  window.addEventListener('beforeunload', endSegment);
+  function initApp() {
+    initSupabase();
+    initRealtimeSync();
+    initReviewDivider();
+    getDeviceId();
+    loadFromStorage();
+    loadLang();
+    updateStorageUI();
+    { const _t = new Date().toISOString().slice(0, 10); if (localStorage.getItem('rutt_verified_date') === _t) routesVerified = true; }
+    loadFromSupabase().then(loadRouteReview);
+    loadRouteReview();
+    window.addEventListener('beforeunload', endSegment);
+    document.getElementById('app').classList.remove('hidden');
+  }
+
+  async function verifyAppPassword(pw) {
+    const res = await fetch(APP_AUTH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    return res.ok;
+  }
+
+  function hideLoginOverlay() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+  }
+
+  // Resolve language before anything else so the login overlay is translated
+  {
+    const saved = localStorage.getItem(LANG_STORAGE);
+    if (saved && LANGS[saved]) {
+      state.lang = saved;
+    } else {
+      const nav = (navigator.language || '').toLowerCase();
+      state.lang = nav.startsWith('ru') ? 'ru' : 'sv';
+    }
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  }
+
+  if (sessionStorage.getItem(APP_AUTH_KEY)) {
+    hideLoginOverlay();
+    initApp();
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const pw = document.getElementById('loginInput').value;
+    if (!pw) return;
+    const errEl = document.getElementById('loginError');
+    errEl.classList.add('hidden');
+    try {
+      const ok = await verifyAppPassword(pw);
+      if (ok) {
+        sessionStorage.setItem(APP_AUTH_KEY, '1');
+        hideLoginOverlay();
+        initApp();
+      } else {
+        errEl.textContent = t('loginWrongPw');
+        errEl.classList.remove('hidden');
+      }
+    } catch {
+      errEl.textContent = t('loginConnError');
+      errEl.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('loginInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
 
   // Event delegation — image list
   document.getElementById('imageList').addEventListener('click', e => {

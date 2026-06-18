@@ -160,6 +160,15 @@ Both calls authenticate to the proxy with `apikey` and `Authorization: Bearer <S
 
 Limit the key with a spend/rate cap in the Anthropic Console.
 
+#### Password gate (app-auth)
+
+`index.html` is protected by a login overlay that blocks all app functionality (including Supabase calls) until a correct password is verified server-side. The pattern mirrors `admin.html`:
+
+- **Client:** on load, the app shows a full-screen `#loginOverlay` and `#app` is `.hidden`. The init sequence (`initApp()`) only runs after the password is verified. Successful auth stores a flag in `sessionStorage` (`rutt_app_authed`) so the password persists for the tab session but is cleared when the tab closes.
+- **Server:** `supabase/functions/app-auth/index.ts` reads the Supabase secret `APP_PASSWORD`, timing-safe-compares the submitted password, and returns `{ ok: true }` (200) or `{ ok: false }` (401). No DB access.
+- **Deploy:** `supabase functions deploy app-auth --no-verify-jwt`. Set the `APP_PASSWORD` secret under Project Settings → Edge Functions → Secrets.
+- **Scope:** this is a UI-level gate only — `claude-proxy` remains unauthenticated. A technical user could bypass the overlay via devtools, but the scan backend would still work. This is an accepted trade-off.
+
 ### Route naming convention
 
 Each route sheet has two sections separated by a blank row:
